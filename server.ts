@@ -108,7 +108,9 @@ async function validateEnvironment() {
 
   // 5. Validate Production Build Directory if in production
   if (isProduction) {
-    const distDir = path.join(resolvedDirname, 'dist');
+    const distDir = resolvedDirname.endsWith('dist') || resolvedDirname.endsWith('dist/')
+      ? resolvedDirname
+      : path.join(resolvedDirname, 'dist');
     if (!distDir || typeof distDir !== 'string') {
       throw new Error('CRITICAL PATH ERROR: Failed to resolve production build path.');
     }
@@ -127,7 +129,7 @@ async function bootstrap() {
   await validateEnvironment();
 
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   console.log('[Bootstrap] Initializing Firebase app...');
 
@@ -158,7 +160,9 @@ async function bootstrap() {
 
   // Serve Frontend Single Page Application (SPA)
   if (isProduction) {
-    const distDir = path.join(resolvedDirname, 'dist');
+    const distDir = resolvedDirname.endsWith('dist') || resolvedDirname.endsWith('dist/')
+      ? resolvedDirname
+      : path.join(resolvedDirname, 'dist');
     app.use(express.static(distDir));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distDir, 'index.html'));
