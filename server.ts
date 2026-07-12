@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { verifyFirebaseConnections } from './server/firebase.js';
 import { DocumentService } from './server/services/documentService.js';
 import { OpenRouterService } from './server/services/openRouterService.js';
+import { SettingsRepository } from './server/repositories/settingsRepository.js';
 
 // Route Imports
 import adminRouter from './server/routes/adminRoutes.js';
@@ -47,7 +48,7 @@ if (!resolvedDirname || typeof resolvedDirname !== 'string') {
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-function validateEnvironment() {
+async function validateEnvironment() {
   console.log('[Bootstrap] Validating environment variables and system paths...');
 
   // 1. Validate GEMINI_API_KEY (Strictly required)
@@ -60,27 +61,42 @@ function validateEnvironment() {
   }
   console.log('✓ GEMINI_API_KEY validation passed.');
 
-  // 2. Validate OPENROUTER_API_KEY (Optional, but warn if placeholder)
-  const orKey = process.env.OPENROUTER_API_KEY;
-  if (orKey) {
-    if (
-      orKey === 'MY_OPENROUTER_API_KEY' ||
-      orKey === 'MY_NEW_API_KEY' ||
-      orKey.includes('<MY_NEW_API_KEY>') ||
-      orKey.trim() === ''
-    ) {
-      console.warn(
-        '[Bootstrap] WARNING: OPENROUTER_API_KEY is configured as a placeholder or is empty. ' +
-        'The application will bypass OpenRouter and fall back seamlessly to the native Google Gemini SDK.'
-      );
-    } else {
-      console.log('✓ OPENROUTER_API_KEY validation passed.');
-    }
-  } else {
-    console.log('[Bootstrap] OPENROUTER_API_KEY is not defined. Using native Google Gemini SDK.');
+  // 2. Load settings to see if provider is OpenRouter
+  let activeProvider = 'OpenRouter'; // Default fallback
+  try {
+    const settings = await SettingsRepository.get();
+    activeProvider = settings.provider || 'OpenRouter';
+    console.log(`[Bootstrap] Configured active AI provider is: "${activeProvider}"`);
+  } catch (dbErr: any) {
+    console.warn(`[Bootstrap] Failed to fetch settings from Firestore. Defaulting provider check to "OpenRouter". Error: ${dbErr.message}`);
   }
 
-  // 3. Validate Firebase Config Path
+  // 3. Validate OPENROUTER_API_KEY
+  const orKey = process.env.OPENROUTER_API_KEY;
+  const isMissingOrPlaceholder = !orKey ||
+    orKey.trim() === '' ||
+    orKey === 'MY_OPENROUTER_API_KEY' ||
+    orKey === 'MY_NEW_API_KEY' ||
+    orKey.includes('<MY_NEW_API_KEY>');
+
+  if (activeProvider === 'OpenRouter') {
+    if (isMissingOrPlaceholder) {
+      throw new Error(
+        'CRITICAL CONFIGURATION ERROR: The active AI provider is configured as "OpenRouter", ' +
+        'but the OPENROUTER_API_KEY environment variable is missing, empty, or a placeholder. ' +
+        'Please configure a valid OPENROUTER_API_KEY in your environment to run the application with this provider.'
+      );
+    }
+    console.log('✓ OpenRouter API key loaded successfully.');
+  } else {
+    if (!isMissingOrPlaceholder) {
+      console.log('✓ OpenRouter API key loaded successfully (Note: current provider is ' + activeProvider + ').');
+    } else {
+      console.log('[Bootstrap] OPENROUTER_API_KEY is not defined or is a placeholder. (Note: current provider is ' + activeProvider + ').');
+    }
+  }
+
+  // 4. Validate Firebase Config Path
   const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
   if (!configPath || typeof configPath !== 'string') {
     throw new Error('CRITICAL PATH ERROR: Failed to resolve Firebase config path.');
@@ -90,7 +106,7 @@ function validateEnvironment() {
   }
   console.log('✓ Firebase configuration file path validated.');
 
-  // 4. Validate Production Build Directory if in production
+  // 5. Validate Production Build Directory if in production
   if (isProduction) {
     const distDir = path.join(resolvedDirname, 'dist');
     if (!distDir || typeof distDir !== 'string') {
@@ -108,7 +124,7 @@ function validateEnvironment() {
 }
 
 async function bootstrap() {
-  validateEnvironment();
+  await validateEnvironment();
 
   const app = express();
   const PORT = 3000;

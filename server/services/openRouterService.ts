@@ -260,14 +260,18 @@ export class OpenRouterService {
       if (!response.ok) {
         const errText = await response.text();
         const detailedErrorText = parseOpenRouterError(response.status, errText, 'Startup Connection Test');
-        console.warn(`[OpenRouter Info] Startup connection test returned status ${response.status}. The app remains 100% functional via seamless native Google Gemini fallback.\nDetails: ${detailedErrorText}`);
+        if (response.status === 401) {
+          console.error(`❌ OpenRouter connection test: Authentication failed. Invalid or expired API Key.`);
+        } else {
+          console.error(`❌ OpenRouter connection test failed with status ${response.status}. Details: ${detailedErrorText}`);
+        }
         return;
       }
 
-      console.log('✅ OpenRouter Connected Successfully');
+      console.log('✓ OpenRouter connection test: Authentication succeeded.');
       console.log(`Active Model: ${model}`);
     } catch (err: any) {
-      console.warn(`[OpenRouter Info] Connection test bypassed: ${err.message}. Seamlessly falling back to native Google Gemini SDK.`);
+      console.error(`❌ OpenRouter connection test failed: ${err.message}`);
     }
   }
 }
