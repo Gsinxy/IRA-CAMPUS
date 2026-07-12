@@ -27,14 +27,17 @@ export async function getGooglePublicKeys(): Promise<{ [key: string]: string }> 
 export function getFirebaseProjectId(): string {
   try {
     const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      if (config.projectId) {
-        return config.projectId;
+    if (configPath && typeof configPath === 'string' && fs.existsSync(configPath)) {
+      const fileContent = fs.readFileSync(configPath, 'utf8');
+      if (fileContent) {
+        const config = JSON.parse(fileContent);
+        if (config && config.projectId && typeof config.projectId === 'string') {
+          return config.projectId;
+        }
       }
     }
   } catch (err) {
-    // Ignore error and fallback
+    // Ignore error and fallback gracefully
   }
   return 'ira-campus-4983a'; // default fallback
 }

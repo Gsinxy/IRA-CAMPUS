@@ -18,11 +18,98 @@ import analyticsRouter from './server/routes/analyticsRoutes.js';
 import documentRouter from './server/routes/documentRoutes.js';
 import chatRouter from './server/routes/chatRoutes.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import fs from 'fs';
+
+let resolvedFilename = '';
+let resolvedDirname = '';
+
+try {
+  // If compiled to CommonJS, __filename and __dirname are defined in the outer scope
+  resolvedFilename = __filename;
+  resolvedDirname = __dirname;
+} catch (err) {
+  // ESM Fallback (development)
+  try {
+    resolvedFilename = fileURLToPath(import.meta.url);
+    resolvedDirname = path.dirname(resolvedFilename);
+  } catch (esmErr: any) {
+    throw new Error(`CRITICAL SYSTEM ERROR: Failed to resolve directory paths. Error: ${esmErr.message}`);
+  }
+}
+
+// Validate that resolved paths are non-empty strings
+if (!resolvedFilename || typeof resolvedFilename !== 'string') {
+  throw new Error('CRITICAL PATH ERROR: resolvedFilename must be a non-empty string.');
+}
+if (!resolvedDirname || typeof resolvedDirname !== 'string') {
+  throw new Error('CRITICAL PATH ERROR: resolvedDirname must be a non-empty string.');
+}
+
 const isProduction = process.env.NODE_ENV === 'production';
 
+function validateEnvironment() {
+  console.log('[Bootstrap] Validating environment variables and system paths...');
+
+  // 1. Validate GEMINI_API_KEY (Strictly required)
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!geminiKey || geminiKey.trim() === '' || geminiKey === 'MY_GEMINI_API_KEY') {
+    throw new Error(
+      'CRITICAL CONFIGURATION ERROR: GEMINI_API_KEY environment variable is missing, empty, or a placeholder. ' +
+      'Please configure a valid Gemini API Key in your environment secrets to run the application.'
+    );
+  }
+  console.log('✓ GEMINI_API_KEY validation passed.');
+
+  // 2. Validate OPENROUTER_API_KEY (Optional, but warn if placeholder)
+  const orKey = process.env.OPENROUTER_API_KEY;
+  if (orKey) {
+    if (
+      orKey === 'MY_OPENROUTER_API_KEY' ||
+      orKey === 'MY_NEW_API_KEY' ||
+      orKey.includes('<MY_NEW_API_KEY>') ||
+      orKey.trim() === ''
+    ) {
+      console.warn(
+        '[Bootstrap] WARNING: OPENROUTER_API_KEY is configured as a placeholder or is empty. ' +
+        'The application will bypass OpenRouter and fall back seamlessly to the native Google Gemini SDK.'
+      );
+    } else {
+      console.log('✓ OPENROUTER_API_KEY validation passed.');
+    }
+  } else {
+    console.log('[Bootstrap] OPENROUTER_API_KEY is not defined. Using native Google Gemini SDK.');
+  }
+
+  // 3. Validate Firebase Config Path
+  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+  if (!configPath || typeof configPath !== 'string') {
+    throw new Error('CRITICAL PATH ERROR: Failed to resolve Firebase config path.');
+  }
+  if (!fs.existsSync(configPath)) {
+    throw new Error(`CRITICAL CONFIGURATION ERROR: Firebase config file is missing at: "${configPath}".`);
+  }
+  console.log('✓ Firebase configuration file path validated.');
+
+  // 4. Validate Production Build Directory if in production
+  if (isProduction) {
+    const distDir = path.join(resolvedDirname, 'dist');
+    if (!distDir || typeof distDir !== 'string') {
+      throw new Error('CRITICAL PATH ERROR: Failed to resolve production build path.');
+    }
+    if (!fs.existsSync(distDir)) {
+      throw new Error(`CRITICAL PRODUCTION ERROR: The production build directory "dist" is missing at: "${distDir}". Please build the frontend first.`);
+    }
+    const indexFile = path.join(distDir, 'index.html');
+    if (!fs.existsSync(indexFile)) {
+      throw new Error(`CRITICAL PRODUCTION ERROR: Production entry point "index.html" is missing at: "${indexFile}".`);
+    }
+    console.log('✓ Production static assets directory and files validated.');
+  }
+}
+
 async function bootstrap() {
+  validateEnvironment();
+
   const app = express();
   const PORT = 3000;
 
@@ -55,7 +142,7 @@ async function bootstrap() {
 
   // Serve Frontend Single Page Application (SPA)
   if (isProduction) {
-    const distDir = path.join(__dirname, 'dist');
+    const distDir = path.join(resolvedDirname, 'dist');
     app.use(express.static(distDir));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distDir, 'index.html'));

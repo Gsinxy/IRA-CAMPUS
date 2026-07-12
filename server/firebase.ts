@@ -20,15 +20,30 @@ let app: any = null;
 
 const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
 
-if (!fs.existsSync(configPath)) {
-  console.error('[Firebase Init] ERROR: firebase-applet-config.json not found in workspace.');
-  process.exit(1);
+if (!configPath || typeof configPath !== 'string') {
+  throw new Error('CRITICAL PATH ERROR: Failed to resolve Firebase config file path.');
 }
 
-const firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+if (!fs.existsSync(configPath)) {
+  throw new Error(`CRITICAL CONFIGURATION ERROR: firebase-applet-config.json not found at: "${configPath}". Please configure Firebase for this project first.`);
+}
+
+let firebaseConfig: any;
+try {
+  const fileContent = fs.readFileSync(configPath, 'utf8');
+  if (!fileContent || fileContent.trim() === '') {
+    throw new Error('Config file is empty.');
+  }
+  firebaseConfig = JSON.parse(fileContent);
+} catch (parseErr: any) {
+  throw new Error(`CRITICAL CONFIGURATION ERROR: Failed to parse firebase-applet-config.json. Please check if it contains valid JSON. Error: ${parseErr.message}`);
+}
 
 try {
   if (getApps().length === 0) {
+    if (!firebaseConfig || typeof firebaseConfig !== 'object' || Object.keys(firebaseConfig).length === 0) {
+      throw new Error('Firebase config object is empty or invalid.');
+    }
     app = initializeApp(firebaseConfig);
   } else {
     app = getApp();
@@ -38,8 +53,7 @@ try {
   auth = getAuth(app);
   storage = getStorage(app);
 } catch (err: any) {
-  console.error('[Firebase Init] Critical initialization error:', err.message);
-  process.exit(1);
+  throw new Error(`CRITICAL INITIALIZATION ERROR: Firebase startup failed. Details: ${err.message}`);
 }
 
 /**
