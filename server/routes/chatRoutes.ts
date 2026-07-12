@@ -82,23 +82,30 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     openRouterKey = OpenRouterService.getVerifiedKey();
   } catch (keyErr: any) {
-    console.warn(`[OpenRouter Key Info] ${keyErr.message}. Automatically falling back to native Gemini stream...`);
-    try {
-      await GeminiService.streamNativeFallback(
-        res,
-        systemInstruction,
-        history,
-        message,
-        uniqueCitations,
-        topChunks,
-        retrievedEntities,
-        fullPromptContext,
-        sessionIdentifier
-      );
-    } catch (geminiErr: any) {
-      console.error('[Gemini Fallback Streaming Failed]', geminiErr);
+    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
+      console.warn(`[OpenRouter Key Info] ${keyErr.message}. Automatically falling back to native Gemini stream...`);
+      try {
+        await GeminiService.streamNativeFallback(
+          res,
+          systemInstruction,
+          history,
+          message,
+          uniqueCitations,
+          topChunks,
+          retrievedEntities,
+          fullPromptContext,
+          sessionIdentifier
+        );
+      } catch (geminiErr: any) {
+        console.error('[Gemini Fallback Streaming Failed]', geminiErr);
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.write(`data: ${JSON.stringify({ error: `Fallback Gemini Streaming failed: ${geminiErr.message}` })}\n\n`);
+        res.end();
+      }
+    } else {
+      console.error(`[OpenRouter Key Error] ${keyErr.message}. Bypassing fallback as GEMINI_API_KEY is not configured.`);
       res.setHeader('Content-Type', 'text/event-stream');
-      res.write(`data: ${JSON.stringify({ error: `Fallback Gemini Streaming failed: ${geminiErr.message}` })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: `OpenRouter initialization failed: ${keyErr.message}` })}\n\n`);
       res.end();
     }
     return;
@@ -252,22 +259,28 @@ router.post('/', async (req: Request, res: Response) => {
       promptSnippet: message.substring(0, 200)
     });
 
-    // Trigger direct native Gemini backup streaming immediately
-    try {
-      await GeminiService.streamNativeFallback(
-        res,
-        systemInstruction,
-        history,
-        message,
-        uniqueCitations,
-        topChunks,
-        retrievedEntities,
-        fullPromptContext,
-        sessionIdentifier
-      );
-    } catch (geminiErr: any) {
-      console.error('[Gemini Direct SSE Fallback Failed]', geminiErr);
-      res.write(`data: ${JSON.stringify({ error: `Fallback Gemini Streaming failed: ${geminiErr.message}` })}\n\n`);
+    // Trigger direct native Gemini backup streaming if key is configured
+    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
+      try {
+        await GeminiService.streamNativeFallback(
+          res,
+          systemInstruction,
+          history,
+          message,
+          uniqueCitations,
+          topChunks,
+          retrievedEntities,
+          fullPromptContext,
+          sessionIdentifier
+        );
+      } catch (geminiErr: any) {
+        console.error('[Gemini Direct SSE Fallback Failed]', geminiErr);
+        res.write(`data: ${JSON.stringify({ error: `Fallback Gemini Streaming failed: ${geminiErr.message}` })}\n\n`);
+        res.end();
+      }
+    } else {
+      console.warn(`[OpenRouter Stream Error] Bypassing fallback as GEMINI_API_KEY is not configured.`);
+      res.write(`data: ${JSON.stringify({ error: `OpenRouter stream execution error: ${err.message}` })}\n\n`);
       res.end();
     }
   }

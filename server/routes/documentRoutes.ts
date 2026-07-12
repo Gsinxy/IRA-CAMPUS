@@ -881,13 +881,18 @@ router.post('/upload', adminAuthMiddleware, async (req: AdminRequest, res: Respo
         ], 'You are a professional layout OCR engine.');
         finalContent = result.text || '';
       } catch (orErr: any) {
-        console.warn(`[OpenRouter OCR Warning] ${orErr.message}. Falling back to native Google GenAI OCR client...`);
-        try {
-          const result = await GeminiService.ocrMultimodal(fileBase64, mimeType, extractionPrompt);
-          finalContent = result || '';
-        } catch (geminiErr: any) {
-          console.error('[Gemini Direct OCR Fallback Failed]', geminiErr);
-          throw new Error(`Both OpenRouter and Gemini Multimodal OCR failed: ${geminiErr.message}`);
+        if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
+          console.warn(`[OpenRouter OCR Warning] ${orErr.message}. Falling back to native Google GenAI OCR client...`);
+          try {
+            const result = await GeminiService.ocrMultimodal(fileBase64, mimeType, extractionPrompt);
+            finalContent = result || '';
+          } catch (geminiErr: any) {
+            console.error('[Gemini Direct OCR Fallback Failed]', geminiErr);
+            throw new Error(`Both OpenRouter and Gemini Multimodal OCR failed: ${geminiErr.message}`);
+          }
+        } else {
+          console.error(`[OpenRouter OCR Error] ${orErr.message}. Bypassing fallback as GEMINI_API_KEY is not configured.`);
+          throw orErr;
         }
       }
     } else {

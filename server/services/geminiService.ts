@@ -32,11 +32,43 @@ export function getGeminiClient(): GoogleGenAI | null {
 }
 
 /**
- * Generate embedding for text content using gemini-embedding-2-preview.
+ * Generate embedding for text content using OpenRouter or Gemini.
  */
 export async function getEmbedding(text: string): Promise<number[]> {
+  const orKey = process.env.OPENROUTER_API_KEY;
+  if (orKey && orKey.trim() !== '' && orKey !== 'MY_OPENROUTER_API_KEY') {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${orKey}`,
+          'HTTP-Referer': 'https://iracampus.edu',
+          'X-Title': 'IRA Campus'
+        },
+        body: JSON.stringify({
+          model: 'openai/text-embedding-3-small',
+          input: text,
+        })
+      });
+
+      if (response.ok) {
+        const data = (await response.json()) as any;
+        if (data && data.data && Array.isArray(data.data) && data.data[0]?.embedding) {
+          return data.data[0].embedding;
+        }
+      } else {
+        const errText = await response.text();
+        console.warn(`[OpenRouter Embedding] Error fetching embedding: status ${response.status}`, errText);
+      }
+    } catch (err: any) {
+      console.error('[OpenRouter Embedding] Exception:', err.message);
+    }
+  }
+
   const ai = getGeminiClient();
   if (!ai) {
+    console.warn('[Gemini Service] getEmbedding fallback bypassed: Gemini Client is not initialized.');
     return [];
   }
   try {

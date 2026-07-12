@@ -16,21 +16,40 @@ const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Initialize Gemini SDK
 const apiKey = process.env.GEMINI_API_KEY;
+let ai: any = null;
 if (!apiKey || apiKey === 'MY_GEMINI_API_KEY') {
-  console.error('CRITICAL: GEMINI_API_KEY is not defined in the environment!');
-  process.exit(1);
-}
-const ai = new GoogleGenAI({
-  apiKey: apiKey,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
+  console.warn('WARNING: GEMINI_API_KEY is not defined in the environment. Script will run with local fallbacks if executed.');
+  ai = {
+    models: {
+      generateContent: async () => { throw new Error('GEMINI_API_KEY is not configured.'); },
+      generateContentStream: async () => { throw new Error('GEMINI_API_KEY is not configured.'); },
+      embedContent: async () => { throw new Error('GEMINI_API_KEY is not configured.'); }
     }
+  };
+} else {
+  try {
+    ai = new GoogleGenAI({
+      apiKey: apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        }
+      }
+    });
+  } catch (err) {
+    console.error('Failed to initialize GoogleGenAI client in repair_data.ts:', err);
+    ai = {
+      models: {
+        generateContent: async () => { throw new Error('Google GenAI failed to initialize.'); },
+        generateContentStream: async () => { throw new Error('Google GenAI failed to initialize.'); },
+        embedContent: async () => { throw new Error('Google GenAI failed to initialize.'); }
+      }
+    };
   }
-});
+}
 
 // Robust retry wrapper with exponential backoff
-async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 2, initialDelay = 1000): Promise<T> {
+async function callWithRetry(fn: () => Promise<any>, maxRetries = 2, initialDelay = 1000): Promise<any> {
   let attempt = 0;
   while (attempt < maxRetries) {
     try {

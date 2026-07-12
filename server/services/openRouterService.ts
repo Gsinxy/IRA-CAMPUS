@@ -96,8 +96,12 @@ export async function callOpenRouter(
   try {
     apiKey = getVerifiedOpenRouterKey();
   } catch (keyErr: any) {
-    console.warn(`[OpenRouter Key Warning] ${keyErr.message}. Automatically falling back to native Gemini SDK.`);
-    return await callGeminiDirect(messages, options);
+    if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
+      console.warn(`[OpenRouter Key Warning] ${keyErr.message}. Automatically falling back to native Gemini SDK.`);
+      return await callGeminiDirect(messages, options);
+    } else {
+      throw keyErr;
+    }
   }
 
   const settings = await SettingsRepository.get();
@@ -144,13 +148,17 @@ export async function callOpenRouter(
         const errText = await response.text();
         const status = response.status;
         const detailedErrorText = parseOpenRouterError(status, errText, 'OpenRouter API Call');
-        console.warn(`[OpenRouter Info] API Call failed with status ${status}. Falling back to native Gemini Direct... Details: ${detailedErrorText}`);
-
-        try {
-          return await callGeminiDirect(messages, options);
-        } catch (geminiErr: any) {
-          console.error('[Gemini Direct Fallback Failed]', geminiErr);
-          throw new Error(`OpenRouter failed (${detailedErrorText}) and Gemini fallback failed too: ${geminiErr.message}`);
+        
+        if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
+          console.warn(`[OpenRouter Info] API Call failed with status ${status}. Falling back to native Gemini Direct... Details: ${detailedErrorText}`);
+          try {
+            return await callGeminiDirect(messages, options);
+          } catch (geminiErr: any) {
+            console.error('[Gemini Direct Fallback Failed]', geminiErr);
+            throw new Error(`OpenRouter failed (${detailedErrorText}) and Gemini fallback failed too: ${geminiErr.message}`);
+          }
+        } else {
+          throw new Error(detailedErrorText);
         }
       }
 
@@ -208,12 +216,16 @@ export async function callOpenRouter(
     }
   }
 
-  console.warn(`[OpenRouter Info] Network failed repeatedly. Falling back to native Gemini Direct...`);
-  try {
-    return await callGeminiDirect(messages, options);
-  } catch (geminiErr: any) {
-    console.error('[Gemini Direct Fallback Failed]', geminiErr);
-    throw lastError || geminiErr;
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
+    console.warn(`[OpenRouter Info] Network failed repeatedly. Falling back to native Gemini Direct...`);
+    try {
+      return await callGeminiDirect(messages, options);
+    } catch (geminiErr: any) {
+      console.error('[Gemini Direct Fallback Failed]', geminiErr);
+      throw lastError || geminiErr;
+    }
+  } else {
+    throw lastError || new Error('OpenRouter network request failed repeatedly and no Gemini API Key is configured for fallback.');
   }
 }
 

@@ -51,15 +51,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 async function validateEnvironment() {
   console.log('[Bootstrap] Validating environment variables and system paths...');
 
-  // 1. Validate GEMINI_API_KEY (Strictly required)
+  // 1. Validate GEMINI_API_KEY (Optional)
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey || geminiKey.trim() === '' || geminiKey === 'MY_GEMINI_API_KEY') {
-    throw new Error(
-      'CRITICAL CONFIGURATION ERROR: GEMINI_API_KEY environment variable is missing, empty, or a placeholder. ' +
-      'Please configure a valid Gemini API Key in your environment secrets to run the application.'
-    );
+    console.log('[Bootstrap] Note: GEMINI_API_KEY is not defined or is a placeholder. Native Gemini features or fallbacks will be unavailable.');
+  } else {
+    console.log('✓ GEMINI_API_KEY loaded successfully (Optional).');
   }
-  console.log('✓ GEMINI_API_KEY validation passed.');
 
   // 2. Load settings to see if provider is OpenRouter
   let activeProvider = 'OpenRouter'; // Default fallback
@@ -71,7 +69,7 @@ async function validateEnvironment() {
     console.warn(`[Bootstrap] Failed to fetch settings from Firestore. Defaulting provider check to "OpenRouter". Error: ${dbErr.message}`);
   }
 
-  // 3. Validate OPENROUTER_API_KEY
+  // 3. Validate OPENROUTER_API_KEY (Primary & Required)
   const orKey = process.env.OPENROUTER_API_KEY;
   const isMissingOrPlaceholder = !orKey ||
     orKey.trim() === '' ||
@@ -79,22 +77,13 @@ async function validateEnvironment() {
     orKey === 'MY_NEW_API_KEY' ||
     orKey.includes('<MY_NEW_API_KEY>');
 
-  if (activeProvider === 'OpenRouter') {
-    if (isMissingOrPlaceholder) {
-      throw new Error(
-        'CRITICAL CONFIGURATION ERROR: The active AI provider is configured as "OpenRouter", ' +
-        'but the OPENROUTER_API_KEY environment variable is missing, empty, or a placeholder. ' +
-        'Please configure a valid OPENROUTER_API_KEY in your environment to run the application with this provider.'
-      );
-    }
-    console.log('✓ OpenRouter API key loaded successfully.');
-  } else {
-    if (!isMissingOrPlaceholder) {
-      console.log('✓ OpenRouter API key loaded successfully (Note: current provider is ' + activeProvider + ').');
-    } else {
-      console.log('[Bootstrap] OPENROUTER_API_KEY is not defined or is a placeholder. (Note: current provider is ' + activeProvider + ').');
-    }
+  if (isMissingOrPlaceholder) {
+    throw new Error(
+      'CRITICAL CONFIGURATION ERROR: The OPENROUTER_API_KEY environment variable is missing, empty, or a placeholder. ' +
+      'Please configure a valid OPENROUTER_API_KEY in your environment to run the application.'
+    );
   }
+  console.log('✓ OpenRouter API key loaded successfully.');
 
   // 4. Validate Firebase Config Path
   const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
