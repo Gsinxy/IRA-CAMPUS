@@ -1,0 +1,6 @@
+{
+  "name": "IRA Campus",
+  "description": "An AI-powered official digital guide and college information assistant for prospective students, parents, and faculty.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

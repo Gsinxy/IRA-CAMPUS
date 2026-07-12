@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-iracampus-8e4ad9b5-1144-46c1-b235-d47f563b5334",
+      "rules": "firestore.rules"
+    }
+  ]
+}

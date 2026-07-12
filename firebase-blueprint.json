@@ -1,0 +1,304 @@
+{
+  "entities": {
+    "Analytics": {
+      "title": "Analytics Summary",
+      "description": "Global aggregated analytics for the IRA Campus application",
+      "type": "object",
+      "properties": {
+        "totalQuestions": {
+          "type": "integer",
+          "description": "Total successfully processed chat questions"
+        },
+        "totalFeedbackCount": {
+          "type": "integer",
+          "description": "Total feedback actions submitted by users"
+        },
+        "positiveFeedbackCount": {
+          "type": "integer",
+          "description": "Count of positive feedback"
+        },
+        "negativeFeedbackCount": {
+          "type": "integer",
+          "description": "Count of negative feedback"
+        },
+        "totalTokens": {
+          "type": "integer",
+          "description": "Total tokens consumed across all model inquiries"
+        },
+        "promptTokens": {
+          "type": "integer",
+          "description": "Total prompt tokens consumed"
+        },
+        "completionTokens": {
+          "type": "integer",
+          "description": "Total completion tokens consumed"
+        },
+        "estimatedCost": {
+          "type": "number",
+          "description": "Total estimated cost in USD"
+        },
+        "averageResponseTime": {
+          "type": "number",
+          "description": "Average response time in milliseconds"
+        },
+        "fastestResponseTime": {
+          "type": "number",
+          "description": "Fastest response time recorded"
+        },
+        "slowestResponseTime": {
+          "type": "number",
+          "description": "Slowest response time recorded"
+        },
+        "lastResponseTime": {
+          "type": "number",
+          "description": "Last response time recorded"
+        }
+      },
+      "required": ["totalQuestions", "totalFeedbackCount", "positiveFeedbackCount", "negativeFeedbackCount", "totalTokens", "estimatedCost"]
+    },
+    "ChatLog": {
+      "title": "Chat Log",
+      "description": "Details of an individual question and answer interaction",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "responseTimeMs": {
+          "type": "integer"
+        },
+        "retrievalTimeMs": {
+          "type": "integer"
+        },
+        "generationTimeMs": {
+          "type": "integer"
+        },
+        "model": {
+          "type": "string"
+        },
+        "promptTokens": {
+          "type": "integer"
+        },
+        "completionTokens": {
+          "type": "integer"
+        },
+        "cost": {
+          "type": "number"
+        },
+        "citations": {
+          "type": "array"
+        },
+        "feedback": {
+          "type": "string",
+          "enum": ["like", "dislike", null]
+        }
+      },
+      "required": ["id", "question", "answer", "timestamp", "responseTimeMs"]
+    },
+    "DailyUsage": {
+      "title": "Daily Usage",
+      "description": "Aggregated daily activity statistics",
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string"
+        },
+        "questionsCount": {
+          "type": "integer"
+        }
+      },
+      "required": ["date", "questionsCount"]
+    },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "User evaluation feedback record",
+      "type": "object",
+      "properties": {
+        "question": {
+          "type": "string"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "feedback": {
+          "type": "string",
+          "enum": ["like", "dislike"]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["question", "answer", "feedback", "timestamp"]
+    },
+    "PerformanceLog": {
+      "title": "Performance Log",
+      "description": "Latency and performance metrics",
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "responseTimeMs": {
+          "type": "integer"
+        },
+        "retrievalTimeMs": {
+          "type": "integer"
+        },
+        "generationTimeMs": {
+          "type": "integer"
+        }
+      },
+      "required": ["timestamp", "responseTimeMs", "retrievalTimeMs", "generationTimeMs"]
+    },
+    "KnowledgeStats": {
+      "title": "Knowledge Stats",
+      "description": "Metadata statistics about college knowledge base files",
+      "type": "object",
+      "properties": {
+        "totalDocuments": {
+          "type": "integer"
+        },
+        "totalJsonFiles": {
+          "type": "integer"
+        },
+        "totalImportedUrls": {
+          "type": "integer"
+        },
+        "totalEmbeddings": {
+          "type": "integer"
+        },
+        "averageChunksPerDocument": {
+          "type": "number"
+        },
+        "lastKnowledgeUpdate": {
+          "type": "string"
+        },
+        "lastImportedFile": {
+          "type": "string"
+        }
+      },
+      "required": ["totalDocuments", "totalJsonFiles", "totalImportedUrls", "totalEmbeddings", "averageChunksPerDocument"]
+    },
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Administrative audit logging records",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ipAddress": {
+          "type": "string"
+        }
+      },
+      "required": ["email", "action", "timestamp"]
+    },
+    "Notice": {
+      "title": "Notice",
+      "description": "An announcement or notice for students and faculty",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "author": { "type": "string" }
+      },
+      "required": ["id", "title", "content", "date", "category"]
+    },
+    "FAQ": {
+      "title": "FAQ",
+      "description": "Frequently Asked Question and Answer pair",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "question", "answer", "category"]
+    },
+    "Knowledge": {
+      "title": "Knowledge Document",
+      "description": "Imported or uploaded document for the college knowledge base",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "category": { "type": "string" },
+        "size": { "type": "string" },
+        "chunks": { "type": "array" },
+        "entities": { "type": "object" }
+      },
+      "required": ["id", "title", "content", "uploadedAt"]
+    }
+  },
+  "firestore": {
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Administrative actions audit log"
+    },
+    "/analytics/{docId}": {
+      "schema": { "$ref": "#/entities/Analytics" },
+      "description": "Holds aggregate analytics counters"
+    },
+    "/chat_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ChatLog" },
+      "description": "Log records for every user inquiry"
+    },
+    "/daily_usage/{date}": {
+      "schema": { "$ref": "#/entities/DailyUsage" },
+      "description": "Daily metrics and unique active sessions"
+    },
+    "/daily_usage/{date}/active_sessions/{sessionId}": {
+      "schema": "object",
+      "description": "Subcollection to track unique user sessions per day securely"
+    },
+    "/feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/Feedback" },
+      "description": "Logs of thumbs up/down user feedback events"
+    },
+    "/performance_logs/{logId}": {
+      "schema": { "$ref": "#/entities/PerformanceLog" },
+      "description": "Fine-grained system latency logs"
+    },
+    "/knowledge_stats/{docId}": {
+      "schema": { "$ref": "#/entities/KnowledgeStats" },
+      "description": "Aggregated statistics about knowledge documents"
+    },
+    "/notices/{noticeId}": {
+      "schema": { "$ref": "#/entities/Notice" },
+      "description": "Public notices and announcements"
+    },
+    "/faqs/{faqId}": {
+      "schema": { "$ref": "#/entities/FAQ" },
+      "description": "Public FAQs"
+    },
+    "/knowledge/{docId}": {
+      "schema": { "$ref": "#/entities/Knowledge" },
+      "description": "College documents knowledge base"
+    }
+  }
+}
