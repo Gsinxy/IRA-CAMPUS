@@ -174,6 +174,91 @@ function groupConversationsByDate(conversations: Conversation[]) {
   return groups;
 }
 
+const UniversityBuildingSVG = () => (
+  <svg 
+    viewBox="0 0 600 450" 
+    className="w-[350px] h-[262px] md:w-[500px] md:h-[375px] text-[#1C1C1C] pointer-events-none select-none" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="1.2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    {/* Horizon / Ground Line */}
+    <line x1="50" y1="380" x2="550" y2="380" />
+    
+    {/* Main Base Steps */}
+    <rect x="180" y="340" width="240" height="10" rx="1" />
+    <rect x="160" y="350" width="280" height="10" rx="1" />
+    <rect x="140" y="360" width="320" height="10" rx="1" />
+    <rect x="110" y="370" width="380" height="10" rx="1" />
+
+    {/* Central Portico / Building Block */}
+    <rect x="200" y="180" width="200" height="160" />
+    
+    {/* Portico Columns */}
+    <line x1="220" y1="220" x2="220" y2="340" />
+    <line x1="225" y1="220" x2="225" y2="340" />
+    <line x1="250" y1="220" x2="250" y2="340" />
+    <line x1="255" y1="220" x2="255" y2="340" />
+    <line x1="345" y1="220" x2="345" y2="340" />
+    <line x1="350" y1="220" x2="350" y2="340" />
+    <line x1="375" y1="220" x2="375" y2="340" />
+    <line x1="380" y1="220" x2="380" y2="340" />
+
+    {/* Triangular Pediment */}
+    <polygon points="190,180 410,180 300,120" />
+    {/* Small design inside pediment */}
+    <circle cx="300" cy="160" r="12" />
+    <circle cx="300" cy="160" r="6" />
+
+    {/* Main Door archway */}
+    <path d="M 280,340 L 280,260 C 280,240 320,240 320,260 L 320,340" />
+    <path d="M 285,340 L 285,265 C 285,250 315,250 315,265 L 315,340" />
+    
+    {/* Left Wing */}
+    <rect x="80" y="220" width="120" height="150" />
+    <line x1="80" y1="220" x2="200" y2="220" />
+    
+    {/* Left Wing Windows */}
+    <rect x="100" y="240" width="25" height="35" rx="2" />
+    <rect x="145" y="240" width="25" height="35" rx="2" />
+    <rect x="100" y="295" width="25" height="45" rx="2" />
+    <rect x="145" y="295" width="25" height="45" rx="2" />
+
+    {/* Right Wing */}
+    <rect x="400" y="220" width="120" height="150" />
+    <line x1="400" y1="220" x2="520" y2="220" />
+    
+    {/* Right Wing Windows */}
+    <rect x="430" y="240" width="25" height="35" rx="2" />
+    <rect x="475" y="240" width="25" height="35" rx="2" />
+    <rect x="430" y="295" width="25" height="45" rx="2" />
+    <rect x="475" y="295" width="25" height="45" rx="2" />
+
+    {/* Clock Tower / Dome on top */}
+    <rect x="270" y="70" width="60" height="50" />
+    <circle cx="300" cy="95" r="10" />
+    <line x1="300" y1="95" x2="300" y2="89" />
+    <line x1="300" y1="95" x2="305" y2="95" />
+
+    {/* Dome Top */}
+    <path d="M 270,70 C 270,30 330,30 330,70 Z" />
+    {/* Spire */}
+    <line x1="300" y1="35" x2="300" y2="10" />
+    <line x1="295" y1="15" x2="305" y2="15" />
+
+    {/* Fine architectural detailing */}
+    <line x1="80" y1="250" x2="90" y2="250" />
+    <line x1="180" y1="270" x2="200" y2="270" />
+    <line x1="400" y1="260" x2="420" y2="260" />
+    <line x1="510" y1="300" x2="520" y2="300" />
+    
+    <line x1="110" y1="200" x2="130" y2="200" />
+    <line x1="470" y1="200" x2="490" y2="200" />
+  </svg>
+);
+
 export default function App() {
   // Navigation & tabs state: 'chat' | 'admin'
   const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
@@ -571,10 +656,10 @@ export default function App() {
           <title>${conversation.title}</title>
           <style>
             body { font-family: system-ui, -apple-system, sans-serif; padding: 40px; color: #0f172a; max-width: 800px; margin: 0 auto; line-height: 1.6; }
-            h1 { color: #6c5ce7; font-size: 28px; margin-bottom: 5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
+            h1 { color: #C89B4A; font-size: 28px; margin-bottom: 5px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; }
             .meta { font-size: 12px; color: #64748b; margin-bottom: 30px; font-weight: 500; }
             .msg { margin-bottom: 25px; padding: 15px 20px; border-radius: 12px; }
-            .user { background: #f8fafc; border-left: 4px solid #6c5ce7; }
+            .user { background: #f8fafc; border-left: 4px solid #C89B4A; }
             .ai { background: #f5f3ff; border-left: 4px solid #8b5cf6; }
             .role { font-weight: bold; font-size: 13px; color: #475569; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
             .time { font-size: 11px; color: #94a3b8; float: right; }
@@ -1042,6 +1127,105 @@ export default function App() {
     setLogsModalTitle(title);
     setLogsModalContent(logs || []);
     setLogsModalOpen(true);
+  };
+
+  // Edit Knowledge Source Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<any>(null);
+  const [editingJsonText, setEditingJsonText] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Custom Toast State
+  const [toast, setToast] = useState<{ isOpen: boolean; message: string; type: 'success' | 'error' }>({
+    isOpen: false,
+    message: '',
+    type: 'success'
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ isOpen: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, isOpen: false }));
+    }, 4000);
+  };
+
+  const handleOpenEditModal = async (docObj: any) => {
+    setEditError(null);
+    setEditingDoc(docObj);
+    setIsEditModalOpen(true);
+    setEditingJsonText('Loading original document JSON...');
+
+    try {
+      const res = await fetch(`/api/documents/${docObj.id}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch full document details.');
+      }
+      const fullDoc = await res.json();
+      
+      const jsonToEdit = (fullDoc.type === 'json' && fullDoc.rawJson) 
+        ? fullDoc.rawJson 
+        : {
+            title: fullDoc.title,
+            category: fullDoc.category,
+            summary: fullDoc.summary || '',
+            content: fullDoc.content || '',
+            keywords: fullDoc.keywords || [],
+            faqs: fullDoc.faqs || [],
+            entities: fullDoc.entities || {
+              departments: [],
+              facultyMembers: [],
+              courses: [],
+              fees: [],
+              contacts: [],
+              dates: []
+            },
+            metadata: fullDoc.metadata || [],
+            sourceUrl: fullDoc.sourceUrl || null
+          };
+
+      setEditingJsonText(JSON.stringify(jsonToEdit, null, 2));
+    } catch (err: any) {
+      setEditError(err.message || 'Error fetching document details.');
+      setEditingJsonText('');
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingDoc) return;
+    setEditError(null);
+
+    let parsedJson: any;
+    try {
+      parsedJson = JSON.parse(editingJsonText);
+    } catch (err: any) {
+      setEditError(`Invalid JSON format: ${err.message}`);
+      return;
+    }
+
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(`/api/documents/${editingDoc.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentJson: parsedJson })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save changes.');
+      }
+
+      showToast('Knowledge source updated successfully.', 'success');
+      setIsEditModalOpen(false);
+      setEditingDoc(null);
+      setEditingJsonText('');
+      fetchAdminDocs(); // Refresh table
+    } catch (err: any) {
+      setEditError(err.message || 'Error occurred while saving changes.');
+    } finally {
+      setIsSavingEdit(false);
+    }
   };
   
   // Admin FAQ Creator
@@ -2756,9 +2940,9 @@ export default function App() {
     // Replace markdown links with clickable elements (either button or hyperlink)
     parsedText = parsedText.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (match, label, url) => {
       if (url.includes('ira-ai-production.up.railway.app')) {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 my-2 bg-[#6C5CE7] hover:bg-[#5b4cd1] text-white font-bold text-sm rounded-xl shadow-md shadow-[#6C5CE7]/20 hover:shadow-lg transition-all duration-150 cursor-pointer no-underline decoration-transparent">🚀 Open IRA AI</a>`;
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-5 py-2.5 my-2 bg-[#C89B4A] hover:bg-[#B98A32] text-white font-bold text-sm rounded-xl shadow-md shadow-[#C89B4A]/20 hover:shadow-lg transition-all duration-150 cursor-pointer no-underline decoration-transparent">🚀 Open IRA AI</a>`;
       }
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-[#6C5CE7] hover:underline font-bold">${label}</a>`;
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-[#C89B4A] hover:underline font-bold">${label}</a>`;
     });
 
     // Basic formatting
@@ -2915,168 +3099,289 @@ export default function App() {
     c.messages.some(m => m.content.toLowerCase().includes(chatSearchQuery.toLowerCase()))
   );
 
-  const feeEstimate = calculateEstimateFee();  return (
-    <div className="min-h-screen flex flex-col bg-[#FAFAFB] text-[#0F172A] font-sans antialiased selection:bg-[#6C5CE7]/10">
-      {/* HEADER BAR */}
-      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-[#E5E7EB] px-4 md:px-6 py-2.5 flex justify-between items-center h-14 select-none shrink-0">
-        <div className="flex items-center space-x-3">
-          {/* Toggle Sidebar Button */}
-          <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="p-1.5 rounded-xl text-[#64748B] hover:text-[#0F172A] hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Toggle sidebar history"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
+  const isLandingPage = activeTab === 'chat' && (
+    !currentConversation ||
+    currentConversation.messages.length === 0 ||
+    (currentConversation.messages.length === 1 && currentConversation.messages[0].role === 'assistant')
+  );
 
-          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setActiveTab('chat')}>
-            <span className="text-sm font-extrabold tracking-wider text-slate-900 uppercase">
+  const feeEstimate = calculateEstimateFee();  return (
+    <div className={`min-h-screen flex flex-col ${isLandingPage ? 'bg-[#F7F4EF] text-[#1C1C1C]' : 'bg-[#F7F4EF] text-[#1B1B1B]'} font-sans antialiased selection:bg-[#C89B4A]/10`}>
+      {/* HEADER BAR */}
+      {isLandingPage ? (
+        <header className="sticky top-0 z-40 bg-[#F7F4EF]/90 backdrop-blur-md border-b border-[#E6DED3] px-6 py-4 flex justify-between items-center h-16 select-none shrink-0 w-full">
+          <div className="flex items-center space-x-3">
+            <span className="font-sans font-extrabold tracking-widest text-lg text-[#1C1C1C]">
               IRA CAMPUS
             </span>
-            <span className="bg-[#6C5CE7]/10 text-[#6C5CE7] text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border border-[#6C5CE7]/20">
-              AI
+            <span className="text-xs text-[#6B6B6B] border-l border-[#E6DED3] pl-3 ml-3 hidden sm:inline-block font-medium tracking-wide">
+              Your Campus Assistant
             </span>
           </div>
-        </div>
 
-        {/* Header Right Actions */}
-        <div className="flex items-center space-x-3 text-xs font-semibold relative">
-          {!currentUser ? (
-            <button
-              onClick={() => {
-                setAuthIsSignUp(false);
-                setAuthEmail('');
-                setAuthPassword('');
-                setAuthConfirmPassword('');
-                setAuthName('');
-                setAuthError('');
-                setShowAuthModal(true);
-              }}
-              className="bg-[#6C5CE7] hover:bg-[#5b4cd1] text-white px-4 py-2 rounded-xl transition-all font-bold text-xs shadow-md shadow-[#6C5CE7]/10 cursor-pointer"
-            >
-              Sign In
-            </button>
-          ) : (
-            <div className="relative">
+          <div className="flex items-center space-x-3 text-xs font-semibold relative">
+            {!currentUser ? (
               <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center space-x-2 focus:outline-none focus:ring-0 cursor-pointer"
+                onClick={() => {
+                  setAuthIsSignUp(false);
+                  setAuthEmail('');
+                  setAuthPassword('');
+                  setAuthConfirmPassword('');
+                  setAuthName('');
+                  setAuthError('');
+                  setShowAuthModal(true);
+                }}
+                className="px-5 py-2 bg-white hover:bg-[#F7F4EF]/50 border border-[#E6DED3] hover:border-[#C89B4A] text-xs font-semibold rounded-full transition-all text-[#1C1C1C] cursor-pointer"
               >
-                {currentUser.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt={userProfile?.name || currentUser.displayName || 'User'}
-                    referrerPolicy="no-referrer"
-                    className="h-8 w-8 rounded-full border border-slate-200 object-cover"
-                  />
-                ) : (
-                  <div className="h-8 w-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm uppercase">
-                    {(userProfile?.name || currentUser.displayName || currentUser.email)?.[0] || 'U'}
-                  </div>
-                )}
-                <span className="hidden md:inline text-xs font-bold text-slate-700">
-                  {userProfile?.name || currentUser.displayName || currentUser.email?.split('@')[0]}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                Sign In
               </button>
-
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-2.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 space-y-3 z-50 text-left">
-                  <div className="flex items-center space-x-3 pb-3 border-b border-slate-100">
-                    {currentUser.photoURL ? (
-                      <img
-                        src={currentUser.photoURL}
-                        alt={userProfile?.name || currentUser.displayName || 'User'}
-                        referrerPolicy="no-referrer"
-                        className="h-10 w-10 rounded-full border border-slate-100"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base uppercase">
-                        {(userProfile?.name || currentUser.displayName || currentUser.email)?.[0] || 'U'}
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-extrabold text-slate-900 truncate">
-                        {userProfile?.name || currentUser.displayName || 'Campus User'}
-                      </p>
-                      <p className="text-[10px] text-slate-500 truncate font-semibold">
-                        {currentUser.email}
-                      </p>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center space-x-2 focus:outline-none focus:ring-0 cursor-pointer"
+                >
+                  {currentUser.photoURL ? (
+                    <img
+                      src={currentUser.photoURL}
+                      alt={userProfile?.name || currentUser.displayName || 'User'}
+                      referrerPolicy="no-referrer"
+                      className="h-8 w-8 rounded-full border border-[#E6DED3] object-cover"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-[#C89B4A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                      {(userProfile?.name || currentUser.displayName || currentUser.email)?.[0] || 'U'}
                     </div>
-                  </div>
+                  )}
+                  <span className="hidden md:inline text-xs font-bold text-[#1C1C1C]">
+                    {userProfile?.name || currentUser.displayName || currentUser.email?.split('@')[0]}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-[#6B6B6B]" />
+                </button>
 
-                  <div className="text-[10px] text-slate-500 space-y-1 py-1 font-semibold">
-                    <p className="text-slate-400 font-bold uppercase tracking-wider text-[8px]">Profile Details</p>
-                    <p>Role: <span className="text-indigo-600 font-extrabold">{isUserAdmin ? 'Authorized Staff Admin' : (userProfile?.role || 'Student')}</span></p>
-                    <p className="truncate">Member Since: <span className="text-slate-700">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Just now'}</span></p>
-                  </div>
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2.5 w-64 bg-white border border-[#E6DED3] rounded-2xl shadow-xl p-4 space-y-3 z-50 text-left">
+                    <div className="flex items-center space-x-3 pb-3 border-b border-[#E7DDD0]">
+                      {currentUser.photoURL ? (
+                        <img
+                          src={currentUser.photoURL}
+                          alt={userProfile?.name || currentUser.displayName || 'User'}
+                          referrerPolicy="no-referrer"
+                          className="h-10 w-10 rounded-full border border-[#E7DDD0]"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-[#C89B4A] text-white flex items-center justify-center font-bold text-base uppercase">
+                          {(userProfile?.name || currentUser.displayName || currentUser.email)?.[0] || 'U'}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-extrabold text-[#1C1C1C] truncate">
+                          {userProfile?.name || currentUser.displayName || 'Campus User'}
+                        </p>
+                        <p className="text-[10px] text-[#6B6B6B] truncate font-semibold">
+                          {currentUser.email}
+                        </p>
+                      </div>
+                    </div>
 
-                  {isUserAdmin && (
-                    <div className="border-t border-slate-100 pt-2">
-                      {activeTab === 'chat' ? (
+                    <div className="text-[10px] text-[#6B6B6B] space-y-1 py-1 font-semibold">
+                      <p className="text-[#6B6B6B] font-bold uppercase tracking-wider text-[8px]">Profile Details</p>
+                      <p>Role: <span className="text-[#C89B4A] font-extrabold">{isUserAdmin ? 'Authorized Staff Admin' : (userProfile?.role || 'Student')}</span></p>
+                      <p className="truncate">Member Since: <span className="text-[#1C1C1C]">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Just now'}</span></p>
+                    </div>
+
+                    {isUserAdmin && (
+                      <div className="border-t border-[#E7DDD0] pt-2">
                         <button
                           onClick={() => {
                             setIsProfileOpen(false);
                             setActiveTab('admin');
                           }}
-                          className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 py-2 rounded-xl border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
+                          className="w-full bg-[#F7F4EF] hover:bg-[#E6DED3]/50 text-[#C89B4A] py-2 rounded-xl border border-[#E6DED3] transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
                         >
                           <span>Admin Dashboard</span>
                         </button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setIsProfileOpen(false);
-                            setActiveTab('chat');
-                          }}
-                          className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-xl border border-slate-850 transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
-                        >
-                          <span>Go to Chat</span>
-                        </button>
-                      )}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        handleSignOut();
+                      }}
+                      className="w-full bg-[#B65454]/10 text-[#B65454] hover:bg-rose-100 py-2 rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </header>
+      ) : (
+        <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-md border-b border-[#E7DDD0] px-4 md:px-6 py-2.5 flex justify-between items-center h-14 select-none shrink-0">
+          <div className="flex items-center space-x-3">
+            {/* Toggle Sidebar Button */}
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-1.5 rounded-xl text-[#6B6B6B] hover:text-[#1B1B1B] hover:bg-[#F2EEE8] transition-colors cursor-pointer"
+              title="Toggle sidebar history"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setActiveTab('chat')}>
+              <span className="text-sm font-extrabold tracking-wider text-[#1B1B1B] uppercase">
+                IRA CAMPUS
+              </span>
+              <span className="bg-[#C89B4A]/10 text-[#C89B4A] text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border border-[#C89B4A]/20">
+                AI
+              </span>
+            </div>
+          </div>
+
+          {/* Header Right Actions */}
+          <div className="flex items-center space-x-3 text-xs font-semibold relative">
+            {!currentUser ? (
+              <button
+                onClick={() => {
+                  setAuthIsSignUp(false);
+                  setAuthEmail('');
+                  setAuthPassword('');
+                  setAuthConfirmPassword('');
+                  setAuthName('');
+                  setAuthError('');
+                  setShowAuthModal(true);
+                }}
+                className="bg-[#C89B4A] hover:bg-[#B98A32] text-white px-4 py-2 rounded-xl transition-all font-bold text-xs shadow-md shadow-[#C89B4A]/10 cursor-pointer"
+              >
+                Sign In
+              </button>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="flex items-center space-x-2 focus:outline-none focus:ring-0 cursor-pointer"
+                >
+                  {currentUser.photoURL ? (
+                    <img
+                      src={currentUser.photoURL}
+                      alt={userProfile?.name || currentUser.displayName || 'User'}
+                      referrerPolicy="no-referrer"
+                      className="h-8 w-8 rounded-full border border-[#E7DDD0] object-cover"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-[#C89B4A] text-white flex items-center justify-center font-bold text-sm uppercase">
+                      {(userProfile?.name || currentUser.displayName || currentUser.email)?.[0] || 'U'}
                     </div>
                   )}
+                  <span className="hidden md:inline text-xs font-bold text-[#1B1B1B]">
+                    {userProfile?.name || currentUser.displayName || currentUser.email?.split('@')[0]}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-[#6B6B6B]" />
+                </button>
 
-                  <button
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      handleSignOut();
-                    }}
-                    className="w-full bg-rose-50 text-rose-700 hover:bg-rose-100 py-2 rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </header>
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2.5 w-64 bg-white border border-[#E7DDD0] rounded-2xl shadow-xl p-4 space-y-3 z-50 text-left">
+                    <div className="flex items-center space-x-3 pb-3 border-b border-[#E7DDD0]">
+                      {currentUser.photoURL ? (
+                        <img
+                          src={currentUser.photoURL}
+                          alt={userProfile?.name || currentUser.displayName || 'User'}
+                          referrerPolicy="no-referrer"
+                          className="h-10 w-10 rounded-full border border-[#E7DDD0]"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-[#C89B4A] text-white flex items-center justify-center font-bold text-base uppercase">
+                          {(userProfile?.name || currentUser.displayName || currentUser.email)?.[0] || 'U'}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-extrabold text-[#1B1B1B] truncate">
+                          {userProfile?.name || currentUser.displayName || 'Campus User'}
+                        </p>
+                        <p className="text-[10px] text-[#6B6B6B] truncate font-semibold">
+                          {currentUser.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-[#6B6B6B] space-y-1 py-1 font-semibold">
+                      <p className="text-[#6B6B6B] font-bold uppercase tracking-wider text-[8px]">Profile Details</p>
+                      <p>Role: <span className="text-[#C89B4A] font-extrabold">{isUserAdmin ? 'Authorized Staff Admin' : (userProfile?.role || 'Student')}</span></p>
+                      <p className="truncate">Member Since: <span className="text-[#1B1B1B]">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : 'Just now'}</span></p>
+                    </div>
+
+                    {isUserAdmin && (
+                      <div className="border-t border-[#E7DDD0] pt-2">
+                        {activeTab === 'chat' ? (
+                          <button
+                            onClick={() => {
+                              setIsProfileOpen(false);
+                              setActiveTab('admin');
+                            }}
+                            className="w-full bg-[#F2EEE8] hover:bg-[#E7DDD0] text-[#C89B4A] py-2 rounded-xl border border-[#E7DDD0] transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
+                          >
+                            <span>Admin Dashboard</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setIsProfileOpen(false);
+                              setActiveTab('chat');
+                            }}
+                            className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-xl border border-slate-850 transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
+                          >
+                            <span>Go to Chat</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        handleSignOut();
+                      }}
+                      className="w-full bg-[#B65454]/10 text-[#B65454] hover:bg-rose-100 py-2 rounded-xl border border-rose-200 transition-colors flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </header>
+      )}
 
       {/* BODY PANEL CONTAINER */}
       <main className="flex-1 flex flex-col">
 
         {/* CHAT / CO-PILOT VIEW */}
         {activeTab === 'chat' && (
-          <div className="flex-1 flex bg-[#FAFAFB] relative overflow-hidden">
+          <div className={`flex-1 flex ${isLandingPage ? 'bg-[#F7F4EF]' : 'bg-[#F7F4EF]'} relative overflow-hidden`}>
             
             {/* Left Sidebar Drawer */}
-            <div
-              className={`fixed inset-y-0 left-0 z-50 flex flex-col w-72 bg-white border-r border-[#E5E7EB] transform transition-transform duration-300 ease-out shadow-2xl ${
-                isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              }`}
-            >
+            {!isLandingPage && (
+              <div
+                className={`fixed inset-y-0 left-0 z-50 flex flex-col w-72 bg-white border-r border-[#E7DDD0] transform transition-transform duration-300 ease-out shadow-2xl ${
+                  isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`}
+              >
               {/* Sidebar Header */}
-              <div className="p-4 border-b border-[#E5E7EB] flex justify-between items-center bg-[#FAFAFB]">
-                <span className="text-xs font-extrabold uppercase tracking-widest text-[#64748B] flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-[#6C5CE7]" />
+              <div className="p-4 border-b border-[#E7DDD0] flex justify-between items-center bg-[#F7F4EF]">
+                <span className="text-xs font-extrabold uppercase tracking-widest text-[#6B6B6B] flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-[#C89B4A]" />
                   <span>AI Threads</span>
                 </span>
                 
                 <button
                   onClick={() => setIsSidebarOpen(false)}
-                  className="p-1.5 rounded-xl text-[#64748B] hover:text-[#0F172A] hover:bg-slate-100 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl text-[#6B6B6B] hover:text-[#1B1B1B] hover:bg-[#F2EEE8] transition-colors cursor-pointer"
                   title="Close sidebar"
                 >
                   <X className="h-4.5 w-4.5" />
@@ -3090,20 +3395,20 @@ export default function App() {
                     handleNewChat();
                     setIsSidebarOpen(false);
                   }}
-                  className="w-full bg-[#6C5CE7] hover:bg-[#5b4cd1] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-md shadow-[#6C5CE7]/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full bg-[#C89B4A] hover:bg-[#B98A32] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-md shadow-[#C89B4A]/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   <span>New Conversation</span>
                 </button>
                 
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-slate-400" />
+                  <Search className="absolute left-3 top-3 h-3.5 w-3.5 text-[#6B6B6B]" />
                   <input
                     type="text"
                     value={chatSearchQuery}
                     onChange={(e) => setChatSearchQuery(e.target.value)}
                     placeholder="Search chats..."
-                    className="w-full bg-slate-50 hover:bg-slate-100/60 focus:bg-white text-xs text-slate-900 placeholder:text-slate-400 pl-8.5 pr-3 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] focus:outline-none transition-all"
+                    className="w-full bg-[#F2EEE8] hover:bg-[#F2EEE8]/60 focus:bg-white text-xs text-[#1B1B1B] placeholder:text-[#6B6B6B] pl-8.5 pr-3 py-2.5 border border-[#E7DDD0] rounded-xl focus:ring-1 focus:ring-[#C89B4A] focus:border-[#C89B4A] focus:outline-none transition-all"
                   />
                 </div>
               </div>
@@ -3116,20 +3421,20 @@ export default function App() {
                     {[1, 2, 3, 4].map(idx => (
                       <div key={idx} className="space-y-2 animate-pulse">
                         <div className="h-4 bg-slate-200/60 rounded w-4/5"></div>
-                        <div className="h-3 bg-slate-100 rounded w-1/2"></div>
+                        <div className="h-3 bg-[#F2EEE8] rounded w-1/2"></div>
                       </div>
                     ))}
                   </div>
                 ) : filteredConversations.length === 0 ? (
-                  <div className="py-8 text-center text-slate-400 text-xs font-semibold">
+                  <div className="py-8 text-center text-[#6B6B6B] text-xs font-semibold">
                     No matching threads
                   </div>
                 ) : (
                   <>
                     {/* Batch Selection Options when in selection mode */}
                     {isSelectionMode && (
-                      <div className="bg-[#6C5CE7]/5 rounded-xl border border-[#6C5CE7]/10 p-2 flex flex-col gap-2">
-                        <div className="flex items-center justify-between text-[10px] font-extrabold text-[#6C5CE7] px-1 uppercase tracking-wider">
+                      <div className="bg-[#C89B4A]/5 rounded-xl border border-[#C89B4A]/10 p-2 flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-[10px] font-extrabold text-[#C89B4A] px-1 uppercase tracking-wider">
                           <span>{selectedConvIds.length} Selected</span>
                           <button
                             onClick={() => {
@@ -3157,7 +3462,7 @@ export default function App() {
                               setIsSelectionMode(false);
                               setSelectedConvIds([]);
                             }}
-                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-[10px] uppercase tracking-wider py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer"
+                            className="bg-[#F2EEE8] hover:bg-slate-200 text-[#1B1B1B] font-extrabold text-[10px] uppercase tracking-wider py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -3170,14 +3475,14 @@ export default function App() {
                       <div className="flex items-center justify-between px-2 mb-1.5">
                         <button
                           onClick={() => setIsSelectionMode(true)}
-                          className="text-[10px] font-extrabold text-[#6C5CE7] hover:text-[#5b4cd1] uppercase tracking-wider cursor-pointer hover:underline"
+                          className="text-[10px] font-extrabold text-[#C89B4A] hover:text-[#B98A32] uppercase tracking-wider cursor-pointer hover:underline"
                         >
                           Select Chats
                         </button>
                         {filteredConversations.length > 0 && (
                           <button
                             onClick={handleDeleteAllChats}
-                            className="text-[10px] font-extrabold text-rose-600 hover:text-rose-700 uppercase tracking-wider cursor-pointer hover:underline"
+                            className="text-[10px] font-extrabold text-[#B65454] hover:text-[#B65454] uppercase tracking-wider cursor-pointer hover:underline"
                           >
                             Delete All
                           </button>
@@ -3192,8 +3497,8 @@ export default function App() {
                         if (items.length === 0) return null;
                         return (
                           <div className="space-y-1" key={title}>
-                            <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1">
-                              {showPinIcon && <Pin className="h-3 w-3 text-amber-500 fill-amber-500" />}
+                            <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-[#6B6B6B] flex items-center gap-1">
+                              {showPinIcon && <Pin className="h-3 w-3 text-[#C89B4A] fill-[#C89B4A]" />}
                               <span>{title}</span>
                             </div>
                             {items.map((c, idx) => (
@@ -3201,8 +3506,8 @@ export default function App() {
                                 key={c.id || idx}
                                 className={`group relative flex items-center rounded-xl transition-all border ${
                                   c.id === currentConvId
-                                    ? 'bg-[#6C5CE7]/5 border-[#6C5CE7]/20 text-[#6C5CE7]'
-                                    : 'hover:bg-slate-50 border-transparent text-slate-700'
+                                    ? 'bg-[#C89B4A]/5 border-[#C89B4A]/20 text-[#C89B4A]'
+                                    : 'hover:bg-[#F2EEE8] border-transparent text-[#1B1B1B]'
                                 }`}
                               >
                                 {/* Checkbox for Selection Mode */}
@@ -3213,10 +3518,10 @@ export default function App() {
                                         prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id]
                                       );
                                     }}
-                                    className="pl-3 text-slate-400 hover:text-[#6C5CE7] transition-all cursor-pointer shrink-0"
+                                    className="pl-3 text-[#6B6B6B] hover:text-[#C89B4A] transition-all cursor-pointer shrink-0"
                                   >
                                     {selectedConvIds.includes(c.id) ? (
-                                      <CheckSquare className="h-4 w-4 text-[#6C5CE7]" />
+                                      <CheckSquare className="h-4 w-4 text-[#C89B4A]" />
                                     ) : (
                                       <Square className="h-4 w-4" />
                                     )}
@@ -3236,7 +3541,7 @@ export default function App() {
                                       type="text"
                                       value={editingTitle}
                                       onChange={(e) => setEditingTitle(e.target.value)}
-                                      className="flex-1 min-w-0 bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-lg px-2 py-1 focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] focus:outline-none"
+                                      className="flex-1 min-w-0 bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-lg px-2 py-1 focus:ring-1 focus:ring-[#C89B4A] focus:border-[#C89B4A] focus:outline-none"
                                       autoFocus
                                       onKeyDown={(e) => {
                                         if (e.key === 'Escape') {
@@ -3246,7 +3551,7 @@ export default function App() {
                                     />
                                     <button
                                       type="submit"
-                                      className="p-1 rounded-md text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer shrink-0"
+                                      className="p-1 rounded-md text-[#5B8A5A] hover:bg-[#5B8A5A]/10 transition-colors cursor-pointer shrink-0"
                                       title="Save Title"
                                     >
                                       <Check className="h-3.5 w-3.5" />
@@ -3254,7 +3559,7 @@ export default function App() {
                                     <button
                                       type="button"
                                       onClick={() => setEditingConvId(null)}
-                                      className="p-1 rounded-md text-slate-400 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+                                      className="p-1 rounded-md text-[#6B6B6B] hover:bg-[#F2EEE8] transition-colors cursor-pointer shrink-0"
                                       title="Cancel Rename"
                                     >
                                       <X className="h-3.5 w-3.5" />
@@ -3277,10 +3582,10 @@ export default function App() {
                                         isSelectionMode ? 'pr-3' : 'pr-20'
                                       }`}
                                     >
-                                      <span className={`text-xs font-bold truncate ${c.id === currentConvId ? 'text-[#6C5CE7]' : 'text-slate-800'}`}>
+                                      <span className={`text-xs font-bold truncate ${c.id === currentConvId ? 'text-[#C89B4A]' : 'text-[#1B1B1B]'}`}>
                                         {c.title}
                                       </span>
-                                      <div className="flex justify-between items-center text-[9px] text-[#64748B] font-semibold">
+                                      <div className="flex justify-between items-center text-[9px] text-[#6B6B6B] font-semibold">
                                         <span>{c.messages.length} messages</span>
                                         <span>{new Date(c.updatedAt || c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
                                       </div>
@@ -3288,17 +3593,17 @@ export default function App() {
                                     
                                     {/* Action Buttons (Hidden during Selection Mode) */}
                                     {!isSelectionMode && (
-                                      <div className="absolute right-1 opacity-0 group-hover:opacity-100 flex items-center space-x-0.5 bg-white/95 backdrop-blur-xs py-1 px-1 rounded-lg shadow-xs border border-slate-100">
+                                      <div className="absolute right-1 opacity-0 group-hover:opacity-100 flex items-center space-x-0.5 bg-white/95 backdrop-blur-xs py-1 px-1 rounded-lg shadow-xs border border-[#E7DDD0]">
                                         <button
                                           onClick={(e) => handleTogglePin(c.id, e)}
                                           className={`p-1 rounded-lg transition-all cursor-pointer ${
                                             c.isPinned 
-                                              ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50' 
-                                              : 'text-slate-400 hover:text-[#6C5CE7] hover:bg-slate-50'
+                                              ? 'text-[#C89B4A] hover:text-[#C89B4A] hover:bg-[#C89B4A]/5' 
+                                              : 'text-[#6B6B6B] hover:text-[#C89B4A] hover:bg-[#F2EEE8]'
                                           }`}
                                           title={c.isPinned ? "Unpin Chat" : "Pin Chat"}
                                         >
-                                          <Pin className={`h-3 w-3 ${c.isPinned ? 'fill-amber-500' : ''}`} />
+                                          <Pin className={`h-3 w-3 ${c.isPinned ? 'fill-[#C89B4A]' : ''}`} />
                                         </button>
                                         
                                         <button
@@ -3306,7 +3611,7 @@ export default function App() {
                                             e.stopPropagation();
                                             exportAsMarkdown(c);
                                           }}
-                                          className="p-1 rounded-lg text-slate-400 hover:text-[#6C5CE7] hover:bg-slate-50 transition-all cursor-pointer"
+                                          className="p-1 rounded-lg text-[#6B6B6B] hover:text-[#C89B4A] hover:bg-[#F2EEE8] transition-all cursor-pointer"
                                           title="Export Markdown"
                                         >
                                           <Download className="h-3 w-3" />
@@ -3317,7 +3622,7 @@ export default function App() {
                                             e.stopPropagation();
                                             exportAsPDF(c);
                                           }}
-                                          className="p-1 rounded-lg text-slate-400 hover:text-[#6C5CE7] hover:bg-indigo-50 transition-all cursor-pointer font-extrabold text-[8px]"
+                                          className="p-1 rounded-lg text-[#6B6B6B] hover:text-[#C89B4A] hover:bg-[#F2EEE8] transition-all cursor-pointer font-extrabold text-[8px]"
                                           title="Export PDF"
                                         >
                                           PDF
@@ -3329,14 +3634,14 @@ export default function App() {
                                             setEditingConvId(c.id);
                                             setEditingTitle(c.title);
                                           }}
-                                          className="p-1 rounded-lg text-slate-400 hover:text-[#6C5CE7] hover:bg-slate-50 transition-all cursor-pointer"
+                                          className="p-1 rounded-lg text-[#6B6B6B] hover:text-[#C89B4A] hover:bg-[#F2EEE8] transition-all cursor-pointer"
                                           title="Rename"
                                         >
                                           <Pencil className="h-3 w-3" />
                                         </button>
                                         <button
                                           onClick={(e) => handleDeleteChat(c.id, e)}
-                                          className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                                          className="p-1 rounded-lg text-[#6B6B6B] hover:text-[#B65454] hover:bg-[#B65454]/10 transition-all cursor-pointer"
                                           title="Delete"
                                         >
                                           <Trash2 className="h-3 w-3" />
@@ -3367,19 +3672,19 @@ export default function App() {
               </div>
 
               {/* Sidebar Footer with Auth & Settings */}
-              <div className="p-3 border-t border-[#E5E7EB] bg-[#FAFAFB] space-y-1.5">
+              <div className="p-3 border-t border-[#E7DDD0] bg-[#F7F4EF] space-y-1.5">
                 {currentUser ? (
-                  <div className="px-3 py-2 bg-slate-50 rounded-xl border border-slate-200/60 flex items-center justify-between text-xs">
+                  <div className="px-3 py-2 bg-[#F2EEE8] rounded-xl border border-[#E7DDD0]/60 flex items-center justify-between text-xs">
                     <div className="flex flex-col min-w-0">
-                      <span className="font-extrabold text-slate-800 truncate">{currentUser.email}</span>
-                      <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className="font-extrabold text-[#1B1B1B] truncate">{currentUser.email}</span>
+                      <span className="text-[10px] text-[#5B8A5A] font-semibold flex items-center gap-1 mt-0.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#5B8A5A]/100 animate-pulse"></span>
                         {isSyncing ? 'Syncing...' : 'Synced to Cloud'}
                       </span>
                     </div>
                     <button
                       onClick={handleSignOut}
-                      className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer shrink-0"
+                      className="p-1 text-[#6B6B6B] hover:text-[#B65454] hover:bg-[#B65454]/10 rounded-lg transition-all cursor-pointer shrink-0"
                       title="Sign Out"
                     >
                       <LogOut className="h-4 w-4" />
@@ -3387,7 +3692,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <div className="px-3 py-2 bg-amber-50/50 border border-amber-100/60 rounded-xl text-[10px] text-amber-800 font-semibold leading-normal">
+                    <div className="px-3 py-2 bg-[#C89B4A]/5 border border-[#E7DDD0] rounded-xl text-[10px] text-[#1B1B1B] font-semibold leading-normal">
                       Guest Mode – Chats are stored only on this device.
                     </div>
                     <button
@@ -3395,7 +3700,7 @@ export default function App() {
                         setShowAuthModal(true);
                         setIsSidebarOpen(false);
                       }}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold border border-indigo-100/40 transition-all cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-[#F2EEE8] hover:bg-[#E7DDD0] text-[#C89B4A] rounded-xl text-xs font-bold border border-[#E7DDD0]/40 transition-all cursor-pointer"
                     >
                       <Lock className="h-4 w-4" />
                       <span>Sync with Cloud</span>
@@ -3408,24 +3713,25 @@ export default function App() {
                     setShowSettingsModal(true);
                     setIsSidebarOpen(false);
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-bold hover:bg-slate-100 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[#6B6B6B] hover:text-[#1B1B1B] text-xs font-bold hover:bg-[#F2EEE8] transition-colors text-left cursor-pointer"
                 >
-                  <Settings className="h-4.5 w-4.5 text-slate-500" />
+                  <Settings className="h-4.5 w-4.5 text-[#6B6B6B]" />
                   <span>Settings</span>
                 </button>
                 
                 <button
                   onClick={() => setIsSidebarOpen(false)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-900 text-xs font-bold hover:bg-slate-100 transition-colors text-left cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[#6B6B6B] hover:text-[#1B1B1B] text-xs font-bold hover:bg-[#F2EEE8] transition-colors text-left cursor-pointer"
                 >
-                  <ChevronLeft className="h-4.5 w-4.5 text-slate-400" />
+                  <ChevronLeft className="h-4.5 w-4.5 text-[#6B6B6B]" />
                   <span>Collapse History</span>
                 </button>
               </div>
             </div>
+            )}
 
             {/* Sidebar Overlay Backdrop */}
-            {isSidebarOpen && (
+            {isSidebarOpen && !isLandingPage && (
               <div
                 className="fixed inset-0 z-45 bg-slate-900/10 backdrop-blur-xs transition-opacity duration-300"
                 onClick={() => setIsSidebarOpen(false)}
@@ -3438,114 +3744,82 @@ export default function App() {
 
 
               {/* Message streams container */}
-              <div className="flex-1 overflow-y-auto px-4 py-8 space-y-8 bg-[#FAFAFB]">
-                {currentConversation.messages.length === 0 || (currentConversation.messages.length === 1 && currentConversation.messages[0].role === 'assistant') ? (
-                  
-                  /* Clean, Centered Modern Zero-State welcome hero */
-                  <div className="max-w-4xl mx-auto py-16 md:py-28 flex flex-col items-center justify-center space-y-12 animate-in fade-in duration-700">
-                    
-                    {/* Hero Header Section */}
-                    <div className="text-center space-y-4 max-w-3xl flex flex-col items-center">
-                      <h1 className="text-4xl md:text-[54px] font-extrabold tracking-tight text-slate-900 leading-tight md:leading-tight animate-in fade-in slide-in-from-bottom-3 duration-500">
-                        Ask Anything About <span className="text-[#6C5CE7] bg-gradient-to-r from-[#6C5CE7] to-indigo-600 bg-clip-text text-transparent">Your College</span>
-                      </h1>
-                      <p className="text-base md:text-[19px] text-slate-500 max-w-2xl leading-relaxed font-normal animate-in fade-in slide-in-from-bottom-3 duration-500">
-                        Search official college information in seconds. Get accurate answers from verified campus documents.
-                      </p>
-                    </div>
+              <div 
+                className={`flex-1 overflow-y-auto ${isLandingPage ? 'p-0 relative flex flex-col justify-between' : 'px-4 py-8 space-y-8 bg-[#F7F4EF]'}`}
+                style={isLandingPage ? {
+                  backgroundColor: '#F7F4EF',
+                  backgroundImage: `radial-gradient(rgba(200, 155, 74, 0.05) 1px, transparent 1px)`,
+                  backgroundSize: '24px 24px'
+                } : undefined}
+              >
+                {isLandingPage ? (
+                  <>
+                    <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 md:py-24 relative z-10 w-full animate-in fade-in duration-700">
+                      {/* Background Illustration in Bottom-Left corner with 5-8% opacity */}
+                      <div className="absolute bottom-4 left-4 pointer-events-none select-none opacity-[0.06] z-0 hidden lg:block">
+                        <UniversityBuildingSVG />
+                      </div>
 
-                    {/* Z.ai / ChatGPT style large input inside the zero state */}
-                    <div className="w-full max-w-2xl">
-                      <form 
-                        onSubmit={handleSendMessage} 
-                        className="bg-white border border-[#E5E7EB] hover:border-indigo-250 shadow-xl shadow-slate-100/80 rounded-[28px] p-2 flex items-center gap-1 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-[#6C5CE7]/10 transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-1 pl-1 shrink-0">
-                          {/* Attachment Button */}
-                          <label className="p-2.5 rounded-full hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer block" title="Attach Document file">
-                            <Paperclip className="h-4 w-4" />
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  alert(`File "${e.target.files[0].name}" uploaded successfully for grounding!`);
-                                }
-                              }} 
-                            />
-                          </label>
-
-                          {/* Voice Button */}
-                          <button
-                            type="button"
-                            onClick={handleVoiceInput}
-                            className={`p-2.5 rounded-full transition-colors ${
-                              isListening
-                                ? 'bg-rose-50 text-rose-600 animate-pulse'
-                                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
-                            }`}
-                            title="Speak query"
-                          >
-                            <Mic className="h-4 w-4" />
-                          </button>
-
-                          {/* Language selector icon */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              alert("AI model grounded in multi-lingual documents (English, Hindi, regional queries supported).");
-                            }}
-                            className="p-2.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
-                            title="College Grounded Languages"
-                          >
-                            <Globe className="h-4 w-4" />
-                          </button>
+                      <div className="max-w-3xl w-full mx-auto flex flex-col items-center justify-center space-y-10 text-center relative z-10">
+                        {/* Hero Header Section */}
+                        <div className="space-y-4 max-w-2xl">
+                          <h1 className="text-4xl md:text-[56px] font-normal tracking-tight text-[#1C1C1C] leading-[1.15] animate-in fade-in slide-in-from-bottom-3 duration-500">
+                            Ask Anything About <br className="hidden sm:inline" />
+                            <span className="text-[#C89B4A] font-semibold italic">Your College</span>
+                          </h1>
+                          <p className="text-sm md:text-base text-[#6B6B6B] max-w-lg mx-auto leading-relaxed font-light tracking-wide animate-in fade-in slide-in-from-bottom-3 duration-500">
+                            Get accurate answers from verified college information.
+                            <br className="hidden sm:inline" /> Fast, simple and reliable.
+                          </p>
                         </div>
 
-                        <input
-                          type="text"
-                          value={inputMessage}
-                          onChange={(e) => setInputMessage(e.target.value)}
-                          placeholder="Ask anything about your college..."
-                          className="flex-1 bg-transparent border-none text-sm text-slate-900 placeholder:text-slate-400 py-3.5 px-3 focus:outline-none focus:ring-0"
-                        />
-
-                        <button
-                          type="submit"
-                          disabled={!inputMessage.trim()}
-                          className="bg-[#6C5CE7] hover:bg-[#5b4cd1] disabled:bg-slate-100 text-white disabled:text-slate-400 p-3.5 rounded-full transition-all shrink-0 flex items-center justify-center shadow-md shadow-[#6C5CE7]/10 active:scale-95 cursor-pointer"
-                        >
-                          <Send className="h-4 w-4" />
-                        </button>
-                      </form>
-                    </div>
-
-                    {/* Small wrapped modern suggestion chips flow */}
-                    <div className="w-full">
-                      <div className="flex flex-wrap justify-center gap-2 max-w-xl mx-auto">
-                        {[
-                          { label: 'Admission Process', q: 'What is the admission process for B.Tech CSE?' },
-                          { label: 'Fee Structure', q: 'What is the course fee structure?' },
-                          { label: 'BCA Syllabus', q: 'Show me the BCA syllabus for third semester' },
-                          { label: 'Hostel', q: 'Tell me about hostel fees and hostel rules' },
-                          { label: 'Placements', q: 'What is the college placement record and average packages?' },
-                          { label: 'Scholarships', q: 'Are there any scholarships available and what is the eligibility?' },
-                          { label: 'Faculty', q: 'Show me the Head of Department details and contacts' },
-                          { label: 'Campus Rules', q: 'What are the key campus rules and hostel curfew guidelines?' },
-                          { label: "Today's Notices", q: 'What are the latest college notices or announcements?' }
-                        ].map((chip, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => triggerAiInquiry(chip.q)}
-                            className="bg-white hover:bg-[#6C5CE7]/5 border border-[#E5E7EB] hover:border-[#6C5CE7]/30 text-slate-700 hover:text-[#6C5CE7] text-xs font-semibold px-4 py-2 rounded-full shadow-xs transition-all duration-150 cursor-pointer"
+                        {/* Search Area */}
+                        <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-600 delay-100">
+                          <form 
+                            onSubmit={handleSendMessage} 
+                            className="bg-white border border-[#E6DED3] hover:border-[#C89B4A]/50 focus-within:border-[#C89B4A] shadow-lg shadow-[#1C1C1C]/5 rounded-[24px] p-1.5 flex items-center gap-1 transition-all duration-300 w-full"
                           >
-                            {chip.label}
-                          </button>
-                        ))}
+                            {/* Attachment Button */}
+                            <label 
+                              className="p-3.5 rounded-full text-[#6B6B6B] hover:text-[#1C1C1C] hover:bg-[#F7F4EF] transition-colors cursor-pointer shrink-0 ml-1" 
+                              title="Attach Document file"
+                            >
+                              <Paperclip className="h-5 w-5 stroke-[1.5]" />
+                              <input 
+                                type="file" 
+                                className="hidden" 
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                    alert(`File "${e.target.files[0].name}" uploaded successfully for grounding!`);
+                                  }
+                                }} 
+                              />
+                            </label>
+
+                            <input
+                              type="text"
+                              value={inputMessage}
+                              onChange={(e) => setInputMessage(e.target.value)}
+                              placeholder="Ask anything about your college..."
+                              className="flex-1 bg-transparent border-none text-[15px] text-[#1C1C1C] placeholder:text-[#6B6B6B]/60 px-3 focus:outline-none focus:ring-0 w-full"
+                            />
+
+                            <button
+                              type="submit"
+                              disabled={!inputMessage.trim()}
+                              className="bg-[#C89B4A] hover:bg-[#B78A39] disabled:bg-[#E6DED3]/50 text-white disabled:text-[#6B6B6B]/40 p-3 rounded-full transition-all shrink-0 flex items-center justify-center shadow-sm disabled:shadow-none cursor-pointer mr-1"
+                            >
+                              <Send className="h-4.5 w-4.5 stroke-[2]" />
+                            </button>
+                          </form>
+                        </div>
                       </div>
                     </div>
 
-                  </div>
+                    <footer className="w-full py-6 border-t border-[#E6DED3]/60 text-center text-[10px] text-[#6B6B6B] font-semibold tracking-widest uppercase select-none z-10 shrink-0">
+                      Official Information &bull; Verified Sources &bull; Student First
+                    </footer>
+                  </>
                 ) : (
                   
                   /* Clean Claude/ChatGPT Conversation Stream */
@@ -3560,8 +3834,8 @@ export default function App() {
                           {/* Message bubble */}
                           <div className={`p-4 md:p-5 rounded-2xl ${
                             m.role === 'user'
-                              ? 'bg-[#6C5CE7] text-white shadow-sm shadow-[#6C5CE7]/10 rounded-tr-sm'
-                              : 'bg-white text-slate-900 border border-[#E5E7EB] shadow-xs'
+                              ? 'bg-[#C89B4A] text-white shadow-sm shadow-[#C89B4A]/10 rounded-tr-sm'
+                              : 'bg-white text-[#1B1B1B] border border-[#E7DDD0] shadow-xs'
                           }`}>
                             {m.role === 'user' ? (
                               <p className="text-sm font-semibold whitespace-pre-wrap leading-relaxed">{m.content}</p>
@@ -3578,19 +3852,19 @@ export default function App() {
                             <div className="w-full space-y-3 mt-1.5 pl-1">
                               
                               {/* Quick Actions (Copy, Regenerate, Likes, Citations) */}
-                              <div className="flex flex-wrap items-center gap-4 text-[11px] text-[#64748B] font-semibold">
-                                <span className="text-[10px] text-slate-400 font-medium">{m.timestamp}</span>
+                              <div className="flex flex-wrap items-center gap-4 text-[11px] text-[#6B6B6B] font-semibold">
+                                <span className="text-[10px] text-[#6B6B6B] font-medium">{m.timestamp}</span>
                                 
                                 {/* Copy button */}
                                 <button
                                   onClick={() => copyMessageToClipboard(m.id, m.content)}
-                                  className="hover:text-[#6C5CE7] flex items-center gap-1 transition-colors cursor-pointer"
+                                  className="hover:text-[#C89B4A] flex items-center gap-1 transition-colors cursor-pointer"
                                   title="Copy content"
                                 >
                                   {copiedMessageId === m.id ? (
                                     <>
                                       <Check className="h-3 w-3 text-emerald-500" />
-                                      <span className="text-emerald-600 font-bold">Copied</span>
+                                      <span className="text-[#5B8A5A] font-bold">Copied</span>
                                     </>
                                   ) : (
                                     <>
@@ -3603,7 +3877,7 @@ export default function App() {
                                 {/* Regenerate Button */}
                                 <button
                                   onClick={() => handleRegenerate(m.id)}
-                                  className="hover:text-[#6C5CE7] flex items-center gap-1 transition-colors cursor-pointer"
+                                  className="hover:text-[#C89B4A] flex items-center gap-1 transition-colors cursor-pointer"
                                   title="Re-run query"
                                 >
                                   <RefreshCw className="h-3 w-3" />
@@ -3613,7 +3887,7 @@ export default function App() {
                                 {/* Upvote rating */}
                                 <button
                                   onClick={() => handleFeedback(m.id, 'up')}
-                                  className={`hover:text-emerald-600 transition-colors cursor-pointer ${feedbacks[m.id] === 'up' ? 'text-emerald-500' : ''}`}
+                                  className={`hover:text-[#5B8A5A] transition-colors cursor-pointer ${feedbacks[m.id] === 'up' ? 'text-emerald-500' : ''}`}
                                   title="Accurate Answer"
                                 >
                                   <ThumbsUp className="h-3 w-3" />
@@ -3622,7 +3896,7 @@ export default function App() {
                                 {/* Downvote rating */}
                                 <button
                                   onClick={() => handleFeedback(m.id, 'down')}
-                                  className={`hover:text-rose-600 transition-colors cursor-pointer ${feedbacks[m.id] === 'down' ? 'text-rose-500' : ''}`}
+                                  className={`hover:text-[#B65454] transition-colors cursor-pointer ${feedbacks[m.id] === 'down' ? 'text-rose-500' : ''}`}
                                   title="Inaccurate Answer"
                                 >
                                   <ThumbsDown className="h-3 w-3" />
@@ -3631,7 +3905,7 @@ export default function App() {
                                 {m.debug && (
                                   <button
                                     onClick={() => setSelectedDebugMessage(m)}
-                                    className="text-[#6C5CE7] hover:bg-[#6C5CE7]/5 bg-[#6C5CE7]/10 border border-[#6C5CE7]/20 rounded-md px-2 py-0.5 text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer"
+                                    className="text-[#C89B4A] hover:bg-[#C89B4A]/5 bg-[#C89B4A]/10 border border-[#C89B4A]/20 rounded-md px-2 py-0.5 text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer"
                                     title="View AI Grounding Debug Panel"
                                   >
                                     <Database className="h-3 w-3 animate-pulse" />
@@ -3643,7 +3917,7 @@ export default function App() {
                               {/* Grounded Sources / Citations list */}
                               {m.citations && m.citations.length > 0 && (
                                 <div className="space-y-1">
-                                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
+                                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-[#6B6B6B]">
                                     Knowledge Sources:
                                   </p>
                                   <div className="flex flex-wrap gap-1.5">
@@ -3651,7 +3925,7 @@ export default function App() {
                                       <button
                                         key={cidx}
                                         onClick={() => setActiveCitation(cite)}
-                                        className="bg-slate-50 hover:bg-[#6C5CE7]/5 border border-slate-200 hover:border-[#6C5CE7]/20 rounded-lg px-2.5 py-1 text-[10px] font-bold text-slate-600 hover:text-[#6C5CE7] transition-all flex items-center gap-1 cursor-pointer"
+                                        className="bg-[#F2EEE8] hover:bg-[#C89B4A]/5 border border-[#E7DDD0] hover:border-[#C89B4A]/20 rounded-lg px-2.5 py-1 text-[10px] font-bold text-[#6B6B6B] hover:text-[#C89B4A] transition-all flex items-center gap-1 cursor-pointer"
                                       >
                                         <FileText className="h-2.5 w-2.5" />
                                         <span>{cite.title}</span>
@@ -3664,7 +3938,7 @@ export default function App() {
                               {/* Related / Follow up Questions */}
                               {m.suggestions && m.suggestions.length > 0 && (
                                 <div className="space-y-1.5 pt-2">
-                                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
+                                  <p className="text-[9px] font-extrabold uppercase tracking-wider text-[#6B6B6B]">
                                     Related follow-up questions:
                                   </p>
                                   <div className="flex flex-wrap gap-1.5">
@@ -3672,7 +3946,7 @@ export default function App() {
                                       <button
                                         key={sidx}
                                         onClick={() => triggerAiInquiry(sug)}
-                                        className="bg-white hover:bg-[#6C5CE7]/5 border border-[#E5E7EB] hover:border-[#6C5CE7]/20 text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all text-[#6C5CE7] hover:text-[#5b4cd1] cursor-pointer"
+                                        className="bg-white hover:bg-[#C89B4A]/5 border border-[#E7DDD0] hover:border-[#C89B4A]/20 text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all text-[#C89B4A] hover:text-[#B98A32] cursor-pointer"
                                       >
                                         {sug}
                                       </button>
@@ -3694,16 +3968,16 @@ export default function App() {
                 {isAiTyping && (
                   <div className="max-w-3xl mx-auto w-full flex justify-start pl-1">
                     <div className="flex items-start space-x-3.5">
-                      <div className="h-8 w-8 rounded-xl bg-[#6C5CE7] text-white flex items-center justify-center shrink-0 border border-[#6C5CE7]/25 shadow-sm">
+                      <div className="h-8 w-8 rounded-xl bg-[#C89B4A] text-white flex items-center justify-center shrink-0 border border-[#C89B4A]/25 shadow-sm">
                         <Sparkles className="h-4 w-4 animate-spin" />
                       </div>
-                      <div className="bg-white border border-[#E5E7EB] rounded-2xl px-4 py-3 shadow-xs flex items-center space-x-3">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl px-4 py-3 shadow-xs flex items-center space-x-3">
                         <div className="flex space-x-1 shrink-0">
-                          <span className="h-2.5 w-2.5 bg-[#6C5CE7] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="h-2.5 w-2.5 bg-[#6C5CE7] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="h-2.5 w-2.5 bg-[#6C5CE7] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          <span className="h-2.5 w-2.5 bg-[#C89B4A] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="h-2.5 w-2.5 bg-[#C89B4A] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="h-2.5 w-2.5 bg-[#C89B4A] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
-                        <span className="text-xs font-bold text-slate-500">IRA is finding answers in college documents...</span>
+                        <span className="text-xs font-bold text-[#6B6B6B]">IRA is finding answers in college documents...</span>
                       </div>
                     </div>
                   </div>
@@ -3717,11 +3991,11 @@ export default function App() {
                 <div className="p-4 bg-transparent max-w-4xl w-full mx-auto pb-6 relative z-10 shrink-0">
                   <form 
                     onSubmit={handleSendMessage} 
-                    className="bg-white border border-[#E5E7EB] focus-within:border-indigo-400 shadow-xl shadow-slate-100/80 rounded-[28px] p-2 flex items-center gap-1 focus-within:ring-4 focus-within:ring-[#6C5CE7]/10 transition-all duration-200"
+                    className="bg-white border border-[#E7DDD0] focus-within:border-[#C89B4A] shadow-xl shadow-slate-100/80 rounded-[28px] p-2 flex items-center gap-1 focus-within:ring-4 focus-within:ring-[#C89B4A]/10 transition-all duration-200"
                   >
                     <div className="flex items-center gap-1 pl-1 shrink-0">
                       {/* Attachment button */}
-                      <label className="p-2.5 rounded-full hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer block" title="Attach Document file">
+                      <label className="p-2.5 rounded-full hover:bg-[#F2EEE8] text-[#6B6B6B] hover:text-[#6B6B6B] transition-colors cursor-pointer block" title="Attach Document file">
                         <Paperclip className="h-4 w-4" />
                         <input 
                           type="file" 
@@ -3740,8 +4014,8 @@ export default function App() {
                         onClick={handleVoiceInput}
                         className={`p-2.5 rounded-full transition-colors ${
                           isListening
-                            ? 'bg-rose-50 text-rose-600 animate-pulse'
-                            : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                            ? 'bg-[#B65454]/10 text-[#B65454] animate-pulse'
+                            : 'text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-[#F2EEE8]'
                         }`}
                         title="Speak query"
                       >
@@ -3754,7 +4028,7 @@ export default function App() {
                         onClick={() => {
                           alert("AI model is grounded in multi-lingual documents (English, Hindi, regional queries supported).");
                         }}
-                        className="p-2.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors select-none"
+                        className="p-2.5 rounded-full text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-[#F2EEE8] transition-colors select-none"
                         title="Grounded Languages"
                       >
                         <Globe className="h-4 w-4" />
@@ -3767,19 +4041,19 @@ export default function App() {
                       onChange={(e) => setInputMessage(e.target.value)}
                       disabled={isAiTyping}
                       placeholder="Ask anything about your college..."
-                      className="flex-1 bg-transparent border-none text-sm text-slate-900 placeholder:text-slate-400 py-3 px-3 focus:outline-none focus:ring-0 disabled:opacity-50"
+                      className="flex-1 bg-transparent border-none text-sm text-[#1B1B1B] placeholder:text-[#6B6B6B] py-3 px-3 focus:outline-none focus:ring-0 disabled:opacity-50"
                     />
 
                     <button
                       type="submit"
                       disabled={isAiTyping || !inputMessage.trim()}
-                      className="bg-[#6C5CE7] hover:bg-[#5b4cd1] disabled:bg-slate-100 text-white disabled:text-slate-400 p-3.5 rounded-full transition-all shrink-0 flex items-center justify-center shadow-md shadow-[#6C5CE7]/10 active:scale-95 cursor-pointer"
+                      className="bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] text-white disabled:text-[#6B6B6B] p-3.5 rounded-full transition-all shrink-0 flex items-center justify-center shadow-md shadow-[#C89B4A]/10 active:scale-95 cursor-pointer"
                       title="Send message"
                     >
                       <Send className="h-4 w-4" />
                     </button>
                   </form>
-                  <p className="text-[10px] text-slate-400 text-center mt-3 font-semibold">
+                  <p className="text-[10px] text-[#6B6B6B] text-center mt-3 font-semibold">
                     IRA is grounded strictly in the official IRA Campus knowledge base.
                   </p>
                 </div>
@@ -3798,63 +4072,63 @@ export default function App() {
             {/* LOGIN CARD / AUTH STATE CHECK */}
             {isCheckingAuth ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-                <p className="text-xs text-slate-500 font-medium">Verifying administrator session status...</p>
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#C89B4A]"></div>
+                <p className="text-xs text-[#6B6B6B] font-medium">Verifying administrator session status...</p>
               </div>
             ) : isAccessDenied ? (
-              <div className="max-w-md mx-auto bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-xl shadow-slate-100 text-center space-y-6">
-                <div className="inline-flex p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600">
+              <div className="max-w-md mx-auto bg-white border border-[#E7DDD0] rounded-3xl p-6 lg:p-8 shadow-xl shadow-slate-100 text-center space-y-6">
+                <div className="inline-flex p-3 bg-[#B65454]/10 border border-rose-100 rounded-2xl text-[#B65454]">
                   <ShieldAlert className="h-6 w-6" />
                 </div>
                 <h2 className="text-xl font-extrabold text-slate-950">Access Denied</h2>
-                <p className="text-xs text-slate-500 leading-normal font-semibold">
+                <p className="text-xs text-[#6B6B6B] leading-normal font-semibold">
                   You are not authorized to access the IRA Campus Admin Portal.
                 </p>
                 {auth.currentUser && (
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-[10px] text-slate-600 leading-normal space-y-1">
+                  <div className="bg-[#F2EEE8] rounded-xl p-3 border border-[#E7DDD0] text-[10px] text-[#6B6B6B] leading-normal space-y-1">
                     <p>Logged in as: <strong>{auth.currentUser.email}</strong></p>
                   </div>
                 )}
                 <button
                   onClick={handleAdminLogout}
-                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
+                  className="w-full bg-[#F2EEE8] hover:bg-slate-200 text-[#1B1B1B] font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
                 >
                   Sign Out / Choose Another Account
                 </button>
               </div>
             ) : !isAdminLoggedIn ? (
-              <div className="max-w-md mx-auto bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-xl shadow-slate-100 space-y-6">
+              <div className="max-w-md mx-auto bg-white border border-[#E7DDD0] rounded-3xl p-6 lg:p-8 shadow-xl shadow-slate-100 space-y-6">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex p-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 mb-2">
+                  <div className="inline-flex p-3 bg-[#F2EEE8] border border-[#E7DDD0] rounded-2xl text-[#C89B4A] mb-2">
                     <Lock className="h-6 w-6" />
                   </div>
                   <h2 className="text-xl font-extrabold text-slate-950">Staff Administration Portal</h2>
-                  <p className="text-xs text-slate-500 font-semibold leading-relaxed">Sign in with an authorized Google account to manage campus knowledge documents.</p>
+                  <p className="text-xs text-[#6B6B6B] font-semibold leading-relaxed">Sign in with an authorized Google account to manage campus knowledge documents.</p>
                 </div>
 
                 {loginError && (
                   loginError === 'unauthorized-domain' ? (
-                    <div className="bg-amber-50 border border-amber-200 text-amber-900 text-xs p-4 rounded-2xl space-y-3 leading-normal text-left">
+                    <div className="bg-[#C89B4A]/5 border border-[#E7DDD0] text-[#1B1B1B] text-xs p-4 rounded-2xl space-y-3 leading-normal text-left">
                       <div className="flex items-start gap-2.5">
-                        <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                        <ShieldAlert className="h-4 w-4 text-[#C89B4A] shrink-0 mt-0.5" />
                         <div>
-                          <p className="font-extrabold text-amber-950 text-xs">Firebase Unauthorized Domain Error</p>
-                          <p className="text-[10px] text-amber-700 font-semibold mt-1">
+                          <p className="font-extrabold text-[#1B1B1B] text-xs">Firebase Unauthorized Domain Error</p>
+                          <p className="text-[10px] text-[#6B6B6B] font-semibold mt-1">
                             Google Sign-In needs this app's domain to be authorized in your Firebase Console.
                           </p>
                         </div>
                       </div>
                       
                       <div className="space-y-1 pt-1">
-                        <p className="text-[9px] uppercase font-extrabold text-amber-800 tracking-wide">Steps to authorize:</p>
-                        <ol className="list-decimal pl-4 space-y-1 text-[10px] text-amber-800 font-semibold">
+                        <p className="text-[9px] uppercase font-extrabold text-[#1B1B1B] tracking-wide">Steps to authorize:</p>
+                        <ol className="list-decimal pl-4 space-y-1 text-[10px] text-[#1B1B1B] font-semibold">
                           <li>Go to your <strong>Firebase Console</strong>.</li>
                           <li>Navigate to <strong>Authentication</strong> &rarr; <strong>Settings</strong> &rarr; <strong>Authorized domains</strong>.</li>
                           <li>Click <strong>Add domain</strong> and copy-paste these domains:</li>
                         </ol>
                       </div>
 
-                      <div className="space-y-1.5 bg-white border border-amber-100 rounded-xl p-2.5 font-mono text-[9px] text-slate-700">
+                      <div className="space-y-1.5 bg-white border border-[#E7DDD0] rounded-xl p-2.5 font-mono text-[9px] text-[#1B1B1B]">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate select-all font-semibold">{window.location.hostname}</span>
                           <button
@@ -3863,12 +4137,12 @@ export default function App() {
                               setCopiedDev(true);
                               setTimeout(() => setCopiedDev(false), 2000);
                             }}
-                            className="bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-1 rounded font-sans font-bold text-[8px] transition-all cursor-pointer"
+                            className="bg-[#C89B4A]/10 hover:bg-[#C89B4A]/20 text-[#1B1B1B] px-2 py-1 rounded font-sans font-bold text-[8px] transition-all cursor-pointer"
                           >
                             {copiedDev ? 'Copied!' : 'Copy'}
                           </button>
                         </div>
-                        <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-1.5 mt-1.5">
+                        <div className="flex items-center justify-between gap-2 border-t border-[#E7DDD0] pt-1.5 mt-1.5">
                           <span className="truncate select-all font-semibold">ais-pre-kbzuh6brpamvy2idbtbl7l-746370824595.asia-southeast1.run.app</span>
                           <button
                             onClick={() => {
@@ -3876,7 +4150,7 @@ export default function App() {
                               setCopiedPre(true);
                               setTimeout(() => setCopiedPre(false), 2000);
                             }}
-                            className="bg-amber-100 hover:bg-amber-200 text-amber-900 px-2 py-1 rounded font-sans font-bold text-[8px] transition-all cursor-pointer"
+                            className="bg-[#C89B4A]/10 hover:bg-[#C89B4A]/20 text-[#1B1B1B] px-2 py-1 rounded font-sans font-bold text-[8px] transition-all cursor-pointer"
                           >
                             {copiedPre ? 'Copied!' : 'Copy'}
                           </button>
@@ -3884,7 +4158,7 @@ export default function App() {
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold px-4 py-3 rounded-xl leading-normal text-center">
+                    <div className="bg-[#B65454]/10 border border-rose-100 text-[#B65454] text-xs font-bold px-4 py-3 rounded-xl leading-normal text-center">
                       {loginError}
                     </div>
                   )
@@ -3905,17 +4179,17 @@ export default function App() {
                   {isLoggingIn ? 'Authenticating...' : 'Sign in with Google'}
                 </button>
 
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 text-[10px] text-slate-500 leading-normal text-center font-semibold">
+                <div className="bg-[#F2EEE8] rounded-xl p-3 border border-[#E7DDD0] text-[10px] text-[#6B6B6B] leading-normal text-center font-semibold">
                   🔐 Access is restricted to authorized Google accounts only.
                 </div>
               </div>
             ) : (
               // AUTHED ADMIN WORKSPACE
               <div className="space-y-10">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-6">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#E7DDD0] pb-6">
                   <div>
                     <h2 className="text-2xl font-extrabold text-slate-950">Administrative Control Hub</h2>
-                    <p className="text-xs text-slate-500 font-semibold mt-0.5">Manage knowledge documents, publish announcements, and view analytics</p>
+                    <p className="text-xs text-[#6B6B6B] font-semibold mt-0.5">Manage knowledge documents, publish announcements, and view analytics</p>
                   </div>
                   
                   {/* Sync & Retry Buttons */}
@@ -3923,7 +4197,7 @@ export default function App() {
                     <button
                       onClick={handleRetryAllFailed}
                       disabled={isRetryingDocs}
-                      className="bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white font-bold text-xs py-2.5 px-4.5 rounded-xl shadow-md shadow-amber-100 transition-colors flex items-center gap-2 cursor-pointer"
+                      className="bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-amber-400 text-white font-bold text-xs py-2.5 px-4.5 rounded-xl shadow-md shadow-amber-100 transition-colors flex items-center gap-2 cursor-pointer"
                     >
                       <RefreshCw className={`h-4 w-4 ${isRetryingDocs ? 'animate-spin' : ''}`} />
                       <span>{isRetryingDocs ? 'Retrying Failed...' : 'Retry Failed AI Extractions'}</span>
@@ -3932,7 +4206,7 @@ export default function App() {
                     <button
                       onClick={handleRebuildVectors}
                       disabled={isRebuildingVectors}
-                      className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold text-xs py-2.5 px-4.5 rounded-xl shadow-md shadow-indigo-100 transition-colors flex items-center gap-2 cursor-pointer"
+                      className="bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#C89B4A]/80 text-white font-bold text-xs py-2.5 px-4.5 rounded-xl shadow-md shadow-[#1C1C1C]/5 transition-colors flex items-center gap-2 cursor-pointer"
                     >
                       <Database className={`h-4 w-4 ${isRebuildingVectors ? 'animate-spin' : ''}`} />
                       <span>{isRebuildingVectors ? 'Regenerating Embeddings...' : 'Rebuild AI Knowledge Base'}</span>
@@ -3942,13 +4216,13 @@ export default function App() {
 
                 {/* ANALYTICS SECTION */}
                 {!analytics || analytics.totalQuestions === 0 ? (
-                  <div className="bg-white border border-slate-200 rounded-3xl p-10 text-center space-y-5 max-w-lg mx-auto shadow-sm">
-                    <div className="mx-auto w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center">
-                      <BarChart3 className="h-7 w-7 text-indigo-600 animate-pulse" />
+                  <div className="bg-white border border-[#E7DDD0] rounded-3xl p-10 text-center space-y-5 max-w-lg mx-auto shadow-sm">
+                    <div className="mx-auto w-14 h-14 rounded-2xl bg-[#F2EEE8] border border-[#E7DDD0] flex items-center justify-center">
+                      <BarChart3 className="h-7 w-7 text-[#C89B4A] animate-pulse" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-base font-extrabold text-slate-900 uppercase tracking-wider">No Real-Time Analytics Yet</h3>
-                      <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                      <h3 className="text-base font-extrabold text-[#1B1B1B] uppercase tracking-wider">No Real-Time Analytics Yet</h3>
+                      <p className="text-xs text-[#6B6B6B] font-semibold leading-relaxed">
                         Submit queries in the AI Chat tab to begin tracking real-time metrics, system performance, token diagnostics, and user feedback ratings.
                       </p>
                     </div>
@@ -3956,7 +4230,7 @@ export default function App() {
                 ) : (
                   <div className="space-y-8">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <h3 className="text-sm font-extrabold uppercase tracking-widest text-slate-400">
+                      <h3 className="text-sm font-extrabold uppercase tracking-widest text-[#6B6B6B]">
                         Live RAG Engine Analytics
                       </h3>
                       
@@ -3964,7 +4238,7 @@ export default function App() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => exportAnalyticsData('csv')}
-                          className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="bg-[#F2EEE8] hover:bg-[#F2EEE8] border border-[#E7DDD0] text-[#1B1B1B] font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                           title="Export chat logs to CSV"
                         >
                           <Download className="h-3.5 w-3.5" />
@@ -3972,7 +4246,7 @@ export default function App() {
                         </button>
                         <button
                           onClick={() => exportAnalyticsData('json')}
-                          className="bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="bg-[#F2EEE8] hover:bg-[#F2EEE8] border border-[#E7DDD0] text-[#1B1B1B] font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                           title="Export all database stats to JSON"
                         >
                           <Download className="h-3.5 w-3.5" />
@@ -3980,7 +4254,7 @@ export default function App() {
                         </button>
                         <button
                           onClick={handleClearAnalytics}
-                          className="bg-rose-50 hover:bg-rose-100 border border-rose-150 text-rose-600 font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="bg-[#B65454]/10 hover:bg-rose-100 border border-[#B65454]/20 text-[#B65454] font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                           title="Wipe analytics history"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -3992,43 +4266,43 @@ export default function App() {
                     {/* KPI CARDS */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                       {/* Questions Handled */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
-                        <div className="p-2 rounded-lg border text-blue-600 bg-blue-50 border-blue-100 self-start">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
+                        <div className="p-2 rounded-lg border text-[#C89B4A] bg-[#C89B4A]/10 border-[#C89B4A]/20 self-start">
                           <MessageSquare className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Questions Handled</p>
-                          <p className="text-2xl font-extrabold text-slate-900 mt-1">{analytics.totalQuestions.toLocaleString()}</p>
-                          <p className="text-[9px] text-slate-500 font-semibold mt-1">Directly logged queries</p>
+                          <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider">Questions Handled</p>
+                          <p className="text-2xl font-extrabold text-[#1B1B1B] mt-1">{analytics.totalQuestions.toLocaleString()}</p>
+                          <p className="text-[9px] text-[#6B6B6B] font-semibold mt-1">Directly logged queries</p>
                         </div>
                       </div>
 
                       {/* DAU */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
-                        <div className="p-2 rounded-lg border text-amber-600 bg-amber-50 border-amber-100 self-start">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
+                        <div className="p-2 rounded-lg border text-[#C89B4A] bg-[#C89B4A]/5 border-[#E7DDD0] self-start">
                           <Users className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Active Users (DAU)</p>
-                          <p className="text-2xl font-extrabold text-slate-900 mt-1">{analytics.dauToday}</p>
+                          <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider">Active Users (DAU)</p>
+                          <p className="text-2xl font-extrabold text-[#1B1B1B] mt-1">{analytics.dauToday}</p>
                           <div className="flex items-center gap-1.5 mt-1">
-                            <span className={`text-[10px] font-extrabold ${analytics.dauGrowth >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            <span className={`text-[10px] font-extrabold ${analytics.dauGrowth >= 0 ? 'text-[#5B8A5A]' : 'text-[#B65454]'}`}>
                               {analytics.dauGrowth >= 0 ? '+' : ''}{analytics.dauGrowth}%
                             </span>
-                            <span className="text-[9px] text-slate-400 font-medium">vs yesterday ({analytics.dauYesterday})</span>
+                            <span className="text-[9px] text-[#6B6B6B] font-medium">vs yesterday ({analytics.dauYesterday})</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Avg Response Time */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
-                        <div className="p-2 rounded-lg border text-cyan-600 bg-cyan-50 border-cyan-100 self-start">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
+                        <div className="p-2 rounded-lg border text-[#C89B4A] bg-[#C89B4A]/10 border-[#C89B4A]/20 self-start">
                           <Clock className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Avg Response Latency</p>
-                          <p className="text-2xl font-extrabold text-slate-900 mt-1">{analytics.averageResponseTime} ms</p>
-                          <div className="flex flex-wrap items-center gap-x-2 text-[9px] text-slate-400 font-medium mt-1 border-t border-slate-50 pt-1">
+                          <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider">Avg Response Latency</p>
+                          <p className="text-2xl font-extrabold text-[#1B1B1B] mt-1">{analytics.averageResponseTime} ms</p>
+                          <div className="flex flex-wrap items-center gap-x-2 text-[9px] text-[#6B6B6B] font-medium mt-1 border-t border-slate-50 pt-1">
                             <span>Fast: {analytics.fastestResponseTime}ms</span>
                             <span>•</span>
                             <span>Slow: {analytics.slowestResponseTime}ms</span>
@@ -4037,31 +4311,31 @@ export default function App() {
                       </div>
 
                       {/* User Satisfaction */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
-                        <div className="p-2 rounded-lg border text-emerald-600 bg-emerald-50 border-emerald-100 self-start">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
+                        <div className="p-2 rounded-lg border text-[#5B8A5A] bg-[#5B8A5A]/10 border-[#5B8A5A]/20 self-start">
                           <ThumbsUp className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">User Satisfaction</p>
-                          <p className="text-2xl font-extrabold text-slate-900 mt-1">{analytics.positiveFeedbackPercentage}%</p>
+                          <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider">User Satisfaction</p>
+                          <p className="text-2xl font-extrabold text-[#1B1B1B] mt-1">{analytics.positiveFeedbackPercentage}%</p>
                           <div className="flex items-center gap-1.5 mt-1">
-                            <span className="text-[9px] text-emerald-600 font-bold">👍 {analytics.positiveFeedbackPercentage}%</span>
+                            <span className="text-[9px] text-[#5B8A5A] font-bold">👍 {analytics.positiveFeedbackPercentage}%</span>
                             <span className="text-[9px] text-slate-300">|</span>
                             <span className="text-[9px] text-rose-500 font-bold">👎 {analytics.negativeFeedbackPercentage}%</span>
-                            <span className="text-[9px] text-slate-400 font-semibold">({analytics.totalFeedbackCount} total)</span>
+                            <span className="text-[9px] text-[#6B6B6B] font-semibold">({analytics.totalFeedbackCount} total)</span>
                           </div>
                         </div>
                       </div>
 
                       {/* Vector DB Density */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
-                        <div className="p-2 rounded-lg border text-indigo-600 bg-indigo-50 border-indigo-100 self-start">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-3 shadow-sm flex flex-col justify-between">
+                        <div className="p-2 rounded-lg border text-[#C89B4A] bg-[#F2EEE8] border-[#E7DDD0] self-start">
                           <Database className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Embedding Density</p>
-                          <p className="text-2xl font-extrabold text-slate-900 mt-1">{analytics.knowledgeStats?.totalEmbeddings || 0}</p>
-                          <p className="text-[9px] text-slate-400 font-semibold mt-1">Avg {analytics.knowledgeStats?.averageChunksPerDocument || 0} chunks/doc</p>
+                          <p className="text-[10px] text-[#6B6B6B] font-bold uppercase tracking-wider">Embedding Density</p>
+                          <p className="text-2xl font-extrabold text-[#1B1B1B] mt-1">{analytics.knowledgeStats?.totalEmbeddings || 0}</p>
+                          <p className="text-[9px] text-[#6B6B6B] font-semibold mt-1">Avg {analytics.knowledgeStats?.averageChunksPerDocument || 0} chunks/doc</p>
                         </div>
                       </div>
                     </div>
@@ -4070,10 +4344,10 @@ export default function App() {
                     <div className="grid lg:grid-cols-3 gap-6">
                       
                       {/* Daily Questions Trend Area Chart */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 lg:col-span-2 shadow-sm">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-4 lg:col-span-2 shadow-sm">
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Daily Questions Trend</h4>
-                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Real-time volume graph of campus inquiries</p>
+                          <h4 className="text-xs font-bold text-[#1B1B1B] uppercase tracking-wide">Daily Questions Trend</h4>
+                          <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">Real-time volume graph of campus inquiries</p>
                         </div>
                         <div className="h-64">
                           {analytics.dailyQuestions && analytics.dailyQuestions.length > 0 ? (
@@ -4081,18 +4355,18 @@ export default function App() {
                               <AreaChart data={analytics.dailyQuestions}>
                                 <defs>
                                   <linearGradient id="colorQuestions" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/>
-                                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                                    <stop offset="5%" stopColor="#C89B4A" stopOpacity={0.2}/>
+                                    <stop offset="95%" stopColor="#C89B4A" stopOpacity={0}/>
                                   </linearGradient>
                                 </defs>
                                 <XAxis dataKey="date" stroke="#94a3b8" fontSize={9} tickLine={false} />
                                 <YAxis stroke="#94a3b8" fontSize={9} tickLine={false} />
                                 <Tooltip contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
-                                <Area type="monotone" dataKey="count" name="Questions" stroke="#4f46e5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorQuestions)" />
+                                <Area type="monotone" dataKey="count" name="Questions" stroke="#C89B4A" strokeWidth={2.5} fillOpacity={1} fill="url(#colorQuestions)" />
                               </AreaChart>
                             </ResponsiveContainer>
                           ) : (
-                            <div className="h-full flex items-center justify-center text-xs text-slate-400 font-semibold">
+                            <div className="h-full flex items-center justify-center text-xs text-[#6B6B6B] font-semibold">
                               No trend data compiled yet.
                             </div>
                           )}
@@ -4100,30 +4374,30 @@ export default function App() {
                       </div>
 
                       {/* Top Searched Queries list */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm flex flex-col">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-4 shadow-sm flex flex-col">
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Frequent Campus Queries</h4>
-                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Most common questions normalized by the system</p>
+                          <h4 className="text-xs font-bold text-[#1B1B1B] uppercase tracking-wide">Frequent Campus Queries</h4>
+                          <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">Most common questions normalized by the system</p>
                         </div>
                         <div className="flex-1 overflow-y-auto max-h-[250px] space-y-2 pr-1">
                           {analytics.popularQuestions && analytics.popularQuestions.length > 0 ? (
                             analytics.popularQuestions.slice(0, 10).map((pq, index) => (
-                              <div key={index} className="flex items-center justify-between gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2">
+                              <div key={index} className="flex items-center justify-between gap-3 bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl px-3 py-2">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <span className="text-[10px] font-extrabold text-indigo-600 bg-indigo-50 w-5 h-5 rounded-md flex items-center justify-center shrink-0">
+                                  <span className="text-[10px] font-extrabold text-[#C89B4A] bg-[#F2EEE8] w-5 h-5 rounded-md flex items-center justify-center shrink-0">
                                     {index + 1}
                                   </span>
-                                  <p className="text-[11px] text-slate-700 font-semibold truncate" title={pq.question}>
+                                  <p className="text-[11px] text-[#1B1B1B] font-semibold truncate" title={pq.question}>
                                     {pq.question}
                                   </p>
                                 </div>
-                                <span className="text-[10px] font-extrabold text-slate-500 shrink-0 bg-white border border-slate-200/60 rounded-full px-2 py-0.5">
+                                <span className="text-[10px] font-extrabold text-[#6B6B6B] shrink-0 bg-white border border-[#E7DDD0]/60 rounded-full px-2 py-0.5">
                                   {pq.count} ask{pq.count > 1 ? 's' : ''}
                                 </span>
                               </div>
                             ))
                           ) : (
-                            <div className="h-full flex items-center justify-center text-xs text-slate-400 font-semibold py-10">
+                            <div className="h-full flex items-center justify-center text-xs text-[#6B6B6B] font-semibold py-10">
                               No frequent queries logged.
                             </div>
                           )}
@@ -4135,70 +4409,70 @@ export default function App() {
                     {/* AI SYSTEM DIAGNOSTICS & HARDWARE PERFORMANCE */}
                     <div className="grid lg:grid-cols-2 gap-6">
                       {/* AI Model Performance Metrics */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-4 shadow-sm">
                         <div className="flex justify-between items-center">
                           <div>
-                            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">LLM Inference Diagnostics</h4>
-                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Model token footprints and API cost computation</p>
+                            <h4 className="text-xs font-bold text-[#1B1B1B] uppercase tracking-wide">LLM Inference Diagnostics</h4>
+                            <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">Model token footprints and API cost computation</p>
                           </div>
-                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-indigo-600 bg-indigo-50/60 border border-indigo-100 rounded-full px-2.5 py-1">
+                          <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#C89B4A] bg-[#F2EEE8]/60 border border-[#E7DDD0] rounded-full px-2.5 py-1">
                             {analytics.aiModelStats?.modelName.split('/').pop() || 'Gemini'}
                           </span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Total Accumulated Tokens</p>
-                            <p className="text-lg font-extrabold text-slate-800 mt-1">{(analytics.aiModelStats?.totalTokens || 0).toLocaleString()}</p>
-                            <p className="text-[9px] text-slate-400 font-medium mt-0.5">
+                          <div className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3">
+                            <p className="text-[9px] text-[#6B6B6B] font-bold uppercase tracking-wider">Total Accumulated Tokens</p>
+                            <p className="text-lg font-extrabold text-[#1B1B1B] mt-1">{(analytics.aiModelStats?.totalTokens || 0).toLocaleString()}</p>
+                            <p className="text-[9px] text-[#6B6B6B] font-medium mt-0.5">
                               {analytics.aiModelStats?.promptTokens || 0} In / {analytics.aiModelStats?.completionTokens || 0} Out
                             </p>
                           </div>
-                          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Estimated Cumulative API Cost</p>
-                            <p className="text-lg font-extrabold text-slate-800 mt-1">${analytics.aiModelStats?.estimatedCost.toFixed(5)}</p>
-                            <p className="text-[9px] text-slate-400 font-medium mt-0.5">Calculated using live model rates</p>
+                          <div className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3">
+                            <p className="text-[9px] text-[#6B6B6B] font-bold uppercase tracking-wider">Estimated Cumulative API Cost</p>
+                            <p className="text-lg font-extrabold text-[#1B1B1B] mt-1">${analytics.aiModelStats?.estimatedCost.toFixed(5)}</p>
+                            <p className="text-[9px] text-[#6B6B6B] font-medium mt-0.5">Calculated using live model rates</p>
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs">
-                          <span className="text-slate-500 font-semibold">Average Tokens Per Question:</span>
-                          <span className="font-extrabold text-slate-800">{analytics.aiModelStats?.averageTokensPerQuestion || 0} tokens</span>
+                        <div className="flex items-center justify-between bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl px-4 py-3 text-xs">
+                          <span className="text-[#6B6B6B] font-semibold">Average Tokens Per Question:</span>
+                          <span className="font-extrabold text-[#1B1B1B]">{analytics.aiModelStats?.averageTokensPerQuestion || 0} tokens</span>
                         </div>
                       </div>
 
                       {/* System Network & Latency Performance */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-4 shadow-sm">
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">System Performance & Health</h4>
-                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Core network latency split and component status checks</p>
+                          <h4 className="text-xs font-bold text-[#1B1B1B] uppercase tracking-wide">System Performance & Health</h4>
+                          <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">Core network latency split and component status checks</p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 text-xs">
-                          <div className="space-y-1 bg-slate-50 border border-slate-100 rounded-xl p-3">
-                            <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                          <div className="space-y-1 bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3">
+                            <div className="flex items-center gap-1.5 text-[#6B6B6B] font-semibold">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#5B8A5A]/100 animate-ping"></span>
                               <span>Local Vector DB</span>
                             </div>
-                            <p className="font-extrabold text-slate-800 mt-0.5">{analytics.systemPerformance?.vectorDbStatus || 'Online'}</p>
+                            <p className="font-extrabold text-[#1B1B1B] mt-0.5">{analytics.systemPerformance?.vectorDbStatus || 'Online'}</p>
                           </div>
-                          <div className="space-y-1 bg-slate-50 border border-slate-100 rounded-xl p-3">
-                            <div className="flex items-center gap-1.5 text-slate-500 font-semibold">
-                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+                          <div className="space-y-1 bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3">
+                            <div className="flex items-center gap-1.5 text-[#6B6B6B] font-semibold">
+                              <span className="h-1.5 w-1.5 rounded-full bg-[#C89B4A]"></span>
                               <span>Embedding Queue</span>
                             </div>
-                            <p className="font-extrabold text-slate-800 mt-0.5">{analytics.systemPerformance?.embeddingQueue || 'Idle'}</p>
+                            <p className="font-extrabold text-[#1B1B1B] mt-0.5">{analytics.systemPerformance?.embeddingQueue || 'Idle'}</p>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 text-xs border-t border-slate-50 pt-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-slate-500 font-semibold">Avg Document Retrieval:</span>
-                            <span className="font-extrabold text-slate-800">{analytics.systemPerformance?.averageRetrievalTime || 25} ms</span>
+                            <span className="text-[#6B6B6B] font-semibold">Avg Document Retrieval:</span>
+                            <span className="font-extrabold text-[#1B1B1B]">{analytics.systemPerformance?.averageRetrievalTime || 25} ms</span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-slate-500 font-semibold">Avg Response Generation:</span>
-                            <span className="font-extrabold text-slate-800">{analytics.systemPerformance?.averageGenerationTime || 0} ms</span>
+                            <span className="text-[#6B6B6B] font-semibold">Avg Response Generation:</span>
+                            <span className="font-extrabold text-[#1B1B1B]">{analytics.systemPerformance?.averageGenerationTime || 0} ms</span>
                           </div>
                         </div>
                       </div>
@@ -4207,13 +4481,13 @@ export default function App() {
                     {/* LIVE EVENT STREAM & RECENT LOGS */}
                     <div className="grid lg:grid-cols-3 gap-6">
                       {/* Live Activity Feed */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm lg:col-span-1">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-4 shadow-sm lg:col-span-1">
                         <div className="flex justify-between items-center">
                           <div>
-                            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Live Activity Event Stream</h4>
-                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Real-time socket stream of incoming inquiries</p>
+                            <h4 className="text-xs font-bold text-[#1B1B1B] uppercase tracking-wide">Live Activity Event Stream</h4>
+                            <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">Real-time socket stream of incoming inquiries</p>
                           </div>
-                          <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">
+                          <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-[#5B8A5A] bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 rounded-full px-2.5 py-1">
                             <Activity className="h-3 w-3 animate-spin" />
                             <span>STREAM LIVE</span>
                           </div>
@@ -4222,15 +4496,15 @@ export default function App() {
                         <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                           {analytics.liveActivityFeed && analytics.liveActivityFeed.length > 0 ? (
                             analytics.liveActivityFeed.map((event, idx) => (
-                              <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs space-y-1.5">
-                                <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                              <div key={idx} className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3 text-xs space-y-1.5">
+                                <div className="flex justify-between items-center text-[10px] font-bold text-[#6B6B6B]">
                                   <span>{event.time}</span>
-                                  <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">QUERY</span>
+                                  <span className="text-[#C89B4A] bg-[#F2EEE8] px-1.5 py-0.5 rounded">QUERY</span>
                                 </div>
-                                <p className="text-slate-700 font-semibold line-clamp-2 leading-relaxed">
+                                <p className="text-[#1B1B1B] font-semibold line-clamp-2 leading-relaxed">
                                   "{event.question}"
                                 </p>
-                                <div className="text-[9px] text-slate-500 flex items-center gap-1">
+                                <div className="text-[9px] text-[#6B6B6B] flex items-center gap-1">
                                   <span className="font-extrabold">Retrieved:</span>
                                   <span className="truncate max-w-[150px]" title={event.retrievedSource}>
                                     {event.retrievedSource}
@@ -4239,7 +4513,7 @@ export default function App() {
                               </div>
                             ))
                           ) : (
-                            <div className="h-32 flex items-center justify-center text-xs text-slate-400 font-semibold">
+                            <div className="h-32 flex items-center justify-center text-xs text-[#6B6B6B] font-semibold">
                               Waiting for live student chat interactions...
                             </div>
                           )}
@@ -4247,16 +4521,16 @@ export default function App() {
                       </div>
 
                       {/* Conversation History Grid */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm lg:col-span-2">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-5 space-y-4 shadow-sm lg:col-span-2">
                         <div>
-                          <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Conversation Audit Logs</h4>
-                          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Detailed conversational ledger and rating feedback</p>
+                          <h4 className="text-xs font-bold text-[#1B1B1B] uppercase tracking-wide">Conversation Audit Logs</h4>
+                          <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">Detailed conversational ledger and rating feedback</p>
                         </div>
 
-                        <div className="overflow-x-auto max-h-[300px] overflow-y-auto border border-slate-100 rounded-xl">
+                        <div className="overflow-x-auto max-h-[300px] overflow-y-auto border border-[#E7DDD0] rounded-xl">
                           <table className="w-full text-left border-collapse text-xs">
                             <thead>
-                              <tr className="bg-slate-50 text-slate-500 font-bold uppercase text-[9px] tracking-wider border-b border-slate-100">
+                              <tr className="bg-[#F2EEE8] text-[#6B6B6B] font-bold uppercase text-[9px] tracking-wider border-b border-[#E7DDD0]">
                                 <th className="p-3">Time</th>
                                 <th className="p-3">Question Query</th>
                                 <th className="p-3 text-right">Latency</th>
@@ -4267,25 +4541,25 @@ export default function App() {
                             <tbody>
                               {analytics.recentChats && analytics.recentChats.length > 0 ? (
                                 analytics.recentChats.map((chat, idx) => (
-                                  <tr key={chat.id || idx} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                                    <td className="p-3 text-slate-400 font-semibold whitespace-nowrap">{chat.time}</td>
-                                    <td className="p-3 text-slate-700 font-semibold max-w-[200px] truncate" title={chat.question}>
+                                  <tr key={chat.id || idx} className="border-b border-[#E7DDD0] hover:bg-[#F2EEE8]/50 transition-colors">
+                                    <td className="p-3 text-[#6B6B6B] font-semibold whitespace-nowrap">{chat.time}</td>
+                                    <td className="p-3 text-[#1B1B1B] font-semibold max-w-[200px] truncate" title={chat.question}>
                                       {chat.question}
                                     </td>
-                                    <td className="p-3 text-right text-slate-800 font-extrabold whitespace-nowrap">
+                                    <td className="p-3 text-right text-[#1B1B1B] font-extrabold whitespace-nowrap">
                                       {chat.responseTimeMs} ms
                                     </td>
-                                    <td className="p-3 text-slate-500 font-medium max-w-[120px] truncate" title={chat.sourcesUsed.join(', ')}>
+                                    <td className="p-3 text-[#6B6B6B] font-medium max-w-[120px] truncate" title={chat.sourcesUsed.join(', ')}>
                                       {chat.sourcesUsed.join(', ') || 'Direct / Fallback'}
                                     </td>
                                     <td className="p-3 text-center">
                                       {chat.feedback === 'positive' && (
-                                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full px-2 py-0.5 font-extrabold text-[9px]">
+                                        <span className="bg-[#5B8A5A]/10 text-[#5B8A5A] border border-[#5B8A5A]/20 rounded-full px-2 py-0.5 font-extrabold text-[9px]">
                                           👍 Positive
                                         </span>
                                       )}
                                       {chat.feedback === 'negative' && (
-                                        <span className="bg-rose-50 text-rose-700 border border-rose-100 rounded-full px-2 py-0.5 font-extrabold text-[9px]">
+                                        <span className="bg-[#B65454]/10 text-[#B65454] border border-rose-100 rounded-full px-2 py-0.5 font-extrabold text-[9px]">
                                           👎 Negative
                                         </span>
                                       )}
@@ -4297,7 +4571,7 @@ export default function App() {
                                 ))
                               ) : (
                                 <tr>
-                                  <td colSpan={5} className="p-8 text-center text-slate-400 font-semibold">
+                                  <td colSpan={5} className="p-8 text-center text-[#6B6B6B] font-semibold">
                                     No historical logs loaded yet.
                                   </td>
                                 </tr>
@@ -4315,20 +4589,20 @@ export default function App() {
                 <div className="space-y-8">
                   
                   {/* AI Knowledge Extraction Hub */}
-                  <div className="bg-slate-50 border border-slate-200/60 rounded-3xl p-6 lg:p-8 shadow-sm space-y-6">
+                  <div className="bg-[#F2EEE8] border border-[#E7DDD0]/60 rounded-3xl p-6 lg:p-8 shadow-sm space-y-6">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
                         <h4 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
-                          <Sparkles className="h-5 w-5 text-indigo-600 animate-pulse" />
+                          <Sparkles className="h-5 w-5 text-[#C89B4A] animate-pulse" />
                           AI Knowledge Extraction Portal
                         </h4>
-                        <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                        <p className="text-xs text-[#6B6B6B] font-semibold mt-0.5">
                           Paste raw website text or official campus circulars. Gemini will automatically structure, chunk, and index the data.
                         </p>
                       </div>
                       
                       {uploadSuccess && (
-                        <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2">
+                        <div className="bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 text-[#5B8A5A] text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2">
                           <Check className="h-4 w-4" />
                           <span>Knowledge indexed successfully!</span>
                         </div>
@@ -4336,7 +4610,7 @@ export default function App() {
                     </div>
 
                     {/* Navigation tabs for manual vs website import */}
-                    <div className="flex border-b border-slate-200 max-w-lg">
+                    <div className="flex border-b border-[#E7DDD0] max-w-lg">
                       <button
                         type="button"
                         onClick={() => {
@@ -4348,8 +4622,8 @@ export default function App() {
                         }}
                         className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
                           extractionMethod === 'paste'
-                            ? 'border-indigo-600 text-indigo-600 font-extrabold'
-                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                            ? 'border-[#C89B4A] text-[#C89B4A] font-extrabold'
+                            : 'border-transparent text-[#6B6B6B] hover:text-[#6B6B6B]'
                         }`}
                       >
                         <FileText className="h-4 w-4" />
@@ -4366,8 +4640,8 @@ export default function App() {
                         }}
                         className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
                           extractionMethod === 'url'
-                            ? 'border-indigo-600 text-indigo-600 font-extrabold'
-                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                            ? 'border-[#C89B4A] text-[#C89B4A] font-extrabold'
+                            : 'border-transparent text-[#6B6B6B] hover:text-[#6B6B6B]'
                         }`}
                       >
                         <Globe className="h-4 w-4" />
@@ -4384,8 +4658,8 @@ export default function App() {
                         }}
                         className={`py-2.5 px-4 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
                           extractionMethod === 'json'
-                            ? 'border-indigo-600 text-indigo-600 font-extrabold'
-                            : 'border-transparent text-slate-400 hover:text-slate-600'
+                            ? 'border-[#C89B4A] text-[#C89B4A] font-extrabold'
+                            : 'border-transparent text-[#6B6B6B] hover:text-[#6B6B6B]'
                         }`}
                       >
                         <Database className="h-4 w-4" />
@@ -4397,13 +4671,13 @@ export default function App() {
                       <div className="grid lg:grid-cols-2 gap-8 items-start">
                       
                       {/* Left: Raw Content Ingestion / URL Import */}
-                      <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-6 space-y-4 shadow-sm">
                         {extractionMethod === 'paste' ? (
                           <>
                             <div className="space-y-1.5">
-                              <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide flex justify-between">
+                              <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide flex justify-between">
                                 <span>Webpage Text / Raw Copy-Paste Content</span>
-                                <span className="text-slate-500 font-medium normal-case">{pastedContent.length} characters</span>
+                                <span className="text-[#6B6B6B] font-medium normal-case">{pastedContent.length} characters</span>
                               </label>
                               <textarea
                                 rows={15}
@@ -4411,12 +4685,12 @@ export default function App() {
                                 value={pastedContent}
                                 onChange={(e) => setPastedContent(e.target.value)}
                                 placeholder="Paste the entire copied content, HTML markup, tables, or notes from the official college website here..."
-                                className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl p-4 focus:outline-none focus:border-indigo-500 font-medium leading-relaxed resize-y min-h-[300px]"
+                                className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl p-4 focus:outline-none focus:border-[#C89B4A] font-medium leading-relaxed resize-y min-h-[300px]"
                               />
                             </div>
 
                             {extractionError && (
-                              <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold p-4 rounded-xl space-y-2">
+                              <div className="bg-[#B65454]/10 border border-rose-100 text-[#B65454] text-xs font-bold p-4 rounded-xl space-y-2">
                                 <p>{extractionError}</p>
                               </div>
                             )}
@@ -4425,7 +4699,7 @@ export default function App() {
                               type="button"
                               disabled={isExtracting || !pastedContent.trim()}
                               onClick={handleAiExtract}
-                              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold text-xs py-3.5 rounded-xl shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                              className="w-full bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] disabled:text-[#6B6B6B] text-white font-extrabold text-xs py-3.5 rounded-xl shadow-md shadow-[#1C1C1C]/5 transition-all flex items-center justify-center gap-2"
                             >
                               {isExtracting ? (
                                 <>
@@ -4441,15 +4715,15 @@ export default function App() {
                             </button>
 
                             {isExtracting && (
-                              <div className="bg-indigo-50/50 border border-indigo-100/60 rounded-xl p-4 space-y-3">
+                              <div className="bg-[#F2EEE8]/50 border border-[#E7DDD0]/60 rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-3">
                                   <div className="relative flex h-3 w-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C89B4A]/80 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C89B4A]"></span>
                                   </div>
-                                  <span className="text-xs font-bold text-indigo-700">Extraction Progress</span>
+                                  <span className="text-xs font-bold text-[#C89B4A]">Extraction Progress</span>
                                 </div>
-                                <ul className="text-[10px] text-slate-500 space-y-1.5 font-medium pl-6 list-disc">
+                                <ul className="text-[10px] text-[#6B6B6B] space-y-1.5 font-medium pl-6 list-disc">
                                   <li>Analyzing document semantics and domain category...</li>
                                   <li>Isolating searchable knowledge facts and rules...</li>
                                   <li>Formulating high-precision FAQs and summary notes...</li>
@@ -4461,11 +4735,11 @@ export default function App() {
                         ) : (
                           <div className="space-y-5">
                             <div className="space-y-2">
-                              <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">
+                              <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">
                                 Single Webpage URL to Fetch
                               </label>
                               <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B6B6B]">
                                   <Globe className="h-4 w-4" />
                                 </div>
                                 <input
@@ -4474,29 +4748,29 @@ export default function App() {
                                   value={importUrl}
                                   onChange={(e) => setImportUrl(e.target.value)}
                                   placeholder="https://gacs.ac.in/about-us/"
-                                  className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 focus:border-indigo-500 text-xs text-slate-900 rounded-xl pl-10 pr-4 py-3.5 focus:outline-none transition-all font-semibold"
+                                  className="w-full bg-[#F2EEE8] hover:bg-[#F2EEE8]/80 focus:bg-white border border-[#E7DDD0] focus:border-[#C89B4A] text-xs text-[#1B1B1B] rounded-xl pl-10 pr-4 py-3.5 focus:outline-none transition-all font-semibold"
                                 />
                               </div>
-                              <p className="text-[10px] text-slate-400 font-semibold">
+                              <p className="text-[10px] text-[#6B6B6B] font-semibold">
                                 The backend will download only this webpage and extract readable text while preserving headings, lists, and tables.
                               </p>
                             </div>
 
                             {importError && (
-                              <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold p-4 rounded-xl">
+                              <div className="bg-[#B65454]/10 border border-rose-100 text-[#B65454] text-xs font-bold p-4 rounded-xl">
                                 {importError}
                               </div>
                             )}
 
                             {isFetchingUrl && (
-                              <div className="space-y-3 bg-indigo-50/50 border border-indigo-100/60 rounded-xl p-4">
-                                <div className="flex items-center justify-between text-xs font-bold text-indigo-700">
+                              <div className="space-y-3 bg-[#F2EEE8]/50 border border-[#E7DDD0]/60 rounded-xl p-4">
+                                <div className="flex items-center justify-between text-xs font-bold text-[#C89B4A]">
                                   <span>{importStatusText}</span>
                                   <span>{importProgress}%</span>
                                 </div>
                                 <div className="w-full bg-slate-200/60 h-2 rounded-full overflow-hidden">
                                   <div
-                                    className="bg-indigo-600 h-2 rounded-full transition-all duration-500"
+                                    className="bg-[#C89B4A] h-2 rounded-full transition-all duration-500"
                                     style={{ width: `${importProgress}%` }}
                                   ></div>
                                 </div>
@@ -4504,12 +4778,12 @@ export default function App() {
                             )}
 
                             {importSuccessMessage && (
-                              <div className="bg-emerald-50 border border-emerald-150 rounded-2xl p-4 text-emerald-800 space-y-2">
+                              <div className="bg-[#5B8A5A]/10 border border-emerald-150 rounded-2xl p-4 text-emerald-800 space-y-2">
                                 <div className="flex items-center gap-2">
-                                  <CheckSquare className="h-5 w-5 text-emerald-600" />
+                                  <CheckSquare className="h-5 w-5 text-[#5B8A5A]" />
                                   <h4 className="font-extrabold text-xs">Page Fetched Successfully</h4>
                                 </div>
-                                <p className="text-[10px] text-emerald-600 font-semibold pl-7 leading-relaxed">
+                                <p className="text-[10px] text-[#5B8A5A] font-semibold pl-7 leading-relaxed">
                                   Formatting preserved (headings, lists, and tables). You can view the preview below and click "Generate Structured Knowledge" to extract knowledge schema.
                                 </p>
                               </div>
@@ -4519,7 +4793,7 @@ export default function App() {
                               type="button"
                               disabled={isFetchingUrl || !importUrl.trim()}
                               onClick={handleFetchAndExtract}
-                              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold text-xs py-3.5 rounded-xl shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                              className="w-full bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] disabled:text-[#6B6B6B] text-white font-extrabold text-xs py-3.5 rounded-xl shadow-md shadow-[#1C1C1C]/5 transition-all flex items-center justify-center gap-2"
                             >
                               {isFetchingUrl ? (
                                 <>
@@ -4536,23 +4810,23 @@ export default function App() {
 
                             {/* Cleaned webpage preview panel with editable content preview */}
                             {pastedContent && !isFetchingUrl && (
-                              <div className="space-y-2 border-t border-slate-100 pt-4">
-                                <div className="bg-slate-50 border border-slate-150 rounded-xl p-3 text-[10px] text-slate-500 font-semibold space-y-1">
+                              <div className="space-y-2 border-t border-[#E7DDD0] pt-4">
+                                <div className="bg-[#F2EEE8] border border-slate-150 rounded-xl p-3 text-[10px] text-[#6B6B6B] font-semibold space-y-1">
                                   <p className="flex justify-between">
                                     <span>Source URL:</span>
-                                    <span className="font-bold text-slate-700 truncate max-w-[180px]">{importUrl}</span>
+                                    <span className="font-bold text-[#1B1B1B] truncate max-w-[180px]">{importUrl}</span>
                                   </p>
                                   <p className="flex justify-between">
                                     <span>Character Count:</span>
-                                    <span className="font-bold text-slate-700">{pastedContent.length}</span>
+                                    <span className="font-bold text-[#1B1B1B]">{pastedContent.length}</span>
                                   </p>
                                   <p className="flex justify-between">
                                     <span>Word Count:</span>
-                                    <span className="font-bold text-slate-700">{pastedContent.split(/\s+/).filter(Boolean).length}</span>
+                                    <span className="font-bold text-[#1B1B1B]">{pastedContent.split(/\s+/).filter(Boolean).length}</span>
                                   </p>
                                 </div>
 
-                                <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide flex justify-between">
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide flex justify-between">
                                   <span>Editable Content Preview</span>
                                 </label>
                                 <textarea
@@ -4560,9 +4834,9 @@ export default function App() {
                                   value={pastedContent}
                                   onChange={(e) => setPastedContent(e.target.value)}
                                   placeholder="Editable content preview..."
-                                  className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl p-4 focus:outline-none focus:border-indigo-500 font-mono leading-relaxed resize-y"
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl p-4 focus:outline-none focus:border-[#C89B4A] font-mono leading-relaxed resize-y"
                                 />
-                                <p className="text-[10px] text-slate-400 font-medium">
+                                <p className="text-[10px] text-[#6B6B6B] font-medium">
                                   You can edit the raw webpage content above before sending it to Gemini for knowledge generation.
                                 </p>
 
@@ -4570,7 +4844,7 @@ export default function App() {
                                   type="button"
                                   disabled={isExtracting || !pastedContent.trim()}
                                   onClick={handleAiExtract}
-                                  className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold text-xs py-3 rounded-xl shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                                  className="w-full mt-2 bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] disabled:text-[#6B6B6B] text-white font-extrabold text-xs py-3 rounded-xl shadow-md shadow-[#1C1C1C]/5 transition-all flex items-center justify-center gap-2"
                                 >
                                   {isExtracting ? (
                                     <>
@@ -4593,13 +4867,13 @@ export default function App() {
                       {/* Right: AI Structured Review Console */}
                       <div className="space-y-4">
                         {!extractionSuccess && !isExtracting && !isFetchingUrl && (
-                          <div className="bg-white border border-slate-100 border-dashed rounded-2xl p-12 text-center space-y-3">
-                            <div className="mx-auto w-12 h-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                          <div className="bg-white border border-[#E7DDD0] border-dashed rounded-2xl p-12 text-center space-y-3">
+                            <div className="mx-auto w-12 h-12 rounded-full bg-[#F2EEE8] border border-[#E7DDD0] flex items-center justify-center text-[#6B6B6B]">
                               <Sparkles className="h-5 w-5" />
                             </div>
                             <div>
-                              <h5 className="text-xs font-bold text-slate-900">Extracted Knowledge Console</h5>
-                              <p className="text-[10px] text-slate-400 font-medium max-w-xs mx-auto mt-1">
+                              <h5 className="text-xs font-bold text-[#1B1B1B]">Extracted Knowledge Console</h5>
+                              <p className="text-[10px] text-[#6B6B6B] font-medium max-w-xs mx-auto mt-1">
                                 {extractionMethod === 'url'
                                   ? 'Enter a website URL on the left and click "Fetch & Extract" to generate structured Title, FAQs, Categories, and Chunks.'
                                   : 'Paste webpage data in the left editor and click "Extract with AI" to generate structured Title, FAQs, Categories, and Chunks.'}
@@ -4609,33 +4883,33 @@ export default function App() {
                         )}
 
                         {extractionSuccess && (
-                          <form onSubmit={handleSaveExtracted} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
-                            <div className="border-b border-slate-100 pb-4">
-                              <h5 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">
-                                <CheckSquare className="h-4.5 w-4.5 text-indigo-600" />
+                          <form onSubmit={handleSaveExtracted} className="bg-white border border-[#E7DDD0] rounded-2xl p-6 shadow-sm space-y-6">
+                            <div className="border-b border-[#E7DDD0] pb-4">
+                              <h5 className="text-sm font-extrabold text-[#1B1B1B] flex items-center gap-1.5">
+                                <CheckSquare className="h-4.5 w-4.5 text-[#C89B4A]" />
                                 Review & Edit Structured Knowledge
                               </h5>
-                              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Customize AI outputs below before saving to the RAG database.</p>
+                              <p className="text-[10px] text-[#6B6B6B] font-medium mt-0.5">Customize AI outputs below before saving to the RAG database.</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-1.5 col-span-2">
-                                <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Document Title</label>
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Document Title</label>
                                 <input
                                   type="text"
                                   required
                                   value={extractedTitle}
                                   onChange={(e) => setExtractedTitle(e.target.value)}
-                                  className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] font-bold rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A]"
                                 />
                               </div>
 
                               <div className="space-y-1.5">
-                                <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Category Group</label>
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Category Group</label>
                                 <select
                                   value={extractedCategory}
                                   onChange={(e) => setExtractedCategory(e.target.value)}
-                                  className="w-full bg-slate-50 border border-slate-200 text-xs rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 font-semibold text-slate-700"
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-semibold text-[#1B1B1B]"
                                 >
                                   <option value="Admissions">Admissions</option>
                                   <option value="Academics">Academics</option>
@@ -4647,34 +4921,34 @@ export default function App() {
                               </div>
 
                               <div className="space-y-1.5">
-                                <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Keywords (Comma Separated)</label>
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Keywords (Comma Separated)</label>
                                 <input
                                   type="text"
                                   value={extractedKeywords.join(', ')}
                                   onChange={(e) => setExtractedKeywords(e.target.value.split(',').map(k => k.trim()).filter(Boolean))}
-                                  className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A]"
                                 />
                               </div>
                             </div>
 
                             <div className="space-y-1.5">
-                              <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Document Summary (Grounding Note)</label>
+                              <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Document Summary (Grounding Note)</label>
                               <textarea
                                 rows={2}
                                 value={extractedSummary}
                                 onChange={(e) => setExtractedSummary(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl p-4 focus:outline-none focus:border-indigo-500 leading-relaxed resize-none"
+                                className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl p-4 focus:outline-none focus:border-[#C89B4A] leading-relaxed resize-none"
                               />
                             </div>
 
                             {/* FAQs LIST EDITOR */}
                             <div className="space-y-3">
                               <div className="flex justify-between items-center">
-                                <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Extracted FAQ Compilation</label>
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Extracted FAQ Compilation</label>
                                 <button
                                   type="button"
                                   onClick={handleFaqAdd}
-                                  className="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold flex items-center gap-1"
+                                  className="text-[#C89B4A] hover:text-[#B98A32] text-[10px] font-bold flex items-center gap-1"
                                 >
                                   <Plus className="h-3 w-3" /> Add FAQ
                                 </button>
@@ -4682,14 +4956,14 @@ export default function App() {
 
                               <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
                                 {extractedFaqs.length === 0 ? (
-                                  <p className="text-[10px] text-slate-400 italic">No FAQs generated.</p>
+                                  <p className="text-[10px] text-[#6B6B6B] italic">No FAQs generated.</p>
                                 ) : (
                                   extractedFaqs.map((faq, idx) => (
-                                    <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-2 relative group">
+                                    <div key={idx} className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3 space-y-2 relative group">
                                       <button
                                         type="button"
                                         onClick={() => handleFaqDelete(idx)}
-                                        className="absolute top-2 right-2 text-slate-400 hover:text-rose-500 transition-colors"
+                                        className="absolute top-2 right-2 text-[#6B6B6B] hover:text-rose-500 transition-colors"
                                       >
                                         <Trash2 className="h-3.5 w-3.5" />
                                       </button>
@@ -4699,14 +4973,14 @@ export default function App() {
                                           placeholder="Question"
                                           value={faq.question}
                                           onChange={(e) => handleFaqQuestionChange(idx, e.target.value)}
-                                          className="w-full bg-white border border-slate-200 text-[11px] font-bold text-slate-900 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500"
+                                          className="w-full bg-white border border-[#E7DDD0] text-[11px] font-bold text-[#1B1B1B] rounded-lg px-2 py-1 focus:outline-none focus:border-[#C89B4A]"
                                         />
                                         <textarea
                                           rows={2}
                                           placeholder="Answer"
                                           value={faq.answer}
                                           onChange={(e) => handleFaqAnswerChange(idx, e.target.value)}
-                                          className="w-full bg-white border border-slate-200 text-[10px] text-slate-600 rounded-lg px-2 py-1 focus:outline-none focus:border-indigo-500 resize-none leading-relaxed"
+                                          className="w-full bg-white border border-[#E7DDD0] text-[10px] text-[#6B6B6B] rounded-lg px-2 py-1 focus:outline-none focus:border-[#C89B4A] resize-none leading-relaxed"
                                         />
                                       </div>
                                     </div>
@@ -4718,11 +4992,11 @@ export default function App() {
                             {/* CHUNKS LIST EDITOR */}
                             <div className="space-y-3">
                               <div className="flex justify-between items-center">
-                                <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Searchable Knowledge Chunks</label>
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Searchable Knowledge Chunks</label>
                                 <button
                                   type="button"
                                   onClick={handleChunkAdd}
-                                  className="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold flex items-center gap-1"
+                                  className="text-[#C89B4A] hover:text-[#B98A32] text-[10px] font-bold flex items-center gap-1"
                                 >
                                   <Plus className="h-3 w-3" /> Add Chunk
                                 </button>
@@ -4730,16 +5004,16 @@ export default function App() {
 
                               <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1">
                                 {extractedChunks.length === 0 ? (
-                                  <p className="text-[10px] text-slate-400 italic">No searchable chunks defined.</p>
+                                  <p className="text-[10px] text-[#6B6B6B] italic">No searchable chunks defined.</p>
                                 ) : (
                                   extractedChunks.map((chunk, idx) => (
-                                    <div key={idx} className="bg-slate-50 border border-slate-100 rounded-xl p-3 relative space-y-1">
-                                      <div className="flex justify-between items-center text-[9px] text-slate-400 font-bold mb-1">
+                                    <div key={idx} className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3 relative space-y-1">
+                                      <div className="flex justify-between items-center text-[9px] text-[#6B6B6B] font-bold mb-1">
                                         <span>Chunk #{idx + 1} ({chunk.length} chars)</span>
                                         <button
                                           type="button"
                                           onClick={() => handleChunkDelete(idx)}
-                                          className="text-slate-400 hover:text-rose-500 transition-colors"
+                                          className="text-[#6B6B6B] hover:text-rose-500 transition-colors"
                                         >
                                           <Trash2 className="h-3.5 w-3.5" />
                                         </button>
@@ -4748,7 +5022,7 @@ export default function App() {
                                         rows={4}
                                         value={chunk}
                                         onChange={(e) => handleChunkChange(idx, e.target.value)}
-                                        className="w-full bg-white border border-slate-200 text-[10px] text-slate-700 font-medium rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500 leading-relaxed resize-y"
+                                        className="w-full bg-white border border-[#E7DDD0] text-[10px] text-[#1B1B1B] font-medium rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#C89B4A] leading-relaxed resize-y"
                                       />
                                     </div>
                                   ))
@@ -4759,11 +5033,11 @@ export default function App() {
                             {/* METADATA LIST EDITOR */}
                             <div className="space-y-3">
                               <div className="flex justify-between items-center">
-                                <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Document Metadata</label>
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Document Metadata</label>
                                 <button
                                   type="button"
                                   onClick={handleMetadataAdd}
-                                  className="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold flex items-center gap-1"
+                                  className="text-[#C89B4A] hover:text-[#B98A32] text-[10px] font-bold flex items-center gap-1"
                                 >
                                   <Plus className="h-3 w-3" /> Add Row
                                 </button>
@@ -4771,7 +5045,7 @@ export default function App() {
 
                               <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
                                 {extractedMetadata.length === 0 ? (
-                                  <p className="text-[10px] text-slate-400 italic">No custom metadata.</p>
+                                  <p className="text-[10px] text-[#6B6B6B] italic">No custom metadata.</p>
                                 ) : (
                                   extractedMetadata.map((meta, idx) => (
                                     <div key={idx} className="flex gap-2 items-center">
@@ -4780,19 +5054,19 @@ export default function App() {
                                         placeholder="Key (e.g. Read Time)"
                                         value={meta.key}
                                         onChange={(e) => handleMetadataKeyChange(idx, e.target.value)}
-                                        className="flex-1 bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-800 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500"
+                                        className="flex-1 bg-[#F2EEE8] border border-[#E7DDD0] text-[10px] font-bold text-[#1B1B1B] rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#C89B4A]"
                                       />
                                       <input
                                         type="text"
                                         placeholder="Value (e.g. 3 mins)"
                                         value={meta.value}
                                         onChange={(e) => handleMetadataValueChange(idx, e.target.value)}
-                                        className="flex-1 bg-slate-50 border border-slate-200 text-[10px] text-slate-600 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500"
+                                        className="flex-1 bg-[#F2EEE8] border border-[#E7DDD0] text-[10px] text-[#6B6B6B] rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#C89B4A]"
                                       />
                                       <button
                                         type="button"
                                         onClick={() => handleMetadataDelete(idx)}
-                                        className="text-slate-400 hover:text-rose-500 transition-colors p-1"
+                                        className="text-[#6B6B6B] hover:text-rose-500 transition-colors p-1"
                                       >
                                         <Trash2 className="h-4 w-4" />
                                       </button>
@@ -4805,7 +5079,7 @@ export default function App() {
                             <button
                               type="submit"
                               disabled={isUploading}
-                              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-extrabold text-xs py-3 rounded-xl shadow-md shadow-emerald-50 transition-colors flex items-center justify-center gap-1.5"
+                              className="w-full bg-[#5B8A5A] hover:bg-[#5B8A5A]/90 disabled:bg-slate-300 text-white font-extrabold text-xs py-3 rounded-xl shadow-md shadow-emerald-50 transition-colors flex items-center justify-center gap-1.5"
                             >
                               {isUploading ? (
                                 <>
@@ -4825,22 +5099,22 @@ export default function App() {
 
                     </div>
                     ) : (
-                      <div className="bg-white border border-slate-200 rounded-2xl p-6 lg:p-8 shadow-sm space-y-6">
+                      <div className="bg-white border border-[#E7DDD0] rounded-2xl p-6 lg:p-8 shadow-sm space-y-6">
                         <div className="space-y-2">
                           <h4 className="text-sm font-extrabold text-slate-950 flex items-center gap-2">
-                            <Database className="h-5 w-5 text-indigo-600" />
+                            <Database className="h-5 w-5 text-[#C89B4A]" />
                             Import Knowledge JSON Files
                           </h4>
-                          <p className="text-xs text-slate-500 font-medium max-w-2xl">
+                          <p className="text-xs text-[#6B6B6B] font-medium max-w-2xl">
                             Accept one or multiple JSON files generated by external AI systems or crawl engines.
-                            The schema must define either a single object or an array of objects, with each object containing at least <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[10px] text-slate-800">title</code> and <code className="bg-slate-100 px-1 py-0.5 rounded font-mono text-[10px] text-slate-800">content</code> fields.
+                            The schema must define either a single object or an array of objects, with each object containing at least <code className="bg-[#F2EEE8] px-1 py-0.5 rounded font-mono text-[10px] text-[#1B1B1B]">title</code> and <code className="bg-[#F2EEE8] px-1 py-0.5 rounded font-mono text-[10px] text-[#1B1B1B]">content</code> fields.
                           </p>
                         </div>
 
                         <div className="grid lg:grid-cols-2 gap-8 items-start">
                           {/* Left Column: Upload area */}
                           <div className="space-y-5">
-                            <div className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-2xl p-8 text-center transition-colors relative bg-slate-50/50">
+                            <div className="border-2 border-dashed border-[#E7DDD0] hover:border-[#C89B4A] rounded-2xl p-8 text-center transition-colors relative bg-[#F2EEE8]/50">
                               <input
                                 type="file"
                                 accept=".json"
@@ -4849,14 +5123,14 @@ export default function App() {
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                               />
                               <div className="space-y-3">
-                                <div className="mx-auto w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 shadow-sm">
-                                  <Upload className="h-5 w-5 text-indigo-500" />
+                                <div className="mx-auto w-12 h-12 rounded-full bg-white border border-[#E7DDD0] flex items-center justify-center text-[#6B6B6B] shadow-sm">
+                                  <Upload className="h-5 w-5 text-[#C89B4A]" />
                                 </div>
                                 <div className="space-y-1">
-                                  <p className="text-xs font-bold text-slate-800">
+                                  <p className="text-xs font-bold text-[#1B1B1B]">
                                     Click to select or drag & drop JSON files
                                   </p>
-                                  <p className="text-[10px] text-slate-400 font-medium">
+                                  <p className="text-[10px] text-[#6B6B6B] font-medium">
                                     Support multiple files containing single objects or arrays of knowledge documents
                                   </p>
                                 </div>
@@ -4864,17 +5138,17 @@ export default function App() {
                             </div>
 
                             {jsonImportError && (
-                              <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold p-4 rounded-xl space-y-1">
+                              <div className="bg-[#B65454]/10 border border-rose-100 text-[#B65454] text-xs font-bold p-4 rounded-xl space-y-1">
                                 <p>{jsonImportError}</p>
                               </div>
                             )}
 
                             {jsonImportSuccess && (
-                              <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold p-4 rounded-xl flex items-start gap-2">
-                                <CheckSquare className="h-4 w-4 mt-0.5 text-emerald-600 flex-shrink-0" />
+                              <div className="bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 text-[#5B8A5A] text-xs font-bold p-4 rounded-xl flex items-start gap-2">
+                                <CheckSquare className="h-4 w-4 mt-0.5 text-[#5B8A5A] flex-shrink-0" />
                                 <div>
                                   <p>Saved to Firestore successfully</p>
-                                  <p className="text-[10px] text-emerald-600 font-medium mt-0.5">
+                                  <p className="text-[10px] text-[#5B8A5A] font-medium mt-0.5">
                                     All valid documents were stored in the database and automatic vector index embeddings were generated.
                                   </p>
                                 </div>
@@ -4882,21 +5156,21 @@ export default function App() {
                             )}
 
                             {pendingJsonDocs.length > 0 && (
-                              <div className="bg-indigo-50/50 border border-indigo-100/60 rounded-xl p-4 space-y-3">
+                              <div className="bg-[#F2EEE8]/50 border border-[#E7DDD0]/60 rounded-xl p-4 space-y-3">
                                 <div className="flex justify-between items-center text-xs">
-                                  <span className="font-bold text-indigo-900">Valid Documents Loaded:</span>
-                                  <span className="font-extrabold text-indigo-700 bg-white px-2 py-0.5 border border-indigo-100 rounded-md">
+                                  <span className="font-bold text-[#1B1B1B]">Valid Documents Loaded:</span>
+                                  <span className="font-extrabold text-[#C89B4A] bg-white px-2 py-0.5 border border-[#E7DDD0] rounded-md">
                                     {pendingJsonDocs.length} documents
                                   </span>
                                 </div>
-                                <p className="text-[10px] text-indigo-600 font-semibold leading-relaxed">
+                                <p className="text-[10px] text-[#C89B4A] font-semibold leading-relaxed">
                                   Click the button below to parse, schema-validate, save, and generate vector embeddings for all loaded documents.
                                 </p>
                                 <button
                                   type="button"
                                   disabled={isImportingJson}
                                   onClick={handleImportJson}
-                                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold text-xs py-3 rounded-xl shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                                  className="w-full bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] disabled:text-[#6B6B6B] text-white font-extrabold text-xs py-3 rounded-xl shadow-md shadow-[#1C1C1C]/5 transition-all flex items-center justify-center gap-2"
                                 >
                                   {isImportingJson ? (
                                     <>
@@ -4916,19 +5190,19 @@ export default function App() {
 
                           {/* Right Column: Execution Logs and Real-time Status */}
                           <div className="space-y-4">
-                            <div className="bg-slate-950 border border-slate-900 rounded-2xl p-4 font-mono text-[10px] leading-relaxed text-indigo-300 shadow-inner flex flex-col h-[300px]">
+                            <div className="bg-slate-950 border border-slate-900 rounded-2xl p-4 font-mono text-[10px] leading-relaxed text-[#C89B4A] shadow-inner flex flex-col h-[300px]">
                               <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-                                <span className="font-bold text-slate-400 flex items-center gap-1.5">
-                                  <Terminal className="h-3.5 w-3.5 text-indigo-400" />
+                                <span className="font-bold text-[#6B6B6B] flex items-center gap-1.5">
+                                  <Terminal className="h-3.5 w-3.5 text-[#C89B4A]" />
                                   JSON Ingestion Console Logs
                                 </span>
-                                <span className="text-[9px] bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded text-slate-500 font-semibold">
+                                <span className="text-[9px] bg-slate-900 border border-slate-800 px-1.5 py-0.5 rounded text-[#6B6B6B] font-semibold">
                                   LIVE DIAGNOSTICS
                                 </span>
                               </div>
                               <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 select-text scrollbar-thin">
                                 {jsonImportLogs.length === 0 ? (
-                                  <p className="text-slate-500 italic">No files processed yet. Upload a JSON file to see terminal logs...</p>
+                                  <p className="text-[#6B6B6B] italic">No files processed yet. Upload a JSON file to see terminal logs...</p>
                                 ) : (
                                   jsonImportLogs.map((logStr, i) => (
                                     <div key={i} className="whitespace-pre-wrap">
@@ -4952,12 +5226,12 @@ export default function App() {
                         {/* URL configuration and action */}
                         <div className="max-w-2xl space-y-4">
                           <div className="space-y-1.5">
-                            <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">
+                            <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">
                               College Homepage / Root Website URL
                             </label>
                             <div className="flex flex-col sm:flex-row gap-3">
                               <div className="relative flex-1">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#6B6B6B]">
                                   <Globe className="h-4 w-4" />
                                 </div>
                                 <input
@@ -4966,14 +5240,14 @@ export default function App() {
                                   value={importUrl}
                                   onChange={(e) => setImportUrl(e.target.value)}
                                   placeholder="Enter main URL (e.g. https://iracampus.edu or https://gacs.ac.in)"
-                                  className="w-full bg-slate-50 hover:bg-slate-50/80 focus:bg-white border border-slate-200 focus:border-indigo-500 text-xs text-slate-900 rounded-xl pl-10 pr-4 py-3 focus:outline-none transition-all font-semibold"
+                                  className="w-full bg-[#F2EEE8] hover:bg-[#F2EEE8]/80 focus:bg-white border border-[#E7DDD0] focus:border-[#C89B4A] text-xs text-[#1B1B1B] rounded-xl pl-10 pr-4 py-3 focus:outline-none transition-all font-semibold"
                                 />
                               </div>
                               <button
                                 type="button"
                                 disabled={isScanningLinks || isImportingBatch || !importUrl.trim()}
                                 onClick={handleScanWebsiteLinks}
-                                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-bold text-xs px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm whitespace-nowrap transition-all"
+                                className="bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] disabled:text-[#6B6B6B] text-white font-bold text-xs px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm whitespace-nowrap transition-all"
                               >
                                 {isScanningLinks ? (
                                   <>
@@ -4988,13 +5262,13 @@ export default function App() {
                                 )}
                               </button>
                             </div>
-                            <p className="text-[10px] text-slate-400 font-semibold">
+                            <p className="text-[10px] text-[#6B6B6B] font-semibold">
                               The crawler will fetch the main page, automatically clean clutter, and isolate internal college links for selective structured RAG import.
                             </p>
                           </div>
 
                           {scanError && (
-                            <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold p-4 rounded-xl flex items-center gap-2">
+                            <div className="bg-[#B65454]/10 border border-rose-100 text-[#B65454] text-xs font-bold p-4 rounded-xl flex items-center gap-2">
                               <span>⚠️</span>
                               <p>{scanError}</p>
                             </div>
@@ -5003,11 +5277,11 @@ export default function App() {
 
                         {/* Link Checklist Selection */}
                         {detectedLinks.length > 0 && !isImportingBatch && !batchImportCompleted && (
-                          <div className="space-y-6 animate-fade-in border-t border-slate-100 pt-6">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                          <div className="space-y-6 animate-fade-in border-t border-[#E7DDD0] pt-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#F2EEE8] p-4 rounded-2xl border border-[#E7DDD0]">
                               <div>
-                                <h5 className="text-xs font-bold text-slate-900 uppercase tracking-wide">Select Webpages to Index</h5>
-                                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                                <h5 className="text-xs font-bold text-[#1B1B1B] uppercase tracking-wide">Select Webpages to Index</h5>
+                                <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">
                                   We detected {detectedLinks.length} total internal pages. Choose which pages to structure as separate knowledge documents.
                                 </p>
                               </div>
@@ -5015,11 +5289,11 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={handleToggleAllLinks}
-                                  className="text-[10px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold px-3 py-1.5 rounded-lg transition-colors"
+                                  className="text-[10px] bg-white border border-[#E7DDD0] text-[#1B1B1B] hover:bg-[#F2EEE8] font-bold px-3 py-1.5 rounded-lg transition-colors"
                                 >
                                   {selectedLinks.length === detectedLinks.length ? 'Deselect All' : 'Select All'}
                                 </button>
-                                <span className="text-[10px] bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-bold font-mono">
+                                <span className="text-[10px] bg-[#F2EEE8] text-[#C89B4A] px-3 py-1.5 rounded-lg font-bold font-mono">
                                   {selectedLinks.length} of {detectedLinks.length} Selected
                                 </span>
                               </div>
@@ -5035,16 +5309,16 @@ export default function App() {
                                 const countSelected = catLinks.filter(l => selectedLinks.includes(l.url)).length;
 
                                 return (
-                                  <div key={cat} className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 shadow-sm hover:border-slate-300/80 transition-all">
-                                    <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                                      <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                                  <div key={cat} className="bg-white border border-[#E7DDD0] rounded-2xl p-4 space-y-3 shadow-sm hover:border-[#E7DDD0]/80 transition-all">
+                                    <div className="flex justify-between items-center border-b border-[#E7DDD0] pb-2">
+                                      <span className="text-xs font-bold text-[#1B1B1B] flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#C89B4A]"></span>
                                         {cat === 'General' ? 'Other Discovered' : cat} ({catLinks.length})
                                       </span>
                                       <button
                                         type="button"
                                         onClick={() => handleToggleCategoryLinks(cat)}
-                                        className="text-[9px] text-indigo-600 hover:text-indigo-800 font-bold"
+                                        className="text-[9px] text-[#C89B4A] hover:text-[#B98A32] font-bold"
                                       >
                                         {isAllCatSelected ? 'Deselect Category' : `Select Category (${countSelected}/${catLinks.length})`}
                                       </button>
@@ -5064,19 +5338,19 @@ export default function App() {
                                             key={`${link.url}-${linkIdx}`}
                                             className={`flex items-start gap-2.5 p-2 rounded-xl border text-[11px] font-semibold cursor-pointer transition-all ${
                                               isSelected
-                                                ? 'bg-indigo-50/40 border-indigo-150/80 text-indigo-950'
-                                                : 'bg-slate-50/20 border-slate-150 hover:bg-slate-50 text-slate-600'
+                                                ? 'bg-[#F2EEE8]/40 border-[#E7DDD0]/80 text-[#1B1B1B]'
+                                                : 'bg-[#F2EEE8]/20 border-slate-150 hover:bg-[#F2EEE8] text-[#6B6B6B]'
                                             }`}
                                           >
                                             <input
                                               type="checkbox"
                                               checked={isSelected}
                                               onChange={() => handleToggleLinkSelection(link.url)}
-                                              className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                                              className="mt-0.5 rounded border-[#E7DDD0] text-[#C89B4A] focus:ring-[#C89B4A] h-3.5 w-3.5 cursor-pointer"
                                             />
                                             <div className="flex-1 min-w-0">
                                               <div className="truncate font-bold leading-tight" title={link.label}>{link.label}</div>
-                                              <div className="text-[9px] text-slate-400 font-mono truncate mt-0.5" title={link.url}>
+                                              <div className="text-[9px] text-[#6B6B6B] font-mono truncate mt-0.5" title={link.url}>
                                                 {cleanPath} • {link.url}
                                               </div>
                                             </div>
@@ -5095,7 +5369,7 @@ export default function App() {
                                 type="button"
                                 disabled={selectedLinks.length === 0}
                                 onClick={handleStartBatchImport}
-                                className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold text-xs px-8 py-4 rounded-xl shadow-md shadow-indigo-100 transition-all flex items-center gap-2"
+                                className="bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] disabled:text-[#6B6B6B] text-white font-extrabold text-xs px-8 py-4 rounded-xl shadow-md shadow-[#1C1C1C]/5 transition-all flex items-center gap-2"
                               >
                                 <Sparkles className="h-4.5 w-4.5" />
                                 <span>Import {selectedLinks.length} Selected Webpages</span>
@@ -5106,29 +5380,29 @@ export default function App() {
 
                         {/* Batch Queue & Pipeline Progress View */}
                         {(isImportingBatch || batchImportCompleted) && (
-                          <div className="space-y-6 border-t border-slate-100 pt-6">
-                            <div className="bg-slate-50 border border-slate-200 rounded-3xl p-5 md:p-6 space-y-4">
+                          <div className="space-y-6 border-t border-[#E7DDD0] pt-6">
+                            <div className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-3xl p-5 md:p-6 space-y-4">
                               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                 <div>
-                                  <h5 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                                  <h5 className="text-sm font-extrabold text-[#1B1B1B] flex items-center gap-2">
                                     {isImportingBatch ? (
                                       <>
-                                        <RefreshCw className="h-4.5 w-4.5 text-indigo-600 animate-spin" />
+                                        <RefreshCw className="h-4.5 w-4.5 text-[#C89B4A] animate-spin" />
                                         <span>Website Knowledge Extraction Pipeline Active</span>
                                       </>
                                     ) : (
                                       <>
-                                        <CheckSquare className="h-5 w-5 text-emerald-600" />
+                                        <CheckSquare className="h-5 w-5 text-[#5B8A5A]" />
                                         <span>Intelligent Crawl and Extraction Complete</span>
                                       </>
                                     )}
                                   </h5>
-                                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                  <p className="text-[10px] text-[#6B6B6B] font-semibold mt-0.5">
                                     Each webpage is cleaned, parsed, generated with Gemini, vectorized, and stored as an independent searchable document.
                                   </p>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-xs font-bold text-slate-700">
+                                  <span className="text-xs font-bold text-[#1B1B1B]">
                                     {importQueue.filter(item => item.status === 'completed').length} of {importQueue.length} Done
                                   </span>
                                 </div>
@@ -5138,7 +5412,7 @@ export default function App() {
                               <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 ease-out ${
-                                    batchImportCompleted ? 'bg-emerald-600' : 'bg-indigo-600'
+                                    batchImportCompleted ? 'bg-[#5B8A5A]' : 'bg-[#C89B4A]'
                                   }`}
                                   style={{
                                     width: `${Math.round(
@@ -5149,12 +5423,12 @@ export default function App() {
                               </div>
 
                               {batchImportCompleted && (
-                                <div className="bg-emerald-50 border border-emerald-150 rounded-2xl p-4 text-emerald-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <div className="bg-[#5B8A5A]/10 border border-emerald-150 rounded-2xl p-4 text-emerald-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                   <div className="space-y-1">
                                     <h6 className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                                       <span>✓</span> Import Completed Successfully!
                                     </h6>
-                                    <p className="text-[10px] text-emerald-600 font-semibold leading-relaxed">
+                                    <p className="text-[10px] text-[#5B8A5A] font-semibold leading-relaxed">
                                       We have structured, summarized, indexed, and loaded {batchImportSummary.successful} documents into the searchable RAG database.
                                     </p>
                                   </div>
@@ -5166,7 +5440,7 @@ export default function App() {
                                       setImportQueue([]);
                                       setBatchImportCompleted(false);
                                     }}
-                                    className="bg-white hover:bg-emerald-100/50 border border-emerald-200 text-emerald-700 font-bold text-xs px-4 py-2 rounded-xl transition-colors"
+                                    className="bg-white hover:bg-emerald-100/50 border border-emerald-200 text-[#5B8A5A] font-bold text-xs px-4 py-2 rounded-xl transition-colors"
                                   >
                                     Reset Crawler
                                   </button>
@@ -5183,42 +5457,42 @@ export default function App() {
                                     key={`${item.url}-${index}`}
                                     className={`border rounded-2xl p-4 transition-all ${
                                       isActive
-                                        ? 'bg-indigo-50/30 border-indigo-200 shadow-sm'
+                                        ? 'bg-[#F2EEE8]/30 border-[#E7DDD0] shadow-sm'
                                         : item.status === 'completed'
-                                        ? 'bg-white border-slate-100 opacity-85'
+                                        ? 'bg-white border-[#E7DDD0] opacity-85'
                                         : item.status === 'failed'
-                                        ? 'bg-rose-50/30 border-rose-100'
+                                        ? 'bg-[#B65454]/10/30 border-rose-100'
                                         : 'bg-white border-slate-150'
                                     }`}
                                   >
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                       <div className="flex items-start gap-2.5">
-                                        <span className="text-xs font-bold text-slate-400 font-mono mt-0.5">#{index + 1}</span>
+                                        <span className="text-xs font-bold text-[#6B6B6B] font-mono mt-0.5">#{index + 1}</span>
                                         <div>
-                                          <h6 className="text-xs font-bold text-slate-900">{item.label}</h6>
-                                          <p className="text-[10px] text-slate-400 font-semibold truncate max-w-lg mt-0.5">{item.url}</p>
+                                          <h6 className="text-xs font-bold text-[#1B1B1B]">{item.label}</h6>
+                                          <p className="text-[10px] text-[#6B6B6B] font-semibold truncate max-w-lg mt-0.5">{item.url}</p>
                                         </div>
                                       </div>
 
                                       <div className="flex items-center gap-2">
-                                        <span className="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded text-[9px] uppercase">
+                                        <span className="bg-[#F2EEE8] text-[#6B6B6B] font-bold px-2 py-0.5 rounded text-[9px] uppercase">
                                           {item.category}
                                         </span>
                                         {item.status === 'completed' ? (
-                                          <span className="bg-emerald-50 border border-emerald-100 text-emerald-700 font-extrabold text-[10px] px-2.5 py-1 rounded-xl flex items-center gap-1">
+                                          <span className="bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 text-[#5B8A5A] font-extrabold text-[10px] px-2.5 py-1 rounded-xl flex items-center gap-1">
                                             <span>✓</span> Indexed
                                           </span>
                                         ) : item.status === 'failed' ? (
-                                          <span className="bg-rose-50 border border-rose-100 text-rose-700 font-extrabold text-[10px] px-2.5 py-1 rounded-xl flex items-center gap-1" title={item.error}>
+                                          <span className="bg-[#B65454]/10 border border-rose-100 text-[#B65454] font-extrabold text-[10px] px-2.5 py-1 rounded-xl flex items-center gap-1" title={item.error}>
                                             <span>✗</span> Failed
                                           </span>
                                         ) : item.status === 'pending' ? (
-                                          <span className="bg-slate-100 text-slate-500 font-extrabold text-[10px] px-2.5 py-1 rounded-xl">
+                                          <span className="bg-[#F2EEE8] text-[#6B6B6B] font-extrabold text-[10px] px-2.5 py-1 rounded-xl">
                                             Waiting...
                                           </span>
                                         ) : (
-                                          <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 font-extrabold text-[10px] px-2.5 py-1 rounded-xl flex items-center gap-1.5">
-                                            <RefreshCw className="h-3 w-3 animate-spin text-indigo-600" />
+                                          <span className="bg-[#F2EEE8] border border-[#E7DDD0] text-[#C89B4A] font-extrabold text-[10px] px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                                            <RefreshCw className="h-3 w-3 animate-spin text-[#C89B4A]" />
                                             <span className="capitalize">{item.status}...</span>
                                           </span>
                                         )}
@@ -5227,64 +5501,64 @@ export default function App() {
 
                                     {/* GRANULAR PROGRESS PIPELINE (STEP 8 SPECIFICATION) */}
                                     {isActive && (
-                                      <div className="mt-4 pl-6 space-y-1.5 border-l-2 border-indigo-500 py-1 bg-indigo-50/20 rounded-r-xl p-3 max-w-lg">
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                                          <span className={['fetching', 'cleaning', 'extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}>
+                                      <div className="mt-4 pl-6 space-y-1.5 border-l-2 border-[#C89B4A] py-1 bg-[#F2EEE8]/20 rounded-r-xl p-3 max-w-lg">
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-[#6B6B6B]">
+                                          <span className={['fetching', 'cleaning', 'extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-[#6B6B6B]'}>
                                             {['fetching', 'cleaning', 'extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? '✓' : '⌛'}
                                           </span>
-                                          <span className={item.status === 'fetching' ? 'text-indigo-600 font-extrabold' : ''}>Fetching pages...</span>
+                                          <span className={item.status === 'fetching' ? 'text-[#C89B4A] font-extrabold' : ''}>Fetching pages...</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                                          <span className={['cleaning', 'extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-[#6B6B6B]">
+                                          <span className={['cleaning', 'extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-[#6B6B6B]'}>
                                             {['cleaning', 'extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? '✓' : item.status === 'fetching' ? '⌛' : '○'}
                                           </span>
-                                          <span className={item.status === 'cleaning' ? 'text-indigo-600 font-extrabold' : ''}>Cleaning HTML...</span>
+                                          <span className={item.status === 'cleaning' ? 'text-[#C89B4A] font-extrabold' : ''}>Cleaning HTML...</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                                          <span className={['extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-[#6B6B6B]">
+                                          <span className={['extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-[#6B6B6B]'}>
                                             {['extracting', 'generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? '✓' : item.status === 'cleaning' ? '⌛' : '○'}
                                           </span>
-                                          <span className={item.status === 'extracting' ? 'text-indigo-600 font-extrabold' : ''}>Extracting text...</span>
+                                          <span className={item.status === 'extracting' ? 'text-[#C89B4A] font-extrabold' : ''}>Extracting text...</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                                          <span className={['generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-[#6B6B6B]">
+                                          <span className={['generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-[#6B6B6B]'}>
                                             {['generating', 'embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? '✓' : item.status === 'extracting' ? '⌛' : '○'}
                                           </span>
-                                          <span className={item.status === 'generating' ? 'text-indigo-600 font-extrabold' : ''}>Generating AI knowledge...</span>
+                                          <span className={item.status === 'generating' ? 'text-[#C89B4A] font-extrabold' : ''}>Generating AI knowledge...</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                                          <span className={['embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-[#6B6B6B]">
+                                          <span className={['embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-[#6B6B6B]'}>
                                             {['embedding', 'saving', 'completed'].indexOf(item.status) >= 0 ? '✓' : item.status === 'generating' ? '⌛' : '○'}
                                           </span>
-                                          <span className={item.status === 'embedding' ? 'text-indigo-600 font-extrabold' : ''}>Creating embeddings...</span>
+                                          <span className={item.status === 'embedding' ? 'text-[#C89B4A] font-extrabold' : ''}>Creating embeddings...</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600">
-                                          <span className={['saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-slate-400'}>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-[#6B6B6B]">
+                                          <span className={['saving', 'completed'].indexOf(item.status) >= 0 ? 'text-emerald-500 font-bold' : 'text-[#6B6B6B]'}>
                                             {['saving', 'completed'].indexOf(item.status) >= 0 ? '✓' : item.status === 'embedding' ? '⌛' : '○'}
                                           </span>
-                                          <span className={item.status === 'saving' ? 'text-indigo-600 font-extrabold' : ''}>Saving documents...</span>
+                                          <span className={item.status === 'saving' ? 'text-[#C89B4A] font-extrabold' : ''}>Saving documents...</span>
                                         </div>
                                       </div>
                                     )}
 
                                     {item.status === 'failed' && (
-                                      <div className="mt-4 p-4 bg-rose-50/50 border border-rose-100 rounded-2xl space-y-3 max-w-xl text-xs font-sans">
+                                      <div className="mt-4 p-4 bg-[#B65454]/10/50 border border-rose-100 rounded-2xl space-y-3 max-w-xl text-xs font-sans">
                                         <div className="grid grid-cols-2 gap-3">
                                           <div>
-                                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 block">Failed Stage</span>
+                                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#B65454] block">Failed Stage</span>
                                             <span className="font-bold text-rose-950 mt-0.5 block">{item.failedStage || 'AI Extraction'}</span>
                                           </div>
                                           {item.httpStatus !== undefined && item.httpStatus !== null && (
                                             <div>
-                                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 block">HTTP Status</span>
+                                              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#B65454] block">HTTP Status</span>
                                               <span className="font-bold text-rose-950 mt-0.5 block">{item.httpStatus}</span>
                                             </div>
                                           )}
                                         </div>
 
                                         <div>
-                                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-600 block">Exact Error Message</span>
-                                          <p className="font-semibold text-rose-900 mt-0.5 select-text break-words bg-rose-50 border border-rose-100/30 p-2.5 rounded-xl font-mono text-[10px] leading-relaxed">
+                                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#B65454] block">Exact Error Message</span>
+                                          <p className="font-semibold text-rose-900 mt-0.5 select-text break-words bg-[#B65454]/10 border border-rose-100/30 p-2.5 rounded-xl font-mono text-[10px] leading-relaxed">
                                             {item.error || 'Unknown crawler error.'}
                                           </p>
                                         </div>
@@ -5303,9 +5577,9 @@ export default function App() {
                                             <button
                                               type="button"
                                               onClick={() => handleOpenLogsModal(item.label, item.logs)}
-                                              className="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-[10px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer"
+                                              className="inline-flex items-center gap-1.5 bg-white hover:bg-[#F2EEE8] border border-[#E7DDD0] text-[#1B1B1B] font-extrabold text-[10px] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer"
                                             >
-                                              <Terminal className="h-3 w-3 text-slate-500" />
+                                              <Terminal className="h-3 w-3 text-[#6B6B6B]" />
                                               View Logs
                                             </button>
                                           )}
@@ -5324,24 +5598,24 @@ export default function App() {
                   </div>
 
                   {/* Documents Directory List (Full-Width Bottom) */}
-                  <div className="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-6">
+                  <div className="bg-white border border-[#E7DDD0] rounded-3xl p-6 lg:p-8 shadow-sm space-y-6">
                     <div>
                       <h4 className="text-base font-extrabold text-slate-950">College Vector Knowledge Index</h4>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">List of structured and raw campus files mapped to natural language embeddings</p>
+                      <p className="text-xs text-[#6B6B6B] font-medium mt-0.5">List of structured and raw campus files mapped to natural language embeddings</p>
                     </div>
 
                     <div className="overflow-x-auto">
                       {isDocsLoading ? (
-                        <div className="py-12 text-center text-slate-400 text-xs font-semibold">
+                        <div className="py-12 text-center text-[#6B6B6B] text-xs font-semibold">
                           Loading document directory index...
                         </div>
                       ) : adminDocs.length === 0 ? (
-                        <div className="py-12 text-center text-slate-400 text-xs font-semibold">
+                        <div className="py-12 text-center text-[#6B6B6B] text-xs font-semibold">
                           No documents indexed yet. Paste webpage data above to begin semantic extraction.
                         </div>
                       ) : (
                         <table className="min-w-full divide-y divide-slate-100 text-xs text-left">
-                          <thead className="bg-slate-50 text-[10px] text-slate-400 uppercase tracking-wider font-extrabold">
+                          <thead className="bg-[#F2EEE8] text-[10px] text-[#6B6B6B] uppercase tracking-wider font-extrabold">
                             <tr>
                               <th className="px-4 py-3">Source Title</th>
                               <th className="px-4 py-3">Category</th>
@@ -5354,8 +5628,8 @@ export default function App() {
                           </thead>
                           <tbody className="divide-y divide-slate-100 font-medium">
                             {adminDocs.map((doc, docIdx) => (
-                              <tr key={doc.id || docIdx} className="hover:bg-slate-50/50">
-                                <td className="px-4 py-3.5 text-slate-900 font-bold max-w-[240px]" title={doc.title}>
+                              <tr key={doc.id || docIdx} className="hover:bg-[#F2EEE8]/50">
+                                <td className="px-4 py-3.5 text-[#1B1B1B] font-bold max-w-[240px]" title={doc.title}>
                                   <div className="flex items-center gap-2">
                                     <span className="truncate">{doc.title}</span>
                                     {doc.sourceUrl && (
@@ -5363,7 +5637,7 @@ export default function App() {
                                         href={doc.sourceUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-indigo-600 hover:text-indigo-800"
+                                        className="text-[#C89B4A] hover:text-[#B98A32]"
                                         title={`Source URL: ${doc.sourceUrl}`}
                                       >
                                         <ExternalLink className="h-3 w-3" />
@@ -5371,28 +5645,28 @@ export default function App() {
                                     )}
                                   </div>
                                 </td>
-                                <td className="px-4 py-3.5 text-slate-500">
-                                  <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                                <td className="px-4 py-3.5 text-[#6B6B6B]">
+                                  <span className="bg-[#F2EEE8] text-[#1B1B1B] px-2.5 py-1 rounded-full text-[10px] font-bold">
                                     {doc.category}
                                   </span>
                                 </td>
-                                <td className="px-4 py-3.5 text-slate-500">
+                                <td className="px-4 py-3.5 text-[#6B6B6B]">
                                   <span className={`rounded px-1.5 py-0.5 font-mono text-[9px] uppercase font-bold border ${
                                     doc.type === 'url'
-                                      ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                                      : 'bg-indigo-50 border border-indigo-100 text-indigo-700'
+                                      ? 'bg-[#5B8A5A]/10 border-[#5B8A5A]/20 text-[#5B8A5A]'
+                                      : 'bg-[#F2EEE8] border border-[#E7DDD0] text-[#C89B4A]'
                                   }`}>
                                     {doc.type === 'url' ? 'WEBPAGE IMPORT' : doc.type === 'ai_extracted' ? 'AI STRUCTURED' : doc.type}
                                   </span>
                                 </td>
-                                <td className="px-4 py-3.5 text-slate-500">
+                                <td className="px-4 py-3.5 text-[#6B6B6B]">
                                   {doc.aiStatus ? (
                                     <div className="flex flex-col gap-0.5">
                                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase border ${
-                                        doc.aiStatus === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                                        doc.aiStatus === 'Processing' ? 'bg-indigo-50 text-indigo-700 border-indigo-100 animate-pulse' :
-                                        doc.aiStatus === 'Pending' ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                                        'bg-rose-50 text-rose-700 border-rose-100'
+                                        doc.aiStatus === 'Completed' ? 'bg-[#5B8A5A]/10 text-[#5B8A5A] border-[#5B8A5A]/20' :
+                                        doc.aiStatus === 'Processing' ? 'bg-[#F2EEE8] text-[#C89B4A] border-[#E7DDD0] animate-pulse' :
+                                        doc.aiStatus === 'Pending' ? 'bg-[#C89B4A]/5 text-[#6B6B6B] border-[#E7DDD0]' :
+                                        'bg-[#B65454]/10 text-[#B65454] border-rose-100'
                                       }`}>
                                         {doc.aiStatus === 'Completed' && '✓ Completed'}
                                         {doc.aiStatus === 'Processing' && '⚙ Processing'}
@@ -5400,33 +5674,40 @@ export default function App() {
                                         {doc.aiStatus === 'Retry Required' && '⚠️ Failed'}
                                       </span>
                                       {doc.aiError && (
-                                        <span className="text-[9px] text-rose-600 font-mono font-medium max-w-[150px] truncate" title={doc.aiError}>
+                                        <span className="text-[9px] text-[#B65454] font-mono font-medium max-w-[150px] truncate" title={doc.aiError}>
                                           {doc.aiError}
                                         </span>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-slate-400 text-[10px] font-bold italic">
+                                    <span className="text-[#6B6B6B] text-[10px] font-bold italic">
                                       Instant Sync
                                     </span>
                                   )}
                                 </td>
-                                <td className="px-4 py-3.5 text-slate-700 font-bold">{doc.chunksCount || (doc.chunks ? doc.chunks.length : 0)} vectors</td>
-                                <td className="px-4 py-3.5 text-slate-500">{doc.size || 'N/A'}</td>
+                                <td className="px-4 py-3.5 text-[#1B1B1B] font-bold">{doc.chunksCount || (doc.chunks ? doc.chunks.length : 0)} vectors</td>
+                                <td className="px-4 py-3.5 text-[#6B6B6B]">{doc.size || 'N/A'}</td>
                                 <td className="px-4 py-3.5 text-right">
                                   <div className="flex items-center justify-end gap-1">
                                     {doc.aiStatus === 'Retry Required' && (
                                       <button
                                         onClick={() => handleRetryDocument(doc.id)}
-                                        className="text-amber-600 hover:text-amber-800 hover:bg-amber-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                        className="text-[#C89B4A] hover:text-[#1B1B1B] hover:bg-[#C89B4A]/5 p-1.5 rounded-lg transition-colors cursor-pointer"
                                         title="Retry AI Extraction"
                                       >
                                         <RefreshCw className="h-4 w-4" />
                                       </button>
                                     )}
                                     <button
+                                      onClick={() => handleOpenEditModal(doc)}
+                                      className="text-[#C89B4A] hover:text-[#B98A32] hover:bg-[#C89B4A]/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                      title="Edit document"
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </button>
+                                    <button
                                       onClick={() => handleDeleteDoc(doc.id)}
-                                      className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+                                      className="text-rose-500 hover:text-[#B65454] hover:bg-[#B65454]/10 p-1.5 rounded-lg transition-colors cursor-pointer"
                                       title="Delete document"
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -5440,9 +5721,9 @@ export default function App() {
                       )}
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 text-xs font-semibold text-slate-500">
+                    <div className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 text-xs font-semibold text-[#6B6B6B]">
                       <div className="flex items-center space-x-2">
-                        <Database className="h-4 w-4 text-indigo-500" />
+                        <Database className="h-4 w-4 text-[#C89B4A]" />
                         <span>Vectors automatically index when document uploads complete.</span>
                       </div>
                       <span>Total files: {adminDocs.length}</span>
@@ -5456,33 +5737,33 @@ export default function App() {
                 <div className="grid lg:grid-cols-2 gap-8">
                   
                   {/* Create Notice */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+                  <div className="bg-white border border-[#E7DDD0] rounded-2xl p-6 shadow-sm space-y-6">
                     <div>
                       <h4 className="text-base font-extrabold text-slate-950 flex items-center gap-1.5">
-                        <Calendar className="h-4.5 w-4.5 text-indigo-600" />
+                        <Calendar className="h-4.5 w-4.5 text-[#C89B4A]" />
                         Publish Campus Notice
                       </h4>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">Post general alerts visible instantly to all campus visitors</p>
+                      <p className="text-xs text-[#6B6B6B] font-medium mt-0.5">Post general alerts visible instantly to all campus visitors</p>
                     </div>
 
                     <form onSubmit={handleCreateNotice} className="space-y-4">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Notice Title</label>
+                        <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Notice Title</label>
                         <input
                           type="text"
                           required
                           value={noticeTitle}
                           onChange={(e) => setNoticeTitle(e.target.value)}
                           placeholder="e.g. Summer Vacation Rescheduled"
-                          className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                          className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A]"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Notice Category</label>
+                        <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Notice Category</label>
                         <select
                           value={noticeCategory}
                           onChange={(e) => setNoticeCategory(e.target.value as any)}
-                          className="w-full bg-slate-50 border border-slate-200 text-xs rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                          className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A]"
                         >
                           <option value="academic">Academic / Exams</option>
                           <option value="admission">Admission Update</option>
@@ -5491,19 +5772,19 @@ export default function App() {
                         </select>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Announcement Content</label>
+                        <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Announcement Content</label>
                         <textarea
                           rows={4}
                           required
                           value={noticeContent}
                           onChange={(e) => setNoticeContent(e.target.value)}
                           placeholder="Provide the complete notice message clearly..."
-                          className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 resize-none font-medium leading-relaxed"
+                          className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] resize-none font-medium leading-relaxed"
                         />
                       </div>
                       <button
                         type="submit"
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl shadow-md transition-colors"
+                        className="w-full bg-[#C89B4A] hover:bg-[#B98A32] text-white font-bold text-xs py-3 rounded-xl shadow-md transition-colors"
                       >
                         Publish Notice Broadcast
                       </button>
@@ -5511,23 +5792,23 @@ export default function App() {
                   </div>
 
                   {/* Create FAQ */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+                  <div className="bg-white border border-[#E7DDD0] rounded-2xl p-6 shadow-sm space-y-6">
                     <div>
                       <h4 className="text-base font-extrabold text-slate-950 flex items-center gap-1.5">
-                        <MessageSquare className="h-4.5 w-4.5 text-indigo-600" />
+                        <MessageSquare className="h-4.5 w-4.5 text-[#C89B4A]" />
                         Manage Helpful FAQs
                       </h4>
-                      <p className="text-xs text-slate-500 font-medium mt-0.5">Configure typical Q&A answers for rapid navigation</p>
+                      <p className="text-xs text-[#6B6B6B] font-medium mt-0.5">Configure typical Q&A answers for rapid navigation</p>
                     </div>
 
                     <form onSubmit={handleCreateFAQ} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
-                          <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">FAQ Category</label>
+                          <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">FAQ Category</label>
                           <select
                             value={faqCategory}
                             onChange={(e) => setFaqCategory(e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 text-xs rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                            className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A]"
                           >
                             <option value="Admission">Admission</option>
                             <option value="Fees">Fees & Finance</option>
@@ -5537,31 +5818,31 @@ export default function App() {
                           </select>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">Frequent Question</label>
+                          <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Frequent Question</label>
                           <input
                             type="text"
                             required
                             value={faqQuestion}
                             onChange={(e) => setFaqQuestion(e.target.value)}
                             placeholder="e.g. Is transport available?"
-                            className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500"
+                            className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A]"
                           />
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wide">FAQ Answer</label>
+                        <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">FAQ Answer</label>
                         <textarea
                           rows={4}
                           required
                           value={faqAnswer}
                           onChange={(e) => setFaqAnswer(e.target.value)}
                           placeholder="Provide the complete response to this question..."
-                          className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 resize-none font-medium leading-relaxed"
+                          className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] resize-none font-medium leading-relaxed"
                         />
                       </div>
                       <button
                         type="submit"
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl shadow-md transition-colors"
+                        className="w-full bg-[#C89B4A] hover:bg-[#B98A32] text-white font-bold text-xs py-3 rounded-xl shadow-md transition-colors"
                       >
                         Publish FAQ Card
                       </button>
@@ -5584,34 +5865,34 @@ export default function App() {
             <div className="space-y-5">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <span className="text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-extrabold uppercase tracking-wide">
+                  <span className="text-[10px] bg-[#F2EEE8] border border-[#E7DDD0] text-[#C89B4A] px-3 py-1 rounded-full font-extrabold uppercase tracking-wide">
                     Document Grounding Extract
                   </span>
                   <h3 className="text-lg font-extrabold text-slate-950 mt-2 flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-indigo-600" />
+                    <FileText className="h-5 w-5 text-[#C89B4A]" />
                     {activeCitation.title}
                   </h3>
                 </div>
                 <button
                   onClick={() => setActiveCitation(null)}
-                  className="text-slate-400 hover:text-slate-950 text-base font-extrabold p-1"
+                  className="text-[#6B6B6B] hover:text-slate-950 text-base font-extrabold p-1"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 shadow-inner">
-                <p className="text-xs text-slate-600 font-semibold uppercase tracking-wider text-[10px] text-slate-400 mb-2">
+              <div className="bg-[#F2EEE8] border border-[#E7DDD0]/80 rounded-2xl p-5 shadow-inner">
+                <p className="text-xs text-[#6B6B6B] font-semibold uppercase tracking-wider text-[10px] text-[#6B6B6B] mb-2">
                   Retrieved Chunk Snippet:
                 </p>
-                <blockquote className="text-sm text-slate-700 italic leading-relaxed whitespace-pre-wrap font-medium font-serif border-l-4 border-indigo-500 pl-4 py-1">
+                <blockquote className="text-sm text-[#1B1B1B] italic leading-relaxed whitespace-pre-wrap font-medium font-serif border-l-4 border-[#C89B4A] pl-4 py-1">
                   "{activeCitation.snippet}"
                 </blockquote>
               </div>
             </div>
 
-            <div className="border-t border-slate-100 pt-5 space-y-4">
-              <div className="flex items-center space-x-3 text-xs font-semibold text-slate-500 bg-slate-50/50 p-4 border border-slate-100 rounded-xl">
+            <div className="border-t border-[#E7DDD0] pt-5 space-y-4">
+              <div className="flex items-center space-x-3 text-xs font-semibold text-[#6B6B6B] bg-[#F2EEE8]/50 p-4 border border-[#E7DDD0] rounded-xl">
                 <Shield className="h-4.5 w-4.5 text-emerald-500" />
                 <span className="leading-snug">
                   This segment serves as structural context for IRA's conversational output.
@@ -5629,19 +5910,107 @@ export default function App() {
       )}
 
 
+      {/* Edit Knowledge Source Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => !isSavingEdit && setIsEditModalOpen(false)} />
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-205 flex flex-col max-h-[90vh]">
+            <div className="flex justify-between items-center pb-4 border-b border-[#E7DDD0]">
+              <h3 className="text-base font-extrabold text-[#1B1B1B] flex items-center gap-2">
+                <Pencil className="h-4.5 w-4.5 text-[#C89B4A]" />
+                <span>Edit Knowledge Source</span>
+              </h3>
+              <button 
+                onClick={() => !isSavingEdit && setIsEditModalOpen(false)}
+                className="p-1.5 rounded-lg text-[#6B6B6B] hover:text-[#1B1B1B] hover:bg-[#F2EEE8] transition-colors"
+                disabled={isSavingEdit}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="py-4 flex-1 flex flex-col min-h-0">
+              <div className="mb-3 text-xs font-semibold text-[#6B6B6B] flex justify-between items-center">
+                <span>
+                  Source: <strong className="text-[#1B1B1B] font-extrabold">{editingDoc?.title}</strong>
+                </span>
+                <span className="font-mono text-[10px] bg-[#F2EEE8] text-[#C89B4A] px-2 py-0.5 rounded-full uppercase font-bold border border-[#E7DDD0]">
+                  {editingDoc?.type || 'JSON'}
+                </span>
+              </div>
+
+              {editError && (
+                <div className="mb-3 bg-rose-50 border border-rose-100 text-rose-700 text-xs rounded-xl p-3 font-semibold flex items-start gap-2">
+                  <span className="font-extrabold">⚠️ Error:</span>
+                  <p className="flex-1 whitespace-pre-line leading-relaxed">{editError}</p>
+                </div>
+              )}
+
+              <div className="flex-1 flex flex-col min-h-0 bg-[#F7F4EF] border border-[#E7DDD0] rounded-2xl p-3 relative font-mono text-xs">
+                <textarea
+                  value={editingJsonText}
+                  onChange={(e) => setEditingJsonText(e.target.value)}
+                  className="w-full flex-1 bg-transparent resize-none focus:outline-none text-[#1B1B1B] font-medium leading-relaxed overflow-y-auto pr-2"
+                  disabled={isSavingEdit}
+                  placeholder="{ ... }"
+                  style={{ whiteSpace: 'pre', wordBreak: 'normal' }}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-[#E7DDD0]">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="bg-[#F2EEE8] hover:bg-slate-200 text-[#1B1B1B] font-extrabold text-xs px-5 py-3 rounded-xl transition-colors cursor-pointer"
+                disabled={isSavingEdit}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEdit}
+                className="bg-[#C89B4A] hover:bg-[#B98A32] text-white font-extrabold text-xs px-6 py-3 rounded-xl transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                disabled={isSavingEdit || editingJsonText.startsWith('Loading')}
+              >
+                {isSavingEdit ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    <span>Saving & Re-indexing...</span>
+                  </>
+                ) : (
+                  <span>Save Changes</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.isOpen && (
+        <div className="fixed bottom-5 right-5 z-[101] flex items-center gap-2.5 bg-[#1B1B1B] text-white text-xs font-semibold px-4.5 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-5 duration-300">
+          <div className={`p-1 rounded-lg ${toast.type === 'success' ? 'bg-[#5B8A5A]/20 text-[#5B8A5A]' : 'bg-[#B65454]/20 text-[#B65454]'}`}>
+            {toast.type === 'success' ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+          </div>
+          <span>{toast.message}</span>
+        </div>
+      )}
+
+
       {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowSettingsModal(false)} />
-          <div className="relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-205 space-y-5">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <Settings className="h-4.5 w-4.5 text-indigo-600" />
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-205 space-y-5">
+            <div className="flex justify-between items-center pb-2 border-b border-[#E7DDD0]">
+              <h3 className="text-base font-extrabold text-[#1B1B1B] flex items-center gap-2">
+                <Settings className="h-4.5 w-4.5 text-[#C89B4A]" />
                 <span>AI Session Settings</span>
               </h3>
               <button 
                 onClick={() => setShowSettingsModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-lg text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-[#F2EEE8] transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -5649,31 +6018,31 @@ export default function App() {
 
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider block mb-1">
                   AI Grounding Model
                 </label>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between">
+                <div className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-xl p-3 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-bold text-slate-900">Google Gemini API</p>
-                    <p className="text-[10px] text-slate-400 font-medium">Model: gemini-1.5-flash</p>
+                    <p className="text-xs font-bold text-[#1B1B1B]">Google Gemini API</p>
+                    <p className="text-[10px] text-[#6B6B6B] font-medium">Model: gemini-1.5-flash</p>
                   </div>
-                  <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-emerald-200">
+                  <span className="text-[9px] bg-[#5B8A5A]/10 text-[#5B8A5A] px-2 py-0.5 rounded font-bold uppercase tracking-wider border border-emerald-200">
                     Active
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider block mb-1">
                   Knowledge Base
                 </label>
-                <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                <p className="text-xs text-[#6B6B6B] font-semibold leading-relaxed">
                   IRA is loaded with official college documents on Admissions, Syllabus, Placements, Hostels, and Campus Rules.
                 </p>
               </div>
 
               <div>
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block mb-1">
+                <label className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider block mb-1">
                   Session Control
                 </label>
                 <button
@@ -5688,7 +6057,7 @@ export default function App() {
                       }
                     );
                   }}
-                  className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold px-4 py-2 rounded-xl border border-rose-200 transition-colors w-full text-center"
+                  className="bg-[#B65454]/10 hover:bg-rose-100 text-[#B65454] text-xs font-bold px-4 py-2 rounded-xl border border-rose-200 transition-colors w-full text-center"
                 >
                   Clear All Chats History
                 </button>
@@ -5715,10 +6084,10 @@ export default function App() {
             setShowAuthModal(false);
             setAuthError('');
           }} />
-          <div className="relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-205 space-y-5">
-            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-              <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <Lock className="h-4.5 w-4.5 text-[#6C5CE7]" />
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-205 space-y-5">
+            <div className="flex justify-between items-center pb-2 border-b border-[#E7DDD0]">
+              <h3 className="text-base font-extrabold text-[#1B1B1B] flex items-center gap-2">
+                <Lock className="h-4.5 w-4.5 text-[#C89B4A]" />
                 <span>{authIsSignUp ? 'Create Account' : 'Sign In'}</span>
               </h3>
               <button 
@@ -5726,14 +6095,14 @@ export default function App() {
                   setShowAuthModal(false);
                   setAuthError('');
                 }}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-[#F2EEE8] transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {authError && (
-              <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold p-3 rounded-xl">
+              <div className="bg-[#B65454]/10 border border-rose-100 text-[#B65454] text-xs font-bold p-3 rounded-xl">
                 {authError}
               </div>
             )}
@@ -5741,7 +6110,7 @@ export default function App() {
             <form onSubmit={handleAuthSubmit} className="space-y-4">
               {authIsSignUp && (
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                  <label className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider block">
                     Full Name
                   </label>
                   <input
@@ -5750,13 +6119,13 @@ export default function App() {
                     value={authName}
                     onChange={(e) => setAuthName(e.target.value)}
                     placeholder="John Doe"
-                    className="w-full bg-slate-50 hover:bg-slate-100/60 focus:bg-white text-xs text-slate-900 placeholder:text-slate-400 px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] focus:outline-none transition-all"
+                    className="w-full bg-[#F2EEE8] hover:bg-[#F2EEE8]/60 focus:bg-white text-xs text-[#1B1B1B] placeholder:text-[#6B6B6B] px-3.5 py-2.5 border border-[#E7DDD0] rounded-xl focus:ring-1 focus:ring-[#C89B4A] focus:border-[#C89B4A] focus:outline-none transition-all"
                   />
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                <label className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider block">
                   Email Address
                 </label>
                 <input
@@ -5765,12 +6134,12 @@ export default function App() {
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-slate-50 hover:bg-slate-100/60 focus:bg-white text-xs text-slate-900 placeholder:text-slate-400 px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] focus:outline-none transition-all"
+                  className="w-full bg-[#F2EEE8] hover:bg-[#F2EEE8]/60 focus:bg-white text-xs text-[#1B1B1B] placeholder:text-[#6B6B6B] px-3.5 py-2.5 border border-[#E7DDD0] rounded-xl focus:ring-1 focus:ring-[#C89B4A] focus:border-[#C89B4A] focus:outline-none transition-all"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                <label className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider block">
                   Password
                 </label>
                 <input
@@ -5779,13 +6148,13 @@ export default function App() {
                   value={authPassword}
                   onChange={(e) => setAuthPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 hover:bg-slate-100/60 focus:bg-white text-xs text-slate-900 placeholder:text-slate-400 px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] focus:outline-none transition-all"
+                  className="w-full bg-[#F2EEE8] hover:bg-[#F2EEE8]/60 focus:bg-white text-xs text-[#1B1B1B] placeholder:text-[#6B6B6B] px-3.5 py-2.5 border border-[#E7DDD0] rounded-xl focus:ring-1 focus:ring-[#C89B4A] focus:border-[#C89B4A] focus:outline-none transition-all"
                 />
               </div>
 
               {authIsSignUp && (
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                  <label className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider block">
                     Confirm Password
                   </label>
                   <input
@@ -5794,7 +6163,7 @@ export default function App() {
                     value={authConfirmPassword}
                     onChange={(e) => setAuthConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-slate-50 hover:bg-slate-100/60 focus:bg-white text-xs text-slate-900 placeholder:text-slate-400 px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-1 focus:ring-[#6C5CE7] focus:border-[#6C5CE7] focus:outline-none transition-all"
+                    className="w-full bg-[#F2EEE8] hover:bg-[#F2EEE8]/60 focus:bg-white text-xs text-[#1B1B1B] placeholder:text-[#6B6B6B] px-3.5 py-2.5 border border-[#E7DDD0] rounded-xl focus:ring-1 focus:ring-[#C89B4A] focus:border-[#C89B4A] focus:outline-none transition-all"
                   />
                 </div>
               )}
@@ -5802,22 +6171,22 @@ export default function App() {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full bg-[#6C5CE7] hover:bg-[#5b4cd1] disabled:bg-slate-300 text-white font-extrabold text-xs py-3 rounded-xl transition-all shadow-md shadow-[#6C5CE7]/10 cursor-pointer"
+                className="w-full bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-slate-300 text-white font-extrabold text-xs py-3 rounded-xl transition-all shadow-md shadow-[#C89B4A]/10 cursor-pointer"
               >
                 {authLoading ? 'Please wait...' : authIsSignUp ? 'Create Account' : 'Sign In'}
               </button>
             </form>
 
             <div className="relative flex py-1.5 items-center">
-              <div className="flex-grow border-t border-slate-200"></div>
-              <span className="flex-shrink mx-4 text-[10px] text-slate-400 font-extrabold uppercase">or</span>
-              <div className="flex-grow border-t border-slate-200"></div>
+              <div className="flex-grow border-t border-[#E7DDD0]"></div>
+              <span className="flex-shrink mx-4 text-[10px] text-[#6B6B6B] font-extrabold uppercase">or</span>
+              <div className="flex-grow border-t border-[#E7DDD0]"></div>
             </div>
 
             <button
               onClick={handleGoogleSignIn}
               disabled={authLoading}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs py-3 px-4 rounded-xl border border-slate-200 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-[#F2EEE8] text-[#1B1B1B] font-bold text-xs py-3 px-4 rounded-xl border border-[#E7DDD0] shadow-sm transition-all cursor-pointer disabled:opacity-50"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -5839,7 +6208,7 @@ export default function App() {
                   setAuthConfirmPassword('');
                   setAuthName('');
                 }}
-                className="text-xs font-bold text-[#6C5CE7] hover:underline cursor-pointer"
+                className="text-xs font-bold text-[#C89B4A] hover:underline cursor-pointer"
               >
                 {authIsSignUp ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
               </button>
@@ -5852,15 +6221,15 @@ export default function App() {
       {showSyncPrompt && pendingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" />
-          <div className="relative bg-white border border-slate-200 rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-205 space-y-6">
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-205 space-y-6">
             <div className="text-center space-y-2">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#6C5CE7]/10 text-[#6C5CE7]">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#C89B4A]/10 text-[#C89B4A]">
                 <CloudLightning className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-extrabold text-slate-900">
+              <h3 className="text-lg font-extrabold text-[#1B1B1B]">
                 Save Conversation
               </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
+              <p className="text-xs text-[#6B6B6B] leading-relaxed">
                 Do you want to save this conversation to your account?
               </p>
             </div>
@@ -5873,7 +6242,7 @@ export default function App() {
                   setPendingUser(null);
                   await syncCloudHistory(user, conversations);
                 }}
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-[#6C5CE7] hover:bg-[#5b4dbf] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg active:scale-95"
+                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-white bg-[#C89B4A] hover:bg-[#B98A32] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:shadow-lg active:scale-95"
               >
                 <span>Save Conversation</span>
               </button>
@@ -5884,7 +6253,7 @@ export default function App() {
                   setPendingUser(null);
                   await startFreshCloudHistory(user);
                 }}
-                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                className="w-full py-3 px-4 rounded-xl text-xs font-bold text-[#1B1B1B] bg-[#F2EEE8] hover:bg-slate-200 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 <span>Start Fresh</span>
               </button>
@@ -5898,22 +6267,22 @@ export default function App() {
       {selectedDebugMessage && selectedDebugMessage.debug && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={() => setSelectedDebugMessage(null)} />
-          <div className="relative bg-white border border-slate-200 rounded-3xl max-w-5xl w-full h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl max-w-5xl w-full h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-3xl">
+            <div className="p-5 border-b border-[#E7DDD0] flex justify-between items-center bg-[#F2EEE8] rounded-t-3xl">
               <div>
-                <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <Database className="h-5 w-5 text-[#6C5CE7]" />
+                <h3 className="text-base font-extrabold text-[#1B1B1B] flex items-center gap-2">
+                  <Database className="h-5 w-5 text-[#C89B4A]" />
                   <span>RAG Pipeline Dev Debug Panel</span>
-                  <span className="text-[10px] bg-[#6C5CE7]/10 text-[#6C5CE7] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  <span className="text-[10px] bg-[#C89B4A]/10 text-[#C89B4A] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                     Grounding Details
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">Explore real-time semantic retrieval, entity mapping, token metrics, and prompts.</p>
+                <p className="text-xs text-[#6B6B6B] mt-0.5">Explore real-time semantic retrieval, entity mapping, token metrics, and prompts.</p>
               </div>
               <button 
                 onClick={() => setSelectedDebugMessage(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-slate-200/60 transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -5924,38 +6293,38 @@ export default function App() {
               
               {/* Top Metrics Row */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-[#6C5CE7]/5 border border-[#6C5CE7]/10 rounded-2xl p-4 flex items-center gap-3.5">
-                  <div className="p-2.5 bg-[#6C5CE7]/10 rounded-xl">
-                    <Sparkles className="h-5 w-5 text-[#6C5CE7]" />
+                <div className="bg-[#C89B4A]/5 border border-[#C89B4A]/10 rounded-2xl p-4 flex items-center gap-3.5">
+                  <div className="p-2.5 bg-[#C89B4A]/10 rounded-xl">
+                    <Sparkles className="h-5 w-5 text-[#C89B4A]" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total Sent Tokens</p>
-                    <p className="text-xl font-black text-[#6C5CE7] mt-0.5">
-                      {selectedDebugMessage.debug.totalTokens.toLocaleString()} <span className="text-[11px] font-bold text-[#6C5CE7]/70">Tokens</span>
+                    <p className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider">Total Sent Tokens</p>
+                    <p className="text-xl font-black text-[#C89B4A] mt-0.5">
+                      {selectedDebugMessage.debug.totalTokens.toLocaleString()} <span className="text-[11px] font-bold text-[#C89B4A]/70">Tokens</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 flex items-center gap-3.5">
+                <div className="bg-[#5B8A5A]/10/50 border border-[#5B8A5A]/20 rounded-2xl p-4 flex items-center gap-3.5">
                   <div className="p-2.5 bg-emerald-100/60 rounded-xl">
-                    <FileText className="h-5 w-5 text-emerald-600" />
+                    <FileText className="h-5 w-5 text-[#5B8A5A]" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Retrieved Chunks</p>
-                    <p className="text-xl font-black text-emerald-700 mt-0.5">
-                      {selectedDebugMessage.debug.retrievedChunks.length} <span className="text-[11px] font-bold text-emerald-600/70">Top Segments</span>
+                    <p className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider">Retrieved Chunks</p>
+                    <p className="text-xl font-black text-[#5B8A5A] mt-0.5">
+                      {selectedDebugMessage.debug.retrievedChunks.length} <span className="text-[11px] font-bold text-[#5B8A5A]/70">Top Segments</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4 flex items-center gap-3.5">
-                  <div className="p-2.5 bg-amber-100/60 rounded-xl">
-                    <Users className="h-5 w-5 text-amber-600" />
+                <div className="bg-[#C89B4A]/5 border border-[#E7DDD0] rounded-2xl p-4 flex items-center gap-3.5">
+                  <div className="p-2.5 bg-[#C89B4A]/15 rounded-xl">
+                    <Users className="h-5 w-5 text-[#C89B4A]" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Extracted Entity Collections</p>
-                    <p className="text-xl font-black text-amber-700 mt-0.5">
-                      {selectedDebugMessage.debug.retrievedEntities.length} <span className="text-[11px] font-bold text-amber-600/70">Sources Map</span>
+                    <p className="text-[10px] font-extrabold text-[#6B6B6B] uppercase tracking-wider">Extracted Entity Collections</p>
+                    <p className="text-xl font-black text-[#6B6B6B] mt-0.5">
+                      {selectedDebugMessage.debug.retrievedEntities.length} <span className="text-[11px] font-bold text-[#C89B4A]/70">Sources Map</span>
                     </p>
                   </div>
                 </div>
@@ -5966,29 +6335,29 @@ export default function App() {
                 
                 {/* Left Side: Chunks with similarity score */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 pl-1">
-                    <Search className="h-4 w-4 text-indigo-600" />
+                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#6B6B6B] flex items-center gap-1.5 pl-1">
+                    <Search className="h-4 w-4 text-[#C89B4A]" />
                     <span>Retrieved Semantic Chunks & Cosine Scores</span>
                   </h4>
                   
                   <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
                     {selectedDebugMessage.debug.retrievedChunks.map((chunk: any, cidx: number) => (
-                      <div key={cidx} className="bg-white border border-slate-200 hover:border-[#6C5CE7]/30 rounded-2xl p-4 shadow-2xs transition-all space-y-2">
+                      <div key={cidx} className="bg-white border border-[#E7DDD0] hover:border-[#C89B4A]/30 rounded-2xl p-4 shadow-2xs transition-all space-y-2">
                         <div className="flex justify-between items-center border-b border-slate-50 pb-1.5">
-                          <span className="text-xs font-bold text-slate-900 truncate max-w-[70%]">
+                          <span className="text-xs font-bold text-[#1B1B1B] truncate max-w-[70%]">
                             {chunk.docTitle}
                           </span>
                           <span className={`text-[9px] px-2 py-0.5 rounded font-extrabold tracking-wider border ${
                              chunk.score >= 0.7 
-                               ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                               ? 'bg-[#5B8A5A]/10 text-[#5B8A5A] border-emerald-200' 
                                : chunk.score >= 0.4 
-                                 ? 'bg-indigo-50 text-[#6C5CE7] border-indigo-100' 
-                                 : 'bg-slate-50 text-slate-600 border-slate-200'
+                                 ? 'bg-[#F2EEE8] text-[#C89B4A] border-[#E7DDD0]' 
+                                 : 'bg-[#F2EEE8] text-[#6B6B6B] border-[#E7DDD0]'
                            }`}>
                             Score: {chunk.score.toFixed(4)}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-600 leading-relaxed font-sans font-medium whitespace-pre-wrap select-all">
+                        <p className="text-xs text-[#6B6B6B] leading-relaxed font-sans font-medium whitespace-pre-wrap select-all">
                           {chunk.text}
                         </p>
                       </div>
@@ -5998,81 +6367,81 @@ export default function App() {
 
                 {/* Right Side: Retrieved Structured Entities */}
                 <div className="space-y-3">
-                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5 pl-1">
-                    <Database className="h-4 w-4 text-emerald-600" />
+                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#6B6B6B] flex items-center gap-1.5 pl-1">
+                    <Database className="h-4 w-4 text-[#5B8A5A]" />
                     <span>Retrieved Structured Knowledge Entities</span>
                   </h4>
 
                   <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
                     {selectedDebugMessage.debug.retrievedEntities.length === 0 ? (
-                      <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center text-slate-400 text-xs font-medium">
+                      <div className="bg-[#F2EEE8] border border-dashed border-[#E7DDD0] rounded-2xl p-6 text-center text-[#6B6B6B] text-xs font-medium">
                         No structured entities mapped for these segments.
                       </div>
                     ) : (
                       selectedDebugMessage.debug.retrievedEntities.map((re: any, ridx: number) => {
                         const ent = re.entities;
                         return (
-                          <div key={ridx} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
-                            <p className="text-xs font-extrabold text-indigo-900 border-b border-indigo-100/50 pb-1.5 truncate">
+                          <div key={ridx} className="bg-[#F2EEE8] border border-[#E7DDD0] rounded-2xl p-4 space-y-3">
+                            <p className="text-xs font-extrabold text-[#1B1B1B] border-b border-[#E7DDD0]/50 pb-1.5 truncate">
                               Document: {re.docTitle}
                             </p>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
                               {/* Departments */}
-                              <div className="bg-white border border-slate-100 rounded-xl p-2.5">
-                                <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[8px] mb-1">Departments</span>
-                                <span className="font-semibold text-slate-700 leading-normal">
+                              <div className="bg-white border border-[#E7DDD0] rounded-xl p-2.5">
+                                <span className="font-extrabold text-[#6B6B6B] uppercase tracking-wider block text-[8px] mb-1">Departments</span>
+                                <span className="font-semibold text-[#1B1B1B] leading-normal">
                                   {ent.departments && ent.departments.length > 0 ? ent.departments.join(', ') : 'None listed'}
                                 </span>
                               </div>
 
                               {/* Faculty Members */}
-                              <div className="bg-white border border-slate-100 rounded-xl p-2.5">
-                                <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[8px] mb-1">Faculty / Staff</span>
-                                <span className="font-semibold text-slate-700 leading-normal">
+                              <div className="bg-white border border-[#E7DDD0] rounded-xl p-2.5">
+                                <span className="font-extrabold text-[#6B6B6B] uppercase tracking-wider block text-[8px] mb-1">Faculty / Staff</span>
+                                <span className="font-semibold text-[#1B1B1B] leading-normal">
                                   {ent.facultyMembers && ent.facultyMembers.length > 0 ? ent.facultyMembers.join(', ') : 'None listed'}
                                 </span>
                               </div>
 
                               {/* Courses */}
-                              <div className="bg-white border border-slate-100 rounded-xl p-2.5">
-                                <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[8px] mb-1">Courses</span>
-                                <span className="font-semibold text-slate-700 leading-normal">
+                              <div className="bg-white border border-[#E7DDD0] rounded-xl p-2.5">
+                                <span className="font-extrabold text-[#6B6B6B] uppercase tracking-wider block text-[8px] mb-1">Courses</span>
+                                <span className="font-semibold text-[#1B1B1B] leading-normal">
                                   {ent.courses && ent.courses.length > 0 ? ent.courses.join(', ') : 'None listed'}
                                 </span>
                               </div>
 
                               {/* Fees */}
-                              <div className="bg-white border border-slate-100 rounded-xl p-2.5">
-                                <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[8px] mb-1">Fees & Charges</span>
+                              <div className="bg-white border border-[#E7DDD0] rounded-xl p-2.5">
+                                <span className="font-extrabold text-[#6B6B6B] uppercase tracking-wider block text-[8px] mb-1">Fees & Charges</span>
                                 <div className="space-y-0.5">
                                   {ent.fees && ent.fees.length > 0 ? (
                                     ent.fees.map((f: any, fidx: number) => {
                                       if (typeof f === 'object' && f !== null) {
                                         return (
-                                          <p key={fidx} className="font-semibold text-slate-700">
-                                            • <span className="text-slate-500">{f.courseOrService || f.service || 'Item'}:</span> {f.amount}
+                                          <p key={fidx} className="font-semibold text-[#1B1B1B]">
+                                            • <span className="text-[#6B6B6B]">{f.courseOrService || f.service || 'Item'}:</span> {f.amount}
                                           </p>
                                         );
                                       }
-                                      return <p key={fidx} className="font-semibold text-slate-700">• {String(f)}</p>;
+                                      return <p key={fidx} className="font-semibold text-[#1B1B1B]">• {String(f)}</p>;
                                     })
                                   ) : 'None listed'}
                                 </div>
                               </div>
 
                               {/* Contacts */}
-                              <div className="bg-white border border-slate-100 rounded-xl p-2.5">
-                                <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[8px] mb-1">Contacts</span>
-                                <span className="font-semibold text-slate-700 leading-normal select-all">
+                              <div className="bg-white border border-[#E7DDD0] rounded-xl p-2.5">
+                                <span className="font-extrabold text-[#6B6B6B] uppercase tracking-wider block text-[8px] mb-1">Contacts</span>
+                                <span className="font-semibold text-[#1B1B1B] leading-normal select-all">
                                   {ent.contacts && ent.contacts.length > 0 ? ent.contacts.join(', ') : 'None listed'}
                                 </span>
                               </div>
 
                               {/* Dates */}
-                              <div className="bg-white border border-slate-100 rounded-xl p-2.5">
-                                <span className="font-extrabold text-slate-400 uppercase tracking-wider block text-[8px] mb-1">Important Dates</span>
-                                <span className="font-semibold text-slate-700 leading-normal">
+                              <div className="bg-white border border-[#E7DDD0] rounded-xl p-2.5">
+                                <span className="font-extrabold text-[#6B6B6B] uppercase tracking-wider block text-[8px] mb-1">Important Dates</span>
+                                <span className="font-semibold text-[#1B1B1B] leading-normal">
                                   {ent.dates && ent.dates.length > 0 ? ent.dates.join(', ') : 'None listed'}
                                 </span>
                               </div>
@@ -6089,15 +6458,15 @@ export default function App() {
               {/* Full context sent as Prompt grounding */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center px-1">
-                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-                    <FileText className="h-4 w-4 text-amber-600" />
+                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-[#6B6B6B] flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 text-[#C89B4A]" />
                     <span>Final Prompt Grounding Context Sent to Gemini</span>
                   </h4>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(selectedDebugMessage.debug.finalPromptContext);
                     }}
-                    className="text-[10px] font-extrabold text-[#6C5CE7] hover:underline flex items-center gap-1 cursor-pointer bg-[#6C5CE7]/5 border border-[#6C5CE7]/15 rounded-md px-2.5 py-1"
+                    className="text-[10px] font-extrabold text-[#C89B4A] hover:underline flex items-center gap-1 cursor-pointer bg-[#C89B4A]/5 border border-[#C89B4A]/15 rounded-md px-2.5 py-1"
                   >
                     <Copy className="h-3 w-3" />
                     <span>Copy Full Context</span>
@@ -6114,7 +6483,7 @@ export default function App() {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-5 border-t border-slate-100 flex justify-end bg-slate-50 rounded-b-3xl">
+            <div className="p-5 border-t border-[#E7DDD0] flex justify-end bg-[#F2EEE8] rounded-b-3xl">
               <button
                 onClick={() => setSelectedDebugMessage(null)}
                 className="bg-slate-900 hover:bg-slate-950 text-white font-extrabold text-xs py-2.5 px-6 rounded-xl transition-colors cursor-pointer"
@@ -6130,16 +6499,16 @@ export default function App() {
       {showDuplicateUrlDialog && duplicateUrlInfo && (
         <div className="fixed inset-0 z-55 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDuplicateUrlDialog(false)} />
-          <div className="relative bg-white border border-slate-200 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 space-y-6">
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 space-y-6">
             <div className="text-center space-y-2">
-              <div className="inline-flex p-3 bg-amber-50 border border-amber-100 rounded-2xl text-amber-600 mb-2">
+              <div className="inline-flex p-3 bg-[#C89B4A]/5 border border-[#E7DDD0] rounded-2xl text-[#C89B4A] mb-2">
                 <Info className="h-6 w-6" />
               </div>
               <h3 className="text-base font-extrabold text-slate-950">Duplicate URL Detected</h3>
-              <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+              <p className="text-xs text-[#6B6B6B] font-semibold leading-relaxed">
                 {duplicateUrlInfo.message}
               </p>
-              <p className="text-xs text-slate-700 font-bold bg-slate-50 border border-slate-100 p-2.5 rounded-xl truncate">
+              <p className="text-xs text-[#1B1B1B] font-bold bg-[#F2EEE8] border border-[#E7DDD0] p-2.5 rounded-xl truncate">
                 Existing document: "{duplicateUrlInfo.title}"
               </p>
             </div>
@@ -6148,14 +6517,14 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => proceedFetchAndExtract(importUrl.trim(), true, duplicateUrlInfo.docId)}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-3 rounded-xl transition-colors shadow-md shadow-indigo-100 cursor-pointer"
+                className="w-full bg-[#C89B4A] hover:bg-[#B98A32] text-white font-bold text-xs py-3 rounded-xl transition-colors shadow-md shadow-[#1C1C1C]/5 cursor-pointer"
               >
                 Update Existing
               </button>
               <button
                 type="button"
                 onClick={() => proceedFetchAndExtract(importUrl.trim(), false, null)}
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
+                className="w-full bg-[#F2EEE8] hover:bg-slate-200 text-[#1B1B1B] font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
               >
                 Create New Version
               </button>
@@ -6166,7 +6535,7 @@ export default function App() {
                   setImportUrl('');
                   setImportProgress(0);
                 }}
-                className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-500 font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
+                className="w-full bg-white hover:bg-[#F2EEE8] border border-[#E7DDD0] text-[#6B6B6B] font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -6179,20 +6548,20 @@ export default function App() {
       {logsModalOpen && (
         <div className="fixed inset-0 z-55 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setLogsModalOpen(false)} />
-          <div className="relative bg-white border border-slate-200 rounded-3xl p-6 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl p-6 max-w-2xl w-full shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between border-b border-[#E7DDD0] pb-4">
               <div>
                 <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-2">
-                  <Terminal className="h-4 w-4 text-indigo-600" />
+                  <Terminal className="h-4 w-4 text-[#C89B4A]" />
                   Crawler Logs
                 </h3>
-                <p className="text-[11px] text-slate-400 font-semibold mt-0.5 truncate max-w-md">
+                <p className="text-[11px] text-[#6B6B6B] font-semibold mt-0.5 truncate max-w-md">
                   Ingestion pipeline log for: {logsModalTitle}
                 </p>
               </div>
               <button
                 onClick={() => setLogsModalOpen(false)}
-                className="p-1.5 hover:bg-slate-100 rounded-full transition-colors cursor-pointer text-slate-400 hover:text-slate-600"
+                className="p-1.5 hover:bg-[#F2EEE8] rounded-full transition-colors cursor-pointer text-[#6B6B6B] hover:text-[#6B6B6B]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -6206,11 +6575,11 @@ export default function App() {
                   </div>
                 ))
               ) : (
-                <div className="text-slate-500 italic py-4 text-center">No logs recorded for this operation.</div>
+                <div className="text-[#6B6B6B] italic py-4 text-center">No logs recorded for this operation.</div>
               )}
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+            <div className="flex justify-end pt-2 border-t border-[#E7DDD0]">
               <button
                 type="button"
                 onClick={() => setLogsModalOpen(false)}
@@ -6227,21 +6596,21 @@ export default function App() {
       {customDialog.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={customDialog.type === 'confirm' ? customDialog.onCancel : undefined} />
-          <div className="relative bg-white border border-slate-200 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 space-y-5">
+          <div className="relative bg-white border border-[#E7DDD0] rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 space-y-5">
             <div className="space-y-2">
               <h3 className="text-sm font-extrabold text-slate-950 flex items-center gap-2">
                 {customDialog.type === 'confirm' ? (
-                  <div className="p-1.5 bg-rose-50 border border-rose-100 rounded-lg text-rose-600">
+                  <div className="p-1.5 bg-[#B65454]/10 border border-rose-100 rounded-lg text-[#B65454]">
                     <Trash2 className="h-4 w-4" />
                   </div>
                 ) : (
-                  <div className="p-1.5 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-600">
+                  <div className="p-1.5 bg-[#F2EEE8] border border-[#E7DDD0] rounded-lg text-[#C89B4A]">
                     <Info className="h-4 w-4" />
                   </div>
                 )}
                 <span>{customDialog.title}</span>
               </h3>
-              <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+              <p className="text-xs text-[#6B6B6B] font-semibold leading-relaxed">
                 {customDialog.message}
               </p>
             </div>
@@ -6252,7 +6621,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={customDialog.onCancel}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs py-2.5 rounded-xl transition-colors cursor-pointer"
+                    className="flex-1 bg-[#F2EEE8] hover:bg-slate-200 text-[#1B1B1B] font-extrabold text-xs py-2.5 rounded-xl transition-colors cursor-pointer"
                   >
                     {customDialog.cancelLabel || 'Cancel'}
                   </button>
@@ -6268,7 +6637,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={customDialog.onConfirm}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs py-2.5 rounded-xl transition-colors cursor-pointer"
+                  className="w-full bg-[#C89B4A] hover:bg-[#B98A32] text-white font-extrabold text-xs py-2.5 rounded-xl transition-colors cursor-pointer"
                 >
                   {customDialog.confirmLabel || 'OK'}
                 </button>

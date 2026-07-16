@@ -149,6 +149,37 @@ export async function callOpenRouter(
         const status = response.status;
         const detailedErrorText = parseOpenRouterError(status, errText, 'OpenRouter API Call');
         
+        if (status === 402) {
+          const match = errText.match(/but can only afford (\d+)/i);
+          let affordable = 0;
+          if (match) {
+            affordable = parseInt(match[1], 10);
+          }
+          if (affordable > 0) {
+            const nextMaxTokens = Math.max(100, affordable - 10);
+            if (payload.max_tokens > nextMaxTokens) {
+              console.warn(`[OpenRouter 402 Auto-Heal] Reducing max_tokens from ${payload.max_tokens} to ${nextMaxTokens} to fit available credit limit and retrying...`);
+              payload.max_tokens = nextMaxTokens;
+              if (attempts < maxAttempts) {
+                const delay = attempts === 1 ? 2000 : attempts === 2 ? 5000 : 10000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+              }
+            }
+          } else {
+            const nextMaxTokens = Math.max(256, Math.floor(payload.max_tokens / 2));
+            if (payload.max_tokens > nextMaxTokens) {
+              console.warn(`[OpenRouter 402 Auto-Heal] Halving max_tokens from ${payload.max_tokens} to ${nextMaxTokens} and retrying...`);
+              payload.max_tokens = nextMaxTokens;
+              if (attempts < maxAttempts) {
+                const delay = attempts === 1 ? 2000 : attempts === 2 ? 5000 : 10000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+              }
+            }
+          }
+        }
+
         if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
           console.warn(`[OpenRouter Info] API Call failed with status ${status}. Falling back to native Gemini Direct... Details: ${detailedErrorText}`);
           try {

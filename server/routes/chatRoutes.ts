@@ -130,30 +130,82 @@ router.post('/', async (req: Request, res: Response) => {
   let totalCompletionTokens = 0;
 
   try {
-    const openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openRouterKey}`,
-        'HTTP-Referer': 'https://iracampus.edu',
-        'X-Title': 'IRA Campus'
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemInstruction },
-          ...messagesPayload
-        ],
-        temperature,
-        max_tokens: maxTokens,
-        stream: true
-      })
-    });
+    let currentMaxTokens = maxTokens;
+    let openRouterRes: any = null;
+    let streamAttempts = 0;
+    const maxStreamAttempts = 3;
 
-    if (!openRouterRes.ok) {
-      const errText = await openRouterRes.text();
-      console.warn(`[OpenRouter API Error] Status ${openRouterRes.status}. Output: ${errText}. Falling back to Gemini...`);
-      throw new Error(`OpenRouter returned status ${openRouterRes.status}`);
+    while (streamAttempts < maxStreamAttempts) {
+      streamAttempts++;
+      try {
+        openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openRouterKey}`,
+            'HTTP-Referer': 'https://iracampus.edu',
+            'X-Title': 'IRA Campus'
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemInstruction },
+              ...messagesPayload
+            ],
+            temperature,
+            max_tokens: currentMaxTokens,
+            stream: true
+          })
+        });
+
+        if (!openRouterRes.ok) {
+          const errText = await openRouterRes.text();
+          const status = openRouterRes.status;
+          console.warn(`[OpenRouter API Error] Status ${status}. Output: ${errText}. Attempt ${streamAttempts}/${maxStreamAttempts}`);
+          
+          if (status === 402) {
+            const match = errText.match(/but can only afford (\d+)/i);
+            let affordable = 0;
+            if (match) {
+              affordable = parseInt(match[1], 10);
+            }
+            if (affordable > 0) {
+              const nextMaxTokens = Math.max(100, affordable - 10);
+              if (currentMaxTokens > nextMaxTokens) {
+                console.warn(`[OpenRouter Stream 402 Auto-Heal] Reducing max_tokens from ${currentMaxTokens} to ${nextMaxTokens} and retrying...`);
+                currentMaxTokens = nextMaxTokens;
+                if (streamAttempts < maxStreamAttempts) {
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  continue;
+                }
+              }
+            } else {
+              const nextMaxTokens = Math.max(256, Math.floor(currentMaxTokens / 2));
+              if (currentMaxTokens > nextMaxTokens) {
+                console.warn(`[OpenRouter Stream 402 Auto-Heal] Halving max_tokens from ${currentMaxTokens} to ${nextMaxTokens} and retrying...`);
+                currentMaxTokens = nextMaxTokens;
+                if (streamAttempts < maxStreamAttempts) {
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  continue;
+                }
+              }
+            }
+          }
+          
+          throw new Error(`OpenRouter returned status ${status}: ${errText}`);
+        }
+        break; // Success
+      } catch (err: any) {
+        if (streamAttempts >= maxStreamAttempts) {
+          throw err;
+        }
+        console.warn(`[OpenRouter Stream Retry] Error occurred on attempt ${streamAttempts}: ${err.message}. Retrying in 2s...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    if (!openRouterRes || !openRouterRes.ok) {
+      throw new Error('Failed to obtain a valid OpenRouter stream response after retries.');
     }
 
     const reader = openRouterRes.body?.getReader();

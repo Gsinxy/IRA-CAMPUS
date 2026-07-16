@@ -1066,4 +1066,115 @@ router.post('/rebuild', adminAuthMiddleware, async (req: AdminRequest, res: Resp
   }
 });
 
+// GET single document by ID
+router.get('/:id', adminAuthMiddleware, async (req: AdminRequest, res: Response) => {
+  const { id } = req.params;
+  try {
+    const docObj = await DocumentRepository.getById(id);
+    if (!docObj) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    res.json(docObj);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT update / edit a document (re-embed & re-index only this document)
+router.put('/:id', adminAuthMiddleware, async (req: AdminRequest, res: Response) => {
+  const { id } = req.params;
+  const { documentJson } = req.body;
+
+  if (!documentJson) {
+    return res.status(400).json({ error: 'documentJson is required.' });
+  }
+
+  try {
+    let editedObj: any;
+    try {
+      editedObj = typeof documentJson === 'string' ? JSON.parse(documentJson) : documentJson;
+    } catch (parseErr: any) {
+      return res.status(400).json({ error: `Invalid JSON format: ${parseErr.message}` });
+    }
+
+    const existingDoc = await DocumentRepository.getById(id);
+    if (!existingDoc) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    // Merge and update properties
+    let title = editedObj.title || existingDoc.title;
+    let category = editedObj.category || existingDoc.category;
+    let content = editedObj.content || existingDoc.content || '';
+
+    // If it's a JSON type, let's extract fields from the edited rawJson if the user edited it
+    if (existingDoc.type === 'json') {
+      existingDoc.rawJson = editedObj;
+      title = editedObj.title || title;
+      category = editedObj.category || category;
+      content = editedObj.content || content;
+    }
+
+    existingDoc.title = title;
+    existingDoc.category = category;
+    existingDoc.content = content;
+    existingDoc.summary = editedObj.summary !== undefined ? editedObj.summary : existingDoc.summary;
+    existingDoc.faqs = Array.isArray(editedObj.faqs) ? editedObj.faqs : (existingDoc.faqs || []);
+    existingDoc.keywords = Array.isArray(editedObj.keywords) ? editedObj.keywords : (existingDoc.keywords || []);
+    existingDoc.entities = editedObj.entities || existingDoc.entities || {
+      departments: [],
+      facultyMembers: [],
+      courses: [],
+      fees: [],
+      contacts: [],
+      dates: []
+    };
+    (existingDoc as any).contactInformation = editedObj.contactInformation || editedObj.contact_information || (existingDoc as any).contactInformation || null;
+    existingDoc.metadata = Array.isArray(editedObj.metadata) ? editedObj.metadata : (existingDoc.metadata || []);
+    existingDoc.sourceUrl = editedObj.sourceUrl || editedObj.source_url || existingDoc.sourceUrl || null;
+    existingDoc.size = `${Math.round(content.length / 102) / 10} KB`;
+    existingDoc.updatedAt = new Date().toISOString();
+
+    // Re-index / Re-embed only this document
+    console.log(`[Edit Doc] Generating new chunks for updated document: "${title}"`);
+    const rawChunks = convertJsonToSearchableChunks(existingDoc);
+    const docChunks = rawChunks.map((chunkText: string, idx: number) => ({
+      id: `${id}-chunk-${idx}`,
+      text: chunkText,
+      embedding: [] as number[]
+    }));
+
+    console.log(`[Edit Doc] Generating embeddings for ${docChunks.length} chunks...`);
+    for (const chunk of docChunks) {
+      try {
+        const vector = await GeminiService.getEmbedding(chunk.text);
+        if (vector && vector.length > 0) {
+          chunk.embedding = vector;
+        }
+      } catch (embErr: any) {
+        console.error(`[Edit Doc] Failed to get embedding for chunk:`, embErr.message);
+      }
+      await new Promise(resolve => setTimeout(resolve, 100)); // Rate limit safety
+    }
+
+    existingDoc.chunks = docChunks;
+    existingDoc.embedding = (docChunks[0] && docChunks[0].embedding) || [];
+
+    // Save back to Firestore
+    await DocumentRepository.save(existingDoc);
+
+    const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    await AnalyticsRepository.logAuditEvent(
+      req.admin?.email || 'admin@ira.edu',
+      `Knowledge Edit: Redesigned/Updated document: "${title}" (ID: ${id})`,
+      String(clientIp)
+    );
+
+    res.json({ success: true, message: 'Knowledge source updated successfully.', document: existingDoc });
+  } catch (err: any) {
+    console.error('Failed to edit knowledge document:', err);
+    res.status(500).json({ error: `Failed to edit knowledge document: ${err.message}` });
+  }
+});
+
 export default router;
