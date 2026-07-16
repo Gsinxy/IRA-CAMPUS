@@ -1,13 +1,17 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const config: any = firebaseConfig;
 const app = initializeApp(config);
 export const auth = getAuth(app);
-export const db = config.firestoreDatabaseId ? getFirestore(app, config.firestoreDatabaseId) : getFirestore(app);
+
+// Use initializeFirestore with experimentalForceLongPolling enabled to resolve connection issues in sandboxed iframe previews
+export const db = config.firestoreDatabaseId 
+  ? initializeFirestore(app, { experimentalForceLongPolling: true }, config.firestoreDatabaseId) 
+  : initializeFirestore(app, { experimentalForceLongPolling: true });
 
 // Initialize Firebase Analytics (browser only)
 export let analytics: any = null;

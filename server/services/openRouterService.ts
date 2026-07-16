@@ -162,6 +162,12 @@ export async function callOpenRouter(
         }
       }
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const bodyText = await response.text();
+        throw new Error(`OpenRouter returned unexpected content-type "${contentType}" instead of JSON. Body: ${bodyText.substring(0, 300)}`);
+      }
+
       const data = await response.json();
       if (!data.choices || data.choices.length === 0) {
         throw new Error('OpenRouter returned an empty choices array.');

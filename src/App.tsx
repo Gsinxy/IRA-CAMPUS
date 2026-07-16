@@ -78,7 +78,7 @@ import {
   AnalyticsSummary
 } from './types';
 import { auth, db } from './firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { onAuthStateChanged, onIdTokenChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveConversationToFirestore, loadConversationsFromFirestore, deleteConversationFromFirestore, deleteConversationsFromFirestore } from './services/firebaseService';
 
@@ -1080,7 +1080,7 @@ export default function App() {
 
   // Firebase Auth State Listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setIsCheckingAuth(true);
       if (user) {
         const userEmail = user.email || '';
@@ -1217,7 +1217,7 @@ export default function App() {
       const isPublicGet = (url === '/api/notices' || url === '/api/faqs') && (!init || !init.method || init.method.toUpperCase() === 'GET');
       
       if (!isPublicGet) {
-        const token = adminToken || (auth.currentUser ? await auth.currentUser.getIdToken() : null);
+        const token = auth.currentUser ? await auth.currentUser.getIdToken() : (adminToken || null);
         if (token) {
           options.headers = {
             ...options.headers,
