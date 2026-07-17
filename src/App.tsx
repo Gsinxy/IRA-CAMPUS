@@ -1157,7 +1157,7 @@ export default function App() {
     setEditingJsonText('Loading original document JSON...');
 
     try {
-      const res = await fetch(`/api/documents/${docObj.id}`);
+      const res = await fetchWithRetry(`/api/documents/${docObj.id}`);
       if (!res.ok) {
         throw new Error('Failed to fetch full document details.');
       }
@@ -1463,10 +1463,24 @@ export default function App() {
     }
   }, [activeTab, conversations, isAiTyping]);
 
+  const fetchWithRetry = async (url: string, options?: RequestInit, retries = 3, delay = 1000): Promise<Response> => {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err) {
+      if (retries > 0) {
+        console.warn(`[Retry] Fetch to ${url} failed. Retrying in ${delay}ms... (${retries} retries left). Error:`, err);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchWithRetry(url, options, retries - 1, delay * 1.5);
+      }
+      throw err;
+    }
+  };
+
   const fetchNotices = async () => {
     setIsNoticesLoading(true);
     try {
-      const res = await fetch('/api/notices');
+      const res = await fetchWithRetry('/api/notices');
       if (!res.ok) {
         throw new Error(`HTTP status ${res.status}`);
       }
@@ -1481,7 +1495,7 @@ export default function App() {
 
   const fetchFAQs = async () => {
     try {
-      const res = await fetch('/api/faqs');
+      const res = await fetchWithRetry('/api/faqs');
       if (!res.ok) {
         throw new Error(`HTTP status ${res.status}`);
       }
@@ -1495,7 +1509,7 @@ export default function App() {
   const fetchAdminDocs = async () => {
     setIsDocsLoading(true);
     try {
-      const res = await fetch('/api/documents');
+      const res = await fetchWithRetry('/api/documents');
       if (!res.ok) {
         throw new Error(`HTTP status ${res.status}`);
       }
@@ -1510,7 +1524,7 @@ export default function App() {
 
   const fetchAnalytics = async () => {
     try {
-      const res = await fetch('/api/analytics');
+      const res = await fetchWithRetry('/api/analytics');
       if (!res.ok) {
         throw new Error(`HTTP status ${res.status}`);
       }

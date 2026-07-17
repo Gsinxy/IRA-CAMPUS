@@ -5,7 +5,7 @@ import { FaqsRepository } from '../repositories/faqsRepository.js';
 import { AnalyticsRepository } from '../repositories/analyticsRepository.js';
 import { ScrapperService } from '../services/scrapperService.js';
 import { DocumentService } from '../services/documentService.js';
-import { OpenRouterService } from '../services/openRouterService.js';
+import { NvidiaService } from '../services/nvidiaService.js';
 import { GeminiService } from '../services/geminiService.js';
 import { convertJsonToSearchableChunks } from '../utils/helpers.js';
 import { CollegeDocument } from '../../src/types.js';
@@ -715,7 +715,7 @@ Do not include any thinking block, markdown code fence like \`\`\`json, or extra
       ]
     };
 
-    const response = await OpenRouterService.callWithFallback([
+    const response = await NvidiaService.callWithFallback([
       { role: 'user', content: `Please perform full structured College Knowledge Extraction on the following raw copied text/website content. Formulate and return high-fidelity results adhering exactly to the schema:\n\n${content}` }
     ], systemPrompt, true, extractionSchema);
 
@@ -858,11 +858,11 @@ router.post('/upload', adminAuthMiddleware, async (req: AdminRequest, res: Respo
       const page = await ScrapperService.fetchAndParseUrl(url);
       finalContent = page.rawText;
     } else if (fileBase64 && mimeType) {
-      console.log(`Sending file ${title} (${mimeType}) to OpenRouter/Gemini for multimodal text extraction...`);
+      console.log(`Sending file ${title} (${mimeType}) to NVIDIA/Gemini for multimodal text extraction...`);
       const extractionPrompt = 'Extract and read all textual content from this file accurately. Keep the organization structural layout (like headings and tables) clear and neat. Return only the extracted text without any conversational preamble.';
       try {
         const fileDataUrl = `data:${mimeType};base64,${fileBase64}`;
-        const result = await OpenRouterService.callWithFallback([
+        const result = await NvidiaService.callWithFallback([
           {
             role: 'user',
             content: [
@@ -880,19 +880,19 @@ router.post('/upload', adminAuthMiddleware, async (req: AdminRequest, res: Respo
           }
         ], 'You are a professional layout OCR engine.');
         finalContent = result.text || '';
-      } catch (orErr: any) {
+      } catch (nvErr: any) {
         if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
-          console.warn(`[OpenRouter OCR Warning] ${orErr.message}. Falling back to native Google GenAI OCR client...`);
+          console.warn(`[NVIDIA OCR Warning] ${nvErr.message}. Falling back to native Google GenAI OCR client...`);
           try {
             const result = await GeminiService.ocrMultimodal(fileBase64, mimeType, extractionPrompt);
             finalContent = result || '';
           } catch (geminiErr: any) {
             console.error('[Gemini Direct OCR Fallback Failed]', geminiErr);
-            throw new Error(`Both OpenRouter and Gemini Multimodal OCR failed: ${geminiErr.message}`);
+            throw new Error(`Both NVIDIA and Gemini Multimodal OCR failed: ${geminiErr.message}`);
           }
         } else {
-          console.error(`[OpenRouter OCR Error] ${orErr.message}. Bypassing fallback as GEMINI_API_KEY is not configured.`);
-          throw orErr;
+          console.error(`[NVIDIA OCR Error] ${nvErr.message}. Bypassing fallback as GEMINI_API_KEY is not configured.`);
+          throw nvErr;
         }
       }
     } else {

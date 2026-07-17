@@ -32,23 +32,23 @@ export function getGeminiClient(): GoogleGenAI | null {
 }
 
 /**
- * Generate embedding for text content using OpenRouter or Gemini.
+ * Generate embedding for text content using NVIDIA or Gemini.
  */
 export async function getEmbedding(text: string): Promise<number[]> {
-  const orKey = process.env.OPENROUTER_API_KEY;
-  if (orKey && orKey.trim() !== '' && orKey !== 'MY_OPENROUTER_API_KEY') {
+  const nvKey = process.env.NVIDIA_API_KEY;
+  if (nvKey && nvKey.trim() !== '' && nvKey !== 'MY_NVIDIA_API_KEY') {
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
+      const response = await fetch('https://integrate.api.nvidia.com/v1/embeddings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${orKey}`,
-          'HTTP-Referer': 'https://iracampus.edu',
-          'X-Title': 'IRA Campus'
+          'Authorization': `Bearer ${nvKey}`
         },
         body: JSON.stringify({
-          model: 'openai/text-embedding-3-small',
-          input: text,
+          model: 'nvidia/embeddings-nv-embed-qa-4',
+          input: [text],
+          encoding_format: 'float',
+          input_type: 'query'
         })
       });
 
@@ -59,10 +59,28 @@ export async function getEmbedding(text: string): Promise<number[]> {
         }
       } else {
         const errText = await response.text();
-        console.warn(`[OpenRouter Embedding] Error fetching embedding: status ${response.status}`, errText);
+        console.warn(`[NVIDIA Embedding] Error fetching embedding: status ${response.status}`, errText);
+        // Retry with standard direct object input format
+        const retryRes = await fetch('https://integrate.api.nvidia.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${nvKey}`
+          },
+          body: JSON.stringify({
+            model: 'nvidia/embeddings-nv-embed-qa-4',
+            input: text
+          })
+        });
+        if (retryRes.ok) {
+          const data = (await retryRes.json()) as any;
+          if (data && data.data && Array.isArray(data.data) && data.data[0]?.embedding) {
+            return data.data[0].embedding;
+          }
+        }
       }
     } catch (err: any) {
-      console.error('[OpenRouter Embedding] Exception:', err.message);
+      console.error('[NVIDIA Embedding] Exception:', err.message);
     }
   }
 

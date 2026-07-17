@@ -1,7 +1,7 @@
 import { DocumentRepository } from '../repositories/documentRepository.js';
 import { FaqsRepository } from '../repositories/faqsRepository.js';
 import { SettingsRepository } from '../repositories/settingsRepository.js';
-import { OpenRouterService } from './openRouterService.js';
+import { NvidiaService } from './nvidiaService.js';
 import { GeminiService } from './geminiService.js';
 import { CollegeDocument } from '../../src/types.js';
 import { Type } from '@google/genai';
@@ -183,7 +183,7 @@ Do not include any thinking block, markdown code fence like \`\`\`json, or extra
 
     let resultText = '';
     try {
-      const response = await OpenRouterService.callWithFallback([
+      const response = await NvidiaService.callWithFallback([
         { role: 'user', content: userPrompt }
       ], systemPrompt, true, extractionSchema);
       resultText = response.text;

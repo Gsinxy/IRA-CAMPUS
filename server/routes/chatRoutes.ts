@@ -3,7 +3,7 @@ import { SettingsRepository } from '../repositories/settingsRepository.js';
 import { AnalyticsRepository } from '../repositories/analyticsRepository.js';
 import { RagService } from '../services/ragService.js';
 import { GeminiService } from '../services/geminiService.js';
-import { OpenRouterService } from '../services/openRouterService.js';
+import { NvidiaService, getVerifiedNvidiaKey, parseNvidiaError } from '../services/nvidiaService.js';
 
 const router = Router();
 
@@ -74,16 +74,30 @@ router.post('/', async (req: Request, res: Response) => {
 
   // 4. Retrieve settings & select API channel
   const settings = await SettingsRepository.get();
-  const model = settings.model || 'google/gemini-2.5-flash';
+  let model = settings.model || 'meta/llama-3.1-8b-instruct';
+
+  // Fallback map for incompatible OpenRouter/Gemini models
+  if (
+    model.includes('gemini') ||
+    model.includes('gpt') ||
+    model.includes('claude') ||
+    model.includes('google/') ||
+    model.includes('anthropic/') ||
+    model.includes('openai/') ||
+    !model.includes('/')
+  ) {
+    model = 'meta/llama-3.1-8b-instruct';
+  }
+
   const temperature = settings.temperature !== undefined ? settings.temperature : 0.2;
   const maxTokens = settings.maxTokens || 4096;
 
-  let openRouterKey = '';
+  let nvidiaKey = '';
   try {
-    openRouterKey = OpenRouterService.getVerifiedKey();
+    nvidiaKey = getVerifiedNvidiaKey();
   } catch (keyErr: any) {
     if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
-      console.warn(`[OpenRouter Key Info] ${keyErr.message}. Automatically falling back to native Gemini stream...`);
+      console.warn(`[NVIDIA Key Info] ${keyErr.message}. Automatically falling back to native Gemini stream...`);
       try {
         await GeminiService.streamNativeFallback(
           res,
@@ -103,16 +117,16 @@ router.post('/', async (req: Request, res: Response) => {
         res.end();
       }
     } else {
-      console.error(`[OpenRouter Key Error] ${keyErr.message}. Bypassing fallback as GEMINI_API_KEY is not configured.`);
+      console.error(`[NVIDIA Key Error] ${keyErr.message}. Bypassing fallback as GEMINI_API_KEY is not configured.`);
       res.setHeader('Content-Type', 'text/event-stream');
-      res.write(`data: ${JSON.stringify({ error: `OpenRouter initialization failed: ${keyErr.message}` })}\n\n`);
+      res.write(`data: ${JSON.stringify({ error: `NVIDIA initialization failed: ${keyErr.message}` })}\n\n`);
       res.end();
     }
     return;
   }
 
-  // 5. Stream from OpenRouter
-  console.log(`[OpenRouter Stream] Starting request using model "${model}"...`);
+  // 5. Stream from NVIDIA Build API
+  console.log(`[NVIDIA Stream] Starting request using model "${model}"...`);
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -131,20 +145,18 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     let currentMaxTokens = maxTokens;
-    let openRouterRes: any = null;
+    let nvidiaRes: any = null;
     let streamAttempts = 0;
     const maxStreamAttempts = 3;
 
     while (streamAttempts < maxStreamAttempts) {
       streamAttempts++;
       try {
-        openRouterRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        nvidiaRes = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openRouterKey}`,
-            'HTTP-Referer': 'https://iracampus.edu',
-            'X-Title': 'IRA Campus'
+            'Authorization': `Bearer ${nvidiaKey}`
           },
           body: JSON.stringify({
             model,
@@ -158,57 +170,29 @@ router.post('/', async (req: Request, res: Response) => {
           })
         });
 
-        if (!openRouterRes.ok) {
-          const errText = await openRouterRes.text();
-          const status = openRouterRes.status;
-          console.warn(`[OpenRouter API Error] Status ${status}. Output: ${errText}. Attempt ${streamAttempts}/${maxStreamAttempts}`);
+        if (!nvidiaRes.ok) {
+          const errText = await nvidiaRes.text();
+          const status = nvidiaRes.status;
+          const detailedErrorText = parseNvidiaError(status, errText, 'Streaming API Call');
+          console.warn(`[NVIDIA Stream API Error] Status ${status}. Output: ${errText}. Attempt ${streamAttempts}/${maxStreamAttempts}`);
           
-          if (status === 402) {
-            const match = errText.match(/but can only afford (\d+)/i);
-            let affordable = 0;
-            if (match) {
-              affordable = parseInt(match[1], 10);
-            }
-            if (affordable > 0) {
-              const nextMaxTokens = Math.max(100, affordable - 10);
-              if (currentMaxTokens > nextMaxTokens) {
-                console.warn(`[OpenRouter Stream 402 Auto-Heal] Reducing max_tokens from ${currentMaxTokens} to ${nextMaxTokens} and retrying...`);
-                currentMaxTokens = nextMaxTokens;
-                if (streamAttempts < maxStreamAttempts) {
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  continue;
-                }
-              }
-            } else {
-              const nextMaxTokens = Math.max(256, Math.floor(currentMaxTokens / 2));
-              if (currentMaxTokens > nextMaxTokens) {
-                console.warn(`[OpenRouter Stream 402 Auto-Heal] Halving max_tokens from ${currentMaxTokens} to ${nextMaxTokens} and retrying...`);
-                currentMaxTokens = nextMaxTokens;
-                if (streamAttempts < maxStreamAttempts) {
-                  await new Promise(resolve => setTimeout(resolve, 2000));
-                  continue;
-                }
-              }
-            }
-          }
-          
-          throw new Error(`OpenRouter returned status ${status}: ${errText}`);
+          throw new Error(detailedErrorText);
         }
         break; // Success
       } catch (err: any) {
         if (streamAttempts >= maxStreamAttempts) {
           throw err;
         }
-        console.warn(`[OpenRouter Stream Retry] Error occurred on attempt ${streamAttempts}: ${err.message}. Retrying in 2s...`);
+        console.warn(`[NVIDIA Stream Retry] Error occurred on attempt ${streamAttempts}: ${err.message}. Retrying in 2s...`);
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
-    if (!openRouterRes || !openRouterRes.ok) {
-      throw new Error('Failed to obtain a valid OpenRouter stream response after retries.');
+    if (!nvidiaRes || !nvidiaRes.ok) {
+      throw new Error('Failed to obtain a valid NVIDIA stream response after retries.');
     }
 
-    const reader = openRouterRes.body?.getReader();
+    const reader = nvidiaRes.body?.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
 
@@ -248,19 +232,8 @@ router.post('/', async (req: Request, res: Response) => {
     const duration = Date.now() - globalStartTime;
     const totalTokens = totalPromptTokens + totalCompletionTokens || Math.ceil((systemInstruction.length + accumulatedResponseText.length) / 4);
     
-    // Cost mapping helper
-    let estimatedCost = 0;
-    if (model.includes('gemini-2.5-flash')) {
-      estimatedCost = (totalPromptTokens * 0.075 + totalCompletionTokens * 0.30) / 1000000;
-    } else if (model.includes('gemini-2.5-pro')) {
-      estimatedCost = (totalPromptTokens * 1.25 + totalCompletionTokens * 5.00) / 1000000;
-    } else if (model.includes('gpt-5') || model.includes('gpt-4')) {
-      estimatedCost = (totalPromptTokens * 2.50 + totalCompletionTokens * 10.00) / 1000000;
-    } else if (model.includes('claude')) {
-      estimatedCost = (totalPromptTokens * 3.00 + totalCompletionTokens * 15.00) / 1000000;
-    } else {
-      estimatedCost = (totalTokens * 0.15) / 1000000;
-    }
+    // Cost mapping helper (Estimating $0.075 / $0.30 per 1M tokens for NVIDIA models)
+    const estimatedCost = (totalPromptTokens * 0.075 + totalCompletionTokens * 0.30) / 1000000;
 
     // Save model performance log to Firestore
     await AnalyticsRepository.addAILogEntry({
@@ -300,14 +273,14 @@ router.post('/', async (req: Request, res: Response) => {
     res.end();
 
   } catch (err: any) {
-    console.error('[OpenRouter Stream Execution Error] Falling back to Gemini...', err);
+    console.error('[NVIDIA Stream Execution Error] Falling back to Gemini...', err);
     const duration = Date.now() - globalStartTime;
     await AnalyticsRepository.addAILogEntry({
       model,
       processingTimeMs: duration,
       status: 'Failed',
       retries: 0,
-      error: err.message || 'Streaming failure',
+      error: err.message || 'NVIDIA Streaming failure',
       promptSnippet: message.substring(0, 200)
     });
 
@@ -331,8 +304,8 @@ router.post('/', async (req: Request, res: Response) => {
         res.end();
       }
     } else {
-      console.warn(`[OpenRouter Stream Error] Bypassing fallback as GEMINI_API_KEY is not configured.`);
-      res.write(`data: ${JSON.stringify({ error: `OpenRouter stream execution error: ${err.message}` })}\n\n`);
+      console.warn(`[NVIDIA Stream Error] Bypassing fallback as GEMINI_API_KEY is not configured.`);
+      res.write(`data: ${JSON.stringify({ error: `NVIDIA stream execution error: ${err.message}` })}\n\n`);
       res.end();
     }
   }

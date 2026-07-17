@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { verifyFirebaseConnections } from './server/firebase.js';
 import { DocumentService } from './server/services/documentService.js';
-import { OpenRouterService } from './server/services/openRouterService.js';
+import { NvidiaService } from './server/services/nvidiaService.js';
 import { SettingsRepository } from './server/repositories/settingsRepository.js';
 
 // Route Imports
@@ -59,31 +59,32 @@ async function validateEnvironment() {
     console.log('✓ GEMINI_API_KEY loaded successfully (Optional).');
   }
 
-  // 2. Load settings to see if provider is OpenRouter
-  let activeProvider = 'OpenRouter'; // Default fallback
+  // 2. Load settings to see if provider is NVIDIA
+  let activeProvider = 'Nvidia'; // Default fallback
   try {
     const settings = await SettingsRepository.get();
-    activeProvider = settings.provider || 'OpenRouter';
+    activeProvider = settings.provider || 'Nvidia';
     console.log(`[Bootstrap] Configured active AI provider is: "${activeProvider}"`);
   } catch (dbErr: any) {
-    console.warn(`[Bootstrap] Failed to fetch settings from Firestore. Defaulting provider check to "OpenRouter". Error: ${dbErr.message}`);
+    console.warn(`[Bootstrap] Failed to fetch settings from Firestore. Defaulting provider check to "Nvidia". Error: ${dbErr.message}`);
   }
 
-  // 3. Validate OPENROUTER_API_KEY (Primary & Required)
-  const orKey = process.env.OPENROUTER_API_KEY;
-  const isMissingOrPlaceholder = !orKey ||
-    orKey.trim() === '' ||
-    orKey === 'MY_OPENROUTER_API_KEY' ||
-    orKey === 'MY_NEW_API_KEY' ||
-    orKey.includes('<MY_NEW_API_KEY>');
+  // 3. Validate NVIDIA_API_KEY (Primary & Required)
+  const nvKey = process.env.NVIDIA_API_KEY;
+  const isMissingOrPlaceholder = !nvKey ||
+    nvKey.trim() === '' ||
+    nvKey === 'MY_NVIDIA_API_KEY' ||
+    nvKey === 'MY_NEW_API_KEY' ||
+    nvKey.includes('<MY_NEW_API_KEY>');
 
   if (isMissingOrPlaceholder) {
-    throw new Error(
-      'CRITICAL CONFIGURATION ERROR: The OPENROUTER_API_KEY environment variable is missing, empty, or a placeholder. ' +
-      'Please configure a valid OPENROUTER_API_KEY in your environment to run the application.'
+    console.warn(
+      '⚠️ WARNING: The NVIDIA_API_KEY environment variable is missing, empty, or a placeholder. ' +
+      'Please configure a valid NVIDIA_API_KEY in your environment secrets to use NVIDIA-powered features.'
     );
+  } else {
+    console.log('✓ NVIDIA API key loaded successfully.');
   }
-  console.log('✓ OpenRouter API key loaded successfully.');
 
   // 4. Validate Firebase Config Path
   const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
@@ -187,11 +188,11 @@ async function bootstrap() {
       console.error('[Bootstrap] Failed to initialize AI Queue:', qErr);
     }
 
-    // 2. Perform OpenRouter startup connection test
+    // 2. Perform NVIDIA startup connection test
     try {
-      await OpenRouterService.testConnection();
+      await NvidiaService.testConnection();
     } catch (testErr) {
-      console.warn('[Bootstrap] OpenRouter startup check bypassed:', testErr);
+      console.warn('[Bootstrap] NVIDIA startup check bypassed:', testErr);
     }
   });
 }

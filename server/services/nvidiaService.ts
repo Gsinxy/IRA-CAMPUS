@@ -4,21 +4,21 @@ import { callGeminiDirect, streamGeminiDirect } from './geminiService.js';
 import { db, setDoc } from '../firebase.js';
 import { doc } from 'firebase/firestore';
 
-export function getVerifiedOpenRouterKey(): string {
-  const key = process.env.OPENROUTER_API_KEY;
+export function getVerifiedNvidiaKey(): string {
+  const key = process.env.NVIDIA_API_KEY;
   if (
     !key ||
     key.trim() === '' ||
-    key === 'MY_OPENROUTER_API_KEY' ||
+    key === 'MY_NVIDIA_API_KEY' ||
     key === 'MY_NEW_API_KEY' ||
     key.includes('<MY_NEW_API_KEY>')
   ) {
-    throw new Error('OpenRouter API Key Verification Failed: OPENROUTER_API_KEY is missing, empty, or a placeholder.');
+    throw new Error('NVIDIA API Key Verification Failed: NVIDIA_API_KEY is missing, empty, or a placeholder.');
   }
   return key;
 }
 
-export function parseOpenRouterError(status: number, responseText: string, stage: string = 'AI Pipeline'): string {
+export function parseNvidiaError(status: number, responseText: string, stage: string = 'AI Pipeline'): string {
   let parsedErrorMsg = '';
   let errorCode = '';
   try {
@@ -35,24 +35,22 @@ export function parseOpenRouterError(status: number, responseText: string, stage
   if (status === 400) {
     suggestedReason = 'The request payload is invalid, or the selected model is not supported or misconfigured.';
   } else if (status === 401) {
-    suggestedReason = 'The OpenRouter API Key provided is invalid or has expired. Please check your key.';
-  } else if (status === 402) {
-    suggestedReason = 'Your OpenRouter account has insufficient credits. Please purchase credits at https://openrouter.ai/settings/credits.';
+    suggestedReason = 'The NVIDIA API Key provided is invalid or has expired. Please check your key.';
   } else if (status === 403) {
     suggestedReason = 'Access is forbidden. This model may be restricted or your request was blocked.';
   } else if (status === 404) {
-    suggestedReason = 'The requested model or resource could not be found on OpenRouter.';
+    suggestedReason = 'The requested model or resource could not be found on NVIDIA Build API.';
   } else if (status === 429) {
     suggestedReason = 'Rate limit exceeded. You are making too many requests too quickly.';
   } else if (status >= 500) {
-    suggestedReason = 'OpenRouter is experiencing an internal server error or gateway timeout. Please retry shortly.';
+    suggestedReason = 'NVIDIA is experiencing an internal server error or gateway timeout. Please retry shortly.';
   }
 
   const exactMessage = parsedErrorMsg || responseText || 'No detailed error message provided';
 
-  return `[OpenRouter Error]
+  return `[NVIDIA Error]
 - HTTP Status: ${status}
-- Exact OpenRouter error message: ${exactMessage}${errorCode ? ` (Code: ${errorCode})` : ''}
+- Exact NVIDIA error message: ${exactMessage}${errorCode ? ` (Code: ${errorCode})` : ''}
 - Response body: ${responseText}
 - Failed pipeline stage: ${stage}
 - Suggested reason: ${suggestedReason}`;
@@ -77,14 +75,14 @@ async function addAILogToFirestore(logEntry: {
       timestamp
     });
   } catch (err) {
-    console.error('[OpenRouter Service] Failed to write AI log to Firestore:', err);
+    console.error('[NVIDIA Service] Failed to write AI log to Firestore:', err);
   }
 }
 
 /**
- * Execute a standard, non-streaming OpenRouter API request
+ * Execute a standard, non-streaming NVIDIA Build API request
  */
-export async function callOpenRouter(
+export async function callNvidia(
   messages: any[],
   options: {
     responseFormatJson?: boolean;
@@ -94,10 +92,10 @@ export async function callOpenRouter(
 ): Promise<{ text: string; usage?: { prompt_tokens: number; completion_tokens: number }; cost?: number }> {
   let apiKey: string;
   try {
-    apiKey = getVerifiedOpenRouterKey();
+    apiKey = getVerifiedNvidiaKey();
   } catch (keyErr: any) {
     if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
-      console.warn(`[OpenRouter Key Warning] ${keyErr.message}. Automatically falling back to native Gemini SDK.`);
+      console.warn(`[NVIDIA Key Warning] ${keyErr.message}. Automatically falling back to native Gemini SDK.`);
       return await callGeminiDirect(messages, options);
     } else {
       throw keyErr;
@@ -105,9 +103,22 @@ export async function callOpenRouter(
   }
 
   const settings = await SettingsRepository.get();
-  const model = settings.model || 'google/gemini-2.5-flash';
+  let model = settings.model || 'meta/llama-3.1-8b-instruct';
 
-  console.log(`[OpenRouter Audit] Model configured: "${model}"`);
+  // Fallback map for incompatible OpenRouter/Gemini models
+  if (
+    model.includes('gemini') ||
+    model.includes('gpt') ||
+    model.includes('claude') ||
+    model.includes('google/') ||
+    model.includes('anthropic/') ||
+    model.includes('openai/') ||
+    !model.includes('/')
+  ) {
+    model = 'meta/llama-3.1-8b-instruct';
+  }
+
+  console.log(`[NVIDIA Audit] Model configured: "${model}"`);
   const temperature = settings.temperature !== undefined ? settings.temperature : 0.2;
   const maxTokens = settings.maxTokens || 4096;
 
@@ -121,7 +132,10 @@ export async function callOpenRouter(
     max_tokens: maxTokens,
   };
 
+  // Note: NVIDIA Build API supports JSON format on some models, if responseFormatJson is true, we can supply JSON instruction
   if (options.responseFormatJson) {
+    // Some models do not support response_format type json_object directly, 
+    // so we can append a reminder to the messages to ensure we get valid JSON, or pass response_format if compatible.
     payload.response_format = { type: 'json_object' };
   }
 
@@ -133,13 +147,11 @@ export async function callOpenRouter(
   while (attempts < maxAttempts) {
     attempts++;
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': 'https://iracampus.edu',
-          'X-Title': 'IRA Campus'
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify(payload)
       });
@@ -147,46 +159,15 @@ export async function callOpenRouter(
       if (!response.ok) {
         const errText = await response.text();
         const status = response.status;
-        const detailedErrorText = parseOpenRouterError(status, errText, 'OpenRouter API Call');
-        
-        if (status === 402) {
-          const match = errText.match(/but can only afford (\d+)/i);
-          let affordable = 0;
-          if (match) {
-            affordable = parseInt(match[1], 10);
-          }
-          if (affordable > 0) {
-            const nextMaxTokens = Math.max(100, affordable - 10);
-            if (payload.max_tokens > nextMaxTokens) {
-              console.warn(`[OpenRouter 402 Auto-Heal] Reducing max_tokens from ${payload.max_tokens} to ${nextMaxTokens} to fit available credit limit and retrying...`);
-              payload.max_tokens = nextMaxTokens;
-              if (attempts < maxAttempts) {
-                const delay = attempts === 1 ? 2000 : attempts === 2 ? 5000 : 10000;
-                await new Promise(resolve => setTimeout(resolve, delay));
-                continue;
-              }
-            }
-          } else {
-            const nextMaxTokens = Math.max(256, Math.floor(payload.max_tokens / 2));
-            if (payload.max_tokens > nextMaxTokens) {
-              console.warn(`[OpenRouter 402 Auto-Heal] Halving max_tokens from ${payload.max_tokens} to ${nextMaxTokens} and retrying...`);
-              payload.max_tokens = nextMaxTokens;
-              if (attempts < maxAttempts) {
-                const delay = attempts === 1 ? 2000 : attempts === 2 ? 5000 : 10000;
-                await new Promise(resolve => setTimeout(resolve, delay));
-                continue;
-              }
-            }
-          }
-        }
+        const detailedErrorText = parseNvidiaError(status, errText, 'NVIDIA API Call');
 
         if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
-          console.warn(`[OpenRouter Info] API Call failed with status ${status}. Falling back to native Gemini Direct... Details: ${detailedErrorText}`);
+          console.warn(`[NVIDIA Info] API Call failed with status ${status}. Falling back to native Gemini Direct... Details: ${detailedErrorText}`);
           try {
             return await callGeminiDirect(messages, options);
           } catch (geminiErr: any) {
             console.error('[Gemini Direct Fallback Failed]', geminiErr);
-            throw new Error(`OpenRouter failed (${detailedErrorText}) and Gemini fallback failed too: ${geminiErr.message}`);
+            throw new Error(`NVIDIA failed (${detailedErrorText}) and Gemini fallback failed too: ${geminiErr.message}`);
           }
         } else {
           throw new Error(detailedErrorText);
@@ -196,12 +177,12 @@ export async function callOpenRouter(
       const contentType = response.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
         const bodyText = await response.text();
-        throw new Error(`OpenRouter returned unexpected content-type "${contentType}" instead of JSON. Body: ${bodyText.substring(0, 300)}`);
+        throw new Error(`NVIDIA returned unexpected content-type "${contentType}" instead of JSON. Body: ${bodyText.substring(0, 300)}`);
       }
 
       const data = await response.json();
       if (!data.choices || data.choices.length === 0) {
-        throw new Error('OpenRouter returned an empty choices array.');
+        throw new Error('NVIDIA returned an empty choices array.');
       }
 
       const text = data.choices[0].message?.content || '';
@@ -209,19 +190,8 @@ export async function callOpenRouter(
       const completionTokens = data.usage?.completion_tokens || 0;
       const totalTokens = data.usage?.total_tokens || (promptTokens + completionTokens);
 
-      let estimatedCost = 0;
-      if (model.includes('gemini-2.5-flash')) {
-        estimatedCost = (promptTokens * 0.075 + completionTokens * 0.30) / 1000000;
-      } else if (model.includes('gemini-2.5-pro')) {
-        estimatedCost = (promptTokens * 1.25 + completionTokens * 5.00) / 1000000;
-      } else if (model.includes('gpt-5') || model.includes('gpt-4')) {
-        estimatedCost = (promptTokens * 2.50 + completionTokens * 10.00) / 1000000;
-      } else if (model.includes('claude')) {
-        estimatedCost = (promptTokens * 3.00 + completionTokens * 15.00) / 1000000;
-      } else {
-        estimatedCost = (promptTokens * 0.1 + completionTokens * 0.2) / 1000000;
-      }
-
+      // NVIDIA Build API model pricing (extremely low, estimating $0.075/$0.30 per 1M tokens)
+      const estimatedCost = (promptTokens * 0.075 + completionTokens * 0.30) / 1000000;
       const duration = Date.now() - startTime;
 
       await addAILogToFirestore({
@@ -246,7 +216,7 @@ export async function callOpenRouter(
       lastError = err;
       if (attempts < maxAttempts) {
         const delay = attempts === 1 ? 2000 : attempts === 2 ? 5000 : 10000;
-        console.warn(`OpenRouter network error. Retrying in ${delay}ms (Attempt ${attempts}/${maxAttempts})... Err: ${err.message}`);
+        console.warn(`NVIDIA network error. Retrying in ${delay}ms (Attempt ${attempts}/${maxAttempts})... Err: ${err.message}`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
@@ -254,7 +224,7 @@ export async function callOpenRouter(
   }
 
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '' && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
-    console.warn(`[OpenRouter Info] Network failed repeatedly. Falling back to native Gemini Direct...`);
+    console.warn(`[NVIDIA Info] Network failed repeatedly. Falling back to native Gemini Direct...`);
     try {
       return await callGeminiDirect(messages, options);
     } catch (geminiErr: any) {
@@ -262,16 +232,16 @@ export async function callOpenRouter(
       throw lastError || geminiErr;
     }
   } else {
-    throw lastError || new Error('OpenRouter network request failed repeatedly and no Gemini API Key is configured for fallback.');
+    throw lastError || new Error('NVIDIA network request failed repeatedly and no Gemini API Key is configured for fallback.');
   }
 }
 
 /**
  * Class wrapper for modular backend import mapping
  */
-export class OpenRouterService {
+export class NvidiaService {
   static getVerifiedKey(): string {
-    return getVerifiedOpenRouterKey();
+    return getVerifiedNvidiaKey();
   }
 
   static callWithFallback(
@@ -280,23 +250,33 @@ export class OpenRouterService {
     responseFormatJson: boolean = true,
     responseSchema?: any
   ): Promise<{ text: string; usage?: { prompt_tokens: number; completion_tokens: number }; cost?: number }> {
-    return callOpenRouter(messages, { systemPrompt, responseFormatJson, responseSchema });
+    return callNvidia(messages, { systemPrompt, responseFormatJson, responseSchema });
   }
 
   static async testConnection(): Promise<void> {
-    console.log('[OpenRouter Connection Test] Initiating startup connection test...');
+    console.log('[NVIDIA Connection Test] Initiating startup connection test...');
     try {
-      const key = getVerifiedOpenRouterKey();
+      const key = getVerifiedNvidiaKey();
       const settings = await SettingsRepository.get();
-      const model = settings.model || 'google/gemini-2.5-flash';
+      let model = settings.model || 'meta/llama-3.1-8b-instruct';
+
+      if (
+        model.includes('gemini') ||
+        model.includes('gpt') ||
+        model.includes('claude') ||
+        model.includes('google/') ||
+        model.includes('anthropic/') ||
+        model.includes('openai/') ||
+        !model.includes('/')
+      ) {
+        model = 'meta/llama-3.1-8b-instruct';
+      }
       
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`,
-          'HTTP-Referer': 'https://iracampus.edu',
-          'X-Title': 'IRA Campus'
+          'Authorization': `Bearer ${key}`
         },
         body: JSON.stringify({
           model,
@@ -308,19 +288,19 @@ export class OpenRouterService {
 
       if (!response.ok) {
         const errText = await response.text();
-        const detailedErrorText = parseOpenRouterError(response.status, errText, 'Startup Connection Test');
+        const detailedErrorText = parseNvidiaError(response.status, errText, 'Startup Connection Test');
         if (response.status === 401) {
-          console.error(`❌ OpenRouter connection test: Authentication failed. Invalid or expired API Key.`);
+          console.error(`❌ NVIDIA connection test: Authentication failed. Invalid or expired API Key.`);
         } else {
-          console.error(`❌ OpenRouter connection test failed with status ${response.status}. Details: ${detailedErrorText}`);
+          console.error(`❌ NVIDIA connection test failed with status ${response.status}. Details: ${detailedErrorText}`);
         }
         return;
       }
 
-      console.log('✓ OpenRouter connection test: Authentication succeeded.');
+      console.log('✓ NVIDIA connection test: Authentication succeeded.');
       console.log(`Active Model: ${model}`);
     } catch (err: any) {
-      console.error(`❌ OpenRouter connection test failed: ${err.message}`);
+      console.error(`❌ NVIDIA connection test failed: ${err.message}`);
     }
   }
 }
