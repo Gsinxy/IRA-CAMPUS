@@ -29,317 +29,373 @@ export class RagService {
     queryVector: number[]
   ): Promise<RetrievalResult> {
     const retrievalStartTime = Date.now();
-    const qClean = message.trim().toLowerCase();
+    try {
+      const qClean = message.trim().toLowerCase();
 
-    // 1. Load all documents from Firestore
-    const docs = await DocumentRepository.getAll();
+      // 1. Load all documents from Firestore
+      const docs = await DocumentRepository.getAll();
 
-    // 2. Compute query classification
-    const generalCollegePatterns = [
-      'about college', 'college info', 'college history', 'about ira', 'ira overview',
-      'about this institution', 'about the institution', 'about institution',
-      'what is this college', 'what is the college', 'what is this institution',
-      'describe the campus', 'describe campus', 'describe the college', 'describe college',
-      'give an overview', 'campus overview', 'college overview',
-      'tell me about the college', 'overview of the campus', 'overview of college',
-      'tell me about this institution', 'what is this institution', 'institution details',
-      'tell me about the campus', 'campus details', 'describe the institution',
-      'what is this institution', 'about the campus', 'describe this institution',
-      'describe this campus', 'what is this college?', 'tell me about the college',
-      'about this institution', 'what courses are offered', 'courses offered',
-      'which courses', 'list of courses', 'programs offered', 'what programmes',
-      'about the courses', 'which programs', 'available courses', 'tell me about the courses',
-      'courses are offered', 'tell me about the college', 'what is this institution?',
-      'give me an overview of the campus', 'describe the college', 'what courses are offered?'
-    ];
+      // 2. Compute query classification
+      const generalCollegePatterns = [
+        'about college', 'college info', 'college history', 'about ira', 'ira overview',
+        'about this institution', 'about the institution', 'about institution',
+        'what is this college', 'what is the college', 'what is this institution',
+        'describe the campus', 'describe campus', 'describe the college', 'describe college',
+        'give an overview', 'campus overview', 'college overview',
+        'tell me about the college', 'overview of the campus', 'overview of college',
+        'tell me about this institution', 'what is this institution', 'institution details',
+        'tell me about the campus', 'campus details', 'describe the institution',
+        'what is this institution', 'about the campus', 'describe this institution',
+        'describe this campus', 'what is this college?', 'tell me about the college',
+        'about this institution', 'what courses are offered', 'courses offered',
+        'which courses', 'list of courses', 'programs offered', 'what programmes',
+        'about the courses', 'which programs', 'available courses', 'tell me about the courses',
+        'courses are offered', 'tell me about the college', 'what is this institution?',
+        'give me an overview of the campus', 'describe the college', 'what courses are offered?'
+      ];
 
-    const isGeneralCollegeQuery = generalCollegePatterns.some(pat => qClean.includes(pat)) ||
-      (qClean.includes('college') && (qClean.includes('tell') || qClean.includes('info') || qClean.includes('detail') || qClean.includes('describe') || qClean.includes('overview'))) ||
-      (qClean.includes('campus') && (qClean.includes('tell') || qClean.includes('info') || qClean.includes('detail') || qClean.includes('describe') || qClean.includes('overview'))) ||
-      (qClean.includes('institution') && (qClean.includes('tell') || qClean.includes('info') || qClean.includes('detail') || qClean.includes('describe') || qClean.includes('overview'))) ||
-      qClean === 'about' || qClean === 'overview' || qClean === 'college' || qClean === 'campus';
+      const isGeneralCollegeQuery = generalCollegePatterns.some(pat => qClean.includes(pat)) ||
+        (qClean.includes('college') && (qClean.includes('tell') || qClean.includes('info') || qClean.includes('detail') || qClean.includes('describe') || qClean.includes('overview'))) ||
+        (qClean.includes('campus') && (qClean.includes('tell') || qClean.includes('info') || qClean.includes('detail') || qClean.includes('describe') || qClean.includes('overview'))) ||
+        (qClean.includes('institution') && (qClean.includes('tell') || qClean.includes('info') || qClean.includes('detail') || qClean.includes('describe') || qClean.includes('overview'))) ||
+        qClean === 'about' || qClean === 'overview' || qClean === 'college' || qClean === 'campus';
 
-    const scoredDocuments: ScoredDocument[] = [];
-    let maxDocScore = 0;
+      const scoredDocuments: ScoredDocument[] = [];
+      let maxDocScore = 0;
 
-    for (const doc of docs) {
-      // Score Title
-      const titleScore = keywordSimilarity(doc.title || '', message) * 0.95;
-
-      // Score fileName
-      const fileNameScore = doc.fileName ? keywordSimilarity(doc.fileName, message) * 0.95 : 0;
-
-      // Score Summary
-      const summaryScore = doc.summary ? keywordSimilarity(doc.summary, message) * 0.85 : 0;
-
-      // Score Original Content
-      const contentScore = doc.content ? keywordSimilarity(doc.content, message) * 0.6 : 0;
-
-      // Score FAQs
-      let bestFaqScore = 0;
-      if (doc.faqs && Array.isArray(doc.faqs)) {
-        for (const faq of doc.faqs) {
-          const faqText = `FAQ Question: ${faq.question}\nFAQ Answer: ${faq.answer}`;
-          const score = keywordSimilarity(faqText, message) * 0.9;
-          if (score > bestFaqScore) {
-            bestFaqScore = score;
+      const normalizeEntityValue = (val: any): string => {
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'string') return val;
+        if (typeof val === 'object') {
+          if (Array.isArray(val)) {
+            return val.map(normalizeEntityValue).filter(Boolean).join(' ');
           }
-        }
-      }
-
-      // Score Keywords
-      let bestKeywordScore = 0;
-      if (doc.keywords && Array.isArray(doc.keywords)) {
-        for (const kw of doc.keywords) {
-          const score = keywordSimilarity(kw, message) * 0.85;
-          if (score > bestKeywordScore) {
-            bestKeywordScore = score;
+          if ('courseOrService' in val || 'amount' in val) {
+            return `${val.courseOrService || ''}: ${val.amount || ''}`.trim();
           }
-        }
-      }
-
-      // Score Structured Entities (departments, facultyMembers, courses, fees, contacts, etc.)
-      let bestEntityScore = 0;
-      if (doc.entities) {
-        const ent = doc.entities;
-        const entityTexts: string[] = [];
-        if (ent.departments) entityTexts.push(...ent.departments);
-        if (ent.facultyMembers) entityTexts.push(...ent.facultyMembers);
-        if (ent.courses) entityTexts.push(...ent.courses);
-        if (ent.contacts) entityTexts.push(...ent.contacts);
-        if (ent.dates) entityTexts.push(...ent.dates);
-        if (ent.fees) {
-          ent.fees.forEach((f: any) => {
-            if (typeof f === 'object' && f !== null) {
-              entityTexts.push(`${f.courseOrService || ''} ${f.amount || ''}`);
-            } else {
-              entityTexts.push(String(f));
+          if ('type' in val || 'value' in val) {
+            return `${val.type || ''}: ${val.value || ''}`.trim();
+          }
+          if ('name' in val || 'phone' in val) {
+            return `${val.name || ''} (${val.phone || ''})`.trim();
+          }
+          const parts: string[] = [];
+          for (const key of Object.keys(val)) {
+            const v = val[key];
+            if (v !== null && v !== undefined) {
+              if (typeof v === 'object') {
+                parts.push(normalizeEntityValue(v));
+              } else {
+                parts.push(`${key}: ${v}`);
+              }
             }
+          }
+          return parts.filter(Boolean).join(', ');
+        }
+        return String(val);
+      };
+
+      for (const doc of docs) {
+        if (!doc) continue;
+        try {
+          // Score Title
+          const titleScore = keywordSimilarity(doc.title || '', message) * 0.95;
+
+          // Score fileName
+          const fileNameScore = doc.fileName ? keywordSimilarity(doc.fileName, message) * 0.95 : 0;
+
+          // Score Summary
+          const summaryScore = doc.summary ? keywordSimilarity(doc.summary, message) * 0.85 : 0;
+
+          // Score Original Content
+          const contentScore = doc.content ? keywordSimilarity(doc.content, message) * 0.6 : 0;
+
+          // Score FAQs
+          let bestFaqScore = 0;
+          if (doc.faqs && Array.isArray(doc.faqs)) {
+            for (const faq of doc.faqs) {
+              if (!faq) continue;
+              const faqText = `FAQ Question: ${faq.question || ''}\nFAQ Answer: ${faq.answer || ''}`;
+              const score = keywordSimilarity(faqText, message) * 0.9;
+              if (score > bestFaqScore) {
+                bestFaqScore = score;
+              }
+            }
+          }
+
+          // Score Keywords
+          let bestKeywordScore = 0;
+          if (doc.keywords && Array.isArray(doc.keywords)) {
+            for (const kw of doc.keywords) {
+              const score = keywordSimilarity(kw, message) * 0.85;
+              if (score > bestKeywordScore) {
+                bestKeywordScore = score;
+              }
+            }
+          }
+
+          // Score Structured Entities (departments, facultyMembers, courses, fees, contacts, etc.)
+          let bestEntityScore = 0;
+          if (doc.entities) {
+            const ent = doc.entities;
+            const entityTexts: string[] = [];
+
+            const processCollection = (col: any) => {
+              if (Array.isArray(col)) {
+                col.forEach(item => {
+                  const norm = normalizeEntityValue(item);
+                  if (norm) {
+                    entityTexts.push(norm);
+                  }
+                });
+              } else if (col !== null && col !== undefined) {
+                const norm = normalizeEntityValue(col);
+                if (norm) {
+                  entityTexts.push(norm);
+                }
+              }
+            };
+
+            if (ent.departments) processCollection(ent.departments);
+            if (ent.facultyMembers) processCollection(ent.facultyMembers);
+            if (ent.courses) processCollection(ent.courses);
+            if (ent.contacts) processCollection(ent.contacts);
+            if (ent.dates) processCollection(ent.dates);
+            if (ent.fees) processCollection(ent.fees);
+
+            const handledKeys = new Set(['departments', 'facultyMembers', 'courses', 'contacts', 'dates', 'fees']);
+            for (const key of Object.keys(ent)) {
+              if (!handledKeys.has(key)) {
+                processCollection(ent[key]);
+              }
+            }
+
+            for (const text of entityTexts) {
+              const score = keywordSimilarity(text, message) * 0.85;
+              if (score > bestEntityScore) {
+                bestEntityScore = score;
+              }
+            }
+          }
+
+          // Score Metadata
+          let bestMetadataScore = 0;
+          if (doc.metadata && Array.isArray(doc.metadata)) {
+            for (const m of doc.metadata) {
+              if (!m) continue;
+              const metaText = `${m.key || ''} ${m.value || ''}`;
+              const score = keywordSimilarity(metaText, message) * 0.8;
+              if (score > bestMetadataScore) {
+                bestMetadataScore = score;
+              }
+            }
+          }
+
+          // Score chunks.text
+          let bestChunkScore = 0;
+          for (const chunk of doc.chunks || []) {
+            if (!chunk) continue;
+            let score = 0;
+            if (queryVector.length > 0 && chunk.embedding && chunk.embedding.length > 0) {
+              const cosSim = cosineSimilarity(queryVector, chunk.embedding);
+              const kwSim = keywordSimilarity(chunk.text || '', message);
+              score = cosSim * 0.8 + kwSim * 0.2;
+            } else {
+              score = keywordSimilarity(chunk.text || '', message);
+            }
+            if (score > bestChunkScore) {
+              bestChunkScore = score;
+            }
+          }
+
+          // Score raw original JSON if present
+          let bestRawJsonScore = 0;
+          if (doc.type === 'json' && doc.rawJson) {
+            try {
+              const flatText = JSON.stringify(doc.rawJson);
+              bestRawJsonScore = keywordSimilarity(flatText, message) * 0.75;
+            } catch {
+              // Safety
+            }
+          }
+
+          // Combined document score calculation
+          let docScore = Math.max(
+            titleScore,
+            fileNameScore,
+            summaryScore,
+            contentScore,
+            bestFaqScore,
+            bestKeywordScore,
+            bestEntityScore,
+            bestMetadataScore,
+            bestChunkScore,
+            bestRawJsonScore
+          );
+
+          // Identify general overview or Prospectus files
+          let isAboutDoc = false;
+          const docTitleLower = (doc.title || '').toLowerCase();
+          if (
+            docTitleLower.includes('about college') ||
+            docTitleLower.includes('profile & history') ||
+            docTitleLower.includes('facilities, faculty') ||
+            docTitleLower.includes('admission prospectus') ||
+            docTitleLower.includes('about us') ||
+            docTitleLower.includes('general campus info') ||
+            (doc.category && doc.category.toLowerCase().includes('campus info'))
+          ) {
+            isAboutDoc = true;
+          }
+
+          // Apply query boosting
+          if (isGeneralCollegeQuery && isAboutDoc) {
+            docScore = Math.max(docScore, 0.95);
+          }
+
+          if (docScore > maxDocScore) {
+            maxDocScore = docScore;
+          }
+
+          scoredDocuments.push({
+            doc,
+            score: docScore
           });
-        }
-        for (const text of entityTexts) {
-          const score = keywordSimilarity(text, message) * 0.85;
-          if (score > bestEntityScore) {
-            bestEntityScore = score;
-          }
+        } catch (err: any) {
+          console.error(`Malformed or corrupted knowledge document skipped: ID = "${doc?.id || 'unknown'}"`, err);
         }
       }
 
-      // Score Metadata
-      let bestMetadataScore = 0;
-      if (doc.metadata && Array.isArray(doc.metadata)) {
-        for (const m of doc.metadata) {
-          const metaText = `${m.key} ${m.value}`;
-          const score = keywordSimilarity(metaText, message) * 0.8;
-          if (score > bestMetadataScore) {
-            bestMetadataScore = score;
-          }
-        }
+      const retrievalTimeMs = Date.now() - retrievalStartTime;
+
+      // Check if score is below relevance threshold
+      if (maxDocScore < RELEVANCE_THRESHOLD) {
+        return {
+          isRelevant: false,
+          systemInstruction: '',
+          uniqueCitations: [],
+          topChunks: [],
+          retrievedEntities: [],
+          fullPromptContext: '',
+          fallbackResponse: getUnrelatedFallbackMessage(message),
+          retrievalTimeMs
+        };
       }
 
-      // Score chunks.text
-      let bestChunkScore = 0;
-      for (const chunk of doc.chunks || []) {
-        let score = 0;
-        if (queryVector.length > 0 && chunk.embedding && chunk.embedding.length > 0) {
-          const cosSim = cosineSimilarity(queryVector, chunk.embedding);
-          const kwSim = keywordSimilarity(chunk.text, message);
-          score = cosSim * 0.8 + kwSim * 0.2;
-        } else {
-          score = keywordSimilarity(chunk.text, message);
-        }
-        if (score > bestChunkScore) {
-          bestChunkScore = score;
-        }
-      }
+      // Sort and grab top 4 matched documents
+      const matchedDocs = scoredDocuments
+        .filter(sd => sd.score >= RELEVANCE_THRESHOLD)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4);
 
-      // Score raw original JSON if present
-      let bestRawJsonScore = 0;
-      if (doc.type === 'json' && doc.rawJson) {
-        const flatText = JSON.stringify(doc.rawJson);
-        bestRawJsonScore = keywordSimilarity(flatText, message) * 0.75;
-      }
-
-      // Combined document score calculation
-      let docScore = Math.max(
-        titleScore,
-        fileNameScore,
-        summaryScore,
-        contentScore,
-        bestFaqScore,
-        bestKeywordScore,
-        bestEntityScore,
-        bestMetadataScore,
-        bestChunkScore,
-        bestRawJsonScore
+      // Assembly of flat chunks for debugging & logging
+      const topChunks = matchedDocs.flatMap(sd =>
+        (sd.doc.chunks || []).map((chunk: any) => ({
+          docId: sd.doc.id,
+          docTitle: sd.doc.title,
+          text: chunk.text,
+          score: sd.score
+        }))
       );
 
-      // Identify general overview or Prospectus files
-      let isAboutDoc = false;
-      const docTitleLower = (doc.title || '').toLowerCase();
-      if (
-        docTitleLower.includes('about college') ||
-        docTitleLower.includes('profile & history') ||
-        docTitleLower.includes('facilities, faculty') ||
-        docTitleLower.includes('admission prospectus') ||
-        docTitleLower.includes('about us') ||
-        docTitleLower.includes('general campus info') ||
-        (doc.category && doc.category.toLowerCase().includes('campus info'))
-      ) {
-        isAboutDoc = true;
+      const contextBlocks: string[] = [];
+      const retrievedEntities: any[] = [];
+
+      for (const item of matchedDocs) {
+        const { doc } = item;
+
+        // Entity summaries for debugging
+        if (doc.entities) {
+          retrievedEntities.push({
+            docId: doc.id,
+            docTitle: doc.title,
+            entities: doc.entities
+          });
+        }
+
+        const docParts: string[] = [];
+        docParts.push(`DOCUMENT TITLE: ${doc.title}`);
+        if (doc.fileName) docParts.push(`DOCUMENT FILE NAME: ${doc.fileName}`);
+        docParts.push(`Category: ${doc.category || 'N/A'}`);
+        if (doc.summary) docParts.push(`Document Summary: ${doc.summary}`);
+        if (doc.keywords && doc.keywords.length > 0) docParts.push(`Keywords: ${doc.keywords.join(', ')}`);
+
+        docParts.push(`\n--- FULL TEXT CONTENT ---`);
+        docParts.push(doc.content || '');
+
+        if (doc.chunks && doc.chunks.length > 0) {
+          docParts.push(`\n--- INDIVIDUAL CHUNKS (PRESERVED PARAGRAPHS) ---`);
+          doc.chunks.forEach((chunk: any, idx: number) => {
+            docParts.push(`[Chunk ${idx + 1}]:\n${chunk.text}`);
+          });
+        }
+
+        if (doc.faqs && doc.faqs.length > 0) {
+          docParts.push(`\n--- FREQUENTLY ASKED QUESTIONS ---`);
+          doc.faqs.forEach((faq: any, idx: number) => {
+            docParts.push(`Q: ${faq.question}\nA: ${faq.answer}`);
+          });
+        }
+
+        if (doc.type === 'json' || doc.rawJson) {
+          docParts.push(`\n--- COMPLETE ORIGINAL JSON DATA ---`);
+          docParts.push(JSON.stringify(doc.rawJson || doc, null, 2));
+        }
+
+        contextBlocks.push(docParts.join('\n'));
       }
 
-      // Apply query boosting
-      if (isGeneralCollegeQuery && isAboutDoc) {
-        docScore = Math.max(docScore, 0.95);
-      }
+      const context = contextBlocks.join('\n\n==================================================\n\n');
 
-      if (docScore > maxDocScore) {
-        maxDocScore = docScore;
-      }
+      const entitiesGrounding = retrievedEntities.map(re => {
+        const ent = re.entities;
+        const parts: string[] = [];
+        if (ent.departments && ent.departments.length > 0) {
+          parts.push(`Departments: ${ent.departments.map(normalizeEntityValue).filter(Boolean).join(', ')}`);
+        }
+        if (ent.facultyMembers && ent.facultyMembers.length > 0) {
+          parts.push(`Faculty Members: ${ent.facultyMembers.map(normalizeEntityValue).filter(Boolean).join(', ')}`);
+        }
+        if (ent.courses && ent.courses.length > 0) {
+          parts.push(`Courses: ${ent.courses.map(normalizeEntityValue).filter(Boolean).join(', ')}`);
+        }
+        if (ent.fees && ent.fees.length > 0) {
+          parts.push(`Fees & Charges: ${ent.fees.map(normalizeEntityValue).filter(Boolean).join(', ')}`);
+        }
+        if (ent.contacts && ent.contacts.length > 0) {
+          parts.push(`Contacts: ${ent.contacts.map(normalizeEntityValue).filter(Boolean).join(', ')}`);
+        }
+        if (ent.dates && ent.dates.length > 0) {
+          parts.push(`Key Dates: ${ent.dates.map(normalizeEntityValue).filter(Boolean).join(', ')}`);
+        }
 
-      scoredDocuments.push({
-        doc,
-        score: docScore
+        // Match parent document metadata
+        const docObj = docs.find(d => d.id === re.docId);
+        if (docObj && docObj.metadata && docObj.metadata.length > 0) {
+          const metaList = docObj.metadata.map((m: any) => `${m.key}: ${m.value}`).join('; ');
+          parts.push(`Metadata Attributes: ${metaList}`);
+        }
+
+        return `[Structured Metadata & Entities for: ${re.docTitle}]\n${parts.join('\n')}`;
+      }).join('\n\n');
+
+      const fullPromptContext = `${context}\n\n=================================\nSTRUCTURED ENTITIES & METADATA:\n=================================\n${entitiesGrounding}`;
+
+      const citations = matchedDocs.map((item) => {
+        const isJsonDoc = item.doc.type === 'json' || item.doc.id.includes('-json-');
+        const displayTitle = (isJsonDoc && item.doc.fileName) ? item.doc.fileName : item.doc.title;
+        return {
+          docId: item.doc.id,
+          title: displayTitle,
+          snippet: item.doc.summary || (item.doc.content.length > 200 ? item.doc.content.substring(0, 200) + '...' : item.doc.content)
+        };
       });
-    }
 
-    const retrievalTimeMs = Date.now() - retrievalStartTime;
+      const uniqueCitations = citations.filter((c, idx, self) =>
+        self.findIndex(t => t.docId === c.docId) === idx
+      );
 
-    // Check if score is below relevance threshold
-    if (maxDocScore < RELEVANCE_THRESHOLD) {
-      return {
-        isRelevant: false,
-        systemInstruction: '',
-        uniqueCitations: [],
-        topChunks: [],
-        retrievedEntities: [],
-        fullPromptContext: '',
-        fallbackResponse: getUnrelatedFallbackMessage(message),
-        retrievalTimeMs
-      };
-    }
-
-    // Sort and grab top 4 matched documents
-    const matchedDocs = scoredDocuments
-      .filter(sd => sd.score >= RELEVANCE_THRESHOLD)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 4);
-
-    // Assembly of flat chunks for debugging & logging
-    const topChunks = matchedDocs.flatMap(sd =>
-      (sd.doc.chunks || []).map((chunk: any) => ({
-        docId: sd.doc.id,
-        docTitle: sd.doc.title,
-        text: chunk.text,
-        score: sd.score
-      }))
-    );
-
-    const contextBlocks: string[] = [];
-    const retrievedEntities: any[] = [];
-
-    for (const item of matchedDocs) {
-      const { doc } = item;
-
-      // Entity summaries for debugging
-      if (doc.entities) {
-        retrievedEntities.push({
-          docId: doc.id,
-          docTitle: doc.title,
-          entities: doc.entities
-        });
-      }
-
-      const docParts: string[] = [];
-      docParts.push(`DOCUMENT TITLE: ${doc.title}`);
-      if (doc.fileName) docParts.push(`DOCUMENT FILE NAME: ${doc.fileName}`);
-      docParts.push(`Category: ${doc.category || 'N/A'}`);
-      if (doc.summary) docParts.push(`Document Summary: ${doc.summary}`);
-      if (doc.keywords && doc.keywords.length > 0) docParts.push(`Keywords: ${doc.keywords.join(', ')}`);
-
-      docParts.push(`\n--- FULL TEXT CONTENT ---`);
-      docParts.push(doc.content || '');
-
-      if (doc.chunks && doc.chunks.length > 0) {
-        docParts.push(`\n--- INDIVIDUAL CHUNKS (PRESERVED PARAGRAPHS) ---`);
-        doc.chunks.forEach((chunk: any, idx: number) => {
-          docParts.push(`[Chunk ${idx + 1}]:\n${chunk.text}`);
-        });
-      }
-
-      if (doc.faqs && doc.faqs.length > 0) {
-        docParts.push(`\n--- FREQUENTLY ASKED QUESTIONS ---`);
-        doc.faqs.forEach((faq: any, idx: number) => {
-          docParts.push(`Q: ${faq.question}\nA: ${faq.answer}`);
-        });
-      }
-
-      if (doc.type === 'json' || doc.rawJson) {
-        docParts.push(`\n--- COMPLETE ORIGINAL JSON DATA ---`);
-        docParts.push(JSON.stringify(doc.rawJson || doc, null, 2));
-      }
-
-      contextBlocks.push(docParts.join('\n'));
-    }
-
-    const context = contextBlocks.join('\n\n==================================================\n\n');
-
-    const entitiesGrounding = retrievedEntities.map(re => {
-      const ent = re.entities;
-      const parts: string[] = [];
-      if (ent.departments && ent.departments.length > 0) {
-        parts.push(`Departments: ${ent.departments.join(', ')}`);
-      }
-      if (ent.facultyMembers && ent.facultyMembers.length > 0) {
-        parts.push(`Faculty Members: ${ent.facultyMembers.join(', ')}`);
-      }
-      if (ent.courses && ent.courses.length > 0) {
-        parts.push(`Courses: ${ent.courses.join(', ')}`);
-      }
-      if (ent.fees && ent.fees.length > 0) {
-        const feeList = ent.fees.map((f: any) => {
-          if (typeof f === 'object' && f !== null) {
-            return `${f.courseOrService || 'Fee'}: ${f.amount || ''}`;
-          }
-          return String(f);
-        }).join('; ');
-        parts.push(`Fees & Charges: ${feeList}`);
-      }
-      if (ent.contacts && ent.contacts.length > 0) {
-        parts.push(`Contacts: ${ent.contacts.join(', ')}`);
-      }
-      if (ent.dates && ent.dates.length > 0) {
-        parts.push(`Key Dates: ${ent.dates.join(', ')}`);
-      }
-
-      // Match parent document metadata
-      const docObj = docs.find(d => d.id === re.docId);
-      if (docObj && docObj.metadata && docObj.metadata.length > 0) {
-        const metaList = docObj.metadata.map((m: any) => `${m.key}: ${m.value}`).join('; ');
-        parts.push(`Metadata Attributes: ${metaList}`);
-      }
-
-      return `[Structured Metadata & Entities for: ${re.docTitle}]\n${parts.join('\n')}`;
-    }).join('\n\n');
-
-    const fullPromptContext = `${context}\n\n=================================\nSTRUCTURED ENTITIES & METADATA:\n=================================\n${entitiesGrounding}`;
-
-    const citations = matchedDocs.map((item) => {
-      const isJsonDoc = item.doc.type === 'json' || item.doc.id.includes('-json-');
-      const displayTitle = (isJsonDoc && item.doc.fileName) ? item.doc.fileName : item.doc.title;
-      return {
-        docId: item.doc.id,
-        title: displayTitle,
-        snippet: item.doc.summary || (item.doc.content.length > 200 ? item.doc.content.substring(0, 200) + '...' : item.doc.content)
-      };
-    });
-
-    const uniqueCitations = citations.filter((c, idx, self) =>
-      self.findIndex(t => t.docId === c.docId) === idx
-    );
-
-    const systemInstruction = `You are IRA, the official AI Campus Information Assistant for IRA Campus (a premium higher education institution).
+      const systemInstruction = `You are IRA, the official AI Campus Information Assistant for IRA Campus (a premium higher education institution).
 Your core goal is to answer questions from prospective students, current students, parents, faculty, and visitors accurately, politely, and fully based ONLY on the provided college context.
 
 College Grounded Knowledge Context:
@@ -415,14 +471,28 @@ I'm always here to help with anything related to our college."
 
 Do not provide follow-up questions/suggestions or standard college contact info for non-college queries.`;
 
-    return {
-      isRelevant: true,
-      systemInstruction,
-      uniqueCitations,
-      topChunks,
-      retrievedEntities,
-      fullPromptContext,
-      retrievalTimeMs
-    };
+      return {
+        isRelevant: true,
+        systemInstruction,
+        uniqueCitations,
+        topChunks,
+        retrievedEntities,
+        fullPromptContext,
+        retrievalTimeMs
+      };
+    } catch (err: any) {
+      console.error("Critical error in RAG retrieval pipeline:", err);
+      const retrievalTimeMs = Date.now() - retrievalStartTime;
+      return {
+        isRelevant: false,
+        systemInstruction: '',
+        uniqueCitations: [],
+        topChunks: [],
+        retrievedEntities: [],
+        fullPromptContext: '',
+        fallbackResponse: getUnrelatedFallbackMessage(message),
+        retrievalTimeMs
+      };
+    }
   }
 }

@@ -63,10 +63,53 @@ export function cosineSimilarity(vecA: number[], vecB: number[]): number {
 }
 
 // Fallback text keyword similarity
-export function keywordSimilarity(text: string, query: string): number {
-  if (!text || !query) return 0;
-  const queryWords = query.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
-  const textLower = text.toLowerCase();
+export function keywordSimilarity(text: unknown, query: unknown): number {
+  let textStr = '';
+  if (text !== null && text !== undefined) {
+    if (typeof text === 'string') {
+      textStr = text;
+    } else if (typeof text === 'object') {
+      try {
+        textStr = JSON.stringify(text);
+      } catch {
+        textStr = String(text);
+      }
+    } else {
+      textStr = String(text);
+    }
+  }
+
+  let queryStr = '';
+  if (query !== null && query !== undefined) {
+    if (typeof query === 'string') {
+      queryStr = query;
+    } else if (typeof query === 'object') {
+      try {
+        queryStr = JSON.stringify(query);
+      } catch {
+        queryStr = String(query);
+      }
+    } else {
+      queryStr = String(query);
+    }
+  }
+
+  if (!textStr || !queryStr) return 0;
+
+  let queryWords: string[] = [];
+  try {
+    queryWords = queryStr.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+  } catch {
+    queryWords = [];
+  }
+
+  let textLower = '';
+  try {
+    textLower = textStr.toLowerCase();
+  } catch {
+    textLower = textStr;
+  }
+
   if (queryWords.length === 0) return 0;
 
   let matchCount = 0;
@@ -74,9 +117,13 @@ export function keywordSimilarity(text: string, query: string): number {
     if (textLower.includes(word)) {
       matchCount += 1.5; // Bonus for matching keyword
       // Additional bonus if matched as a whole word
-      const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
-      if (wordRegex.test(textLower)) {
-        matchCount += 1.0;
+      try {
+        const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
+        if (wordRegex.test(textLower)) {
+          matchCount += 1.0;
+        }
+      } catch {
+        // Regex failure safety
       }
     }
   }
