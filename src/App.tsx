@@ -319,17 +319,6 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [conversations, setConversations] = useState<Conversation[]>(() => {
-    try {
-      const stored = localStorage.getItem('ira_guest_conversations');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load conversations from localStorage:", e);
-    }
     return [
       {
         id: `conv-${Date.now()}`,
@@ -343,14 +332,6 @@ export default function App() {
   });
 
   const [currentConvId, setCurrentConvId] = useState<string>(() => {
-    try {
-      const storedId = localStorage.getItem('ira_guest_current_conv_id') || (conversations[0]?.id || '');
-      if (storedId) {
-        return storedId;
-      }
-    } catch (e) {
-      console.error("Failed to load currentConvId from localStorage:", e);
-    }
     return conversations[0]?.id || '';
   });
 
@@ -404,15 +385,17 @@ export default function App() {
           mergedList.forEach(c => {
             saveConversationToFirestore(user.uid, c);
           });
-          if (mergedList.length > 0) {
-            setCurrentConvId(mergedList[0].id);
+          const sortedMerged = mergedList.sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+          if (sortedMerged.length > 0) {
+            setCurrentConvId(sortedMerged[0].id);
           }
-          return mergedList;
+          return sortedMerged;
         });
       } else {
         if (guestConvsToSave.length > 0) {
-          setConversations(guestConvsToSave);
-          setCurrentConvId(guestConvsToSave[0].id);
+          const sortedConvs = [...guestConvsToSave].sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+          setConversations(sortedConvs);
+          setCurrentConvId(sortedConvs[0].id);
         } else {
           const newId = `conv-${Date.now()}`;
           const defaultConv: Conversation = {
@@ -725,8 +708,9 @@ export default function App() {
         } catch (e) {}
         
         if (cachedConvs.length > 0) {
-          setConversations(cachedConvs);
-          const cachedId = localStorage.getItem(`ira_current_conv_id_${user.uid}`) || cachedConvs[0].id;
+          const sortedConvs = [...cachedConvs].sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+          setConversations(sortedConvs);
+          const cachedId = localStorage.getItem(`ira_current_conv_id_${user.uid}`) || sortedConvs[0].id;
           setCurrentConvId(cachedId);
         }
         
@@ -735,8 +719,9 @@ export default function App() {
         try {
           const cloudConvs = await loadConversationsFromFirestore(user.uid);
           if (cloudConvs.length > 0) {
-            setConversations(cloudConvs);
-            setCurrentConvId(cloudConvs[0].id);
+            const sortedConvs = [...cloudConvs].sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+            setConversations(sortedConvs);
+            setCurrentConvId(sortedConvs[0].id);
           } else {
             // Start fresh if no cloud history is present
             const newId = `conv-${Date.now()}`;
@@ -759,28 +744,22 @@ export default function App() {
         }
       } else {
         setCurrentUser(null);
-        // Load guest conversations
-        let guestConvs: Conversation[] = [];
+        // Ignore any previous guest conversations. Create a new blank chat automatically.
         try {
-          const stored = localStorage.getItem('ira_guest_conversations');
-          if (stored) {
-            guestConvs = JSON.parse(stored);
-          }
+          localStorage.removeItem('ira_guest_conversations');
+          localStorage.removeItem('ira_guest_current_conv_id');
         } catch (e) {}
-        
-        if (!Array.isArray(guestConvs) || guestConvs.length === 0) {
-          const guestId = `conv-${Date.now()}`;
-          guestConvs = [{
-            id: guestId,
-            title: 'New Conversation',
-            messages: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            isPinned: false
-          }];
-        }
-        setConversations(guestConvs);
-        const guestId = localStorage.getItem('ira_guest_current_conv_id') || guestConvs[0].id;
+
+        const guestId = `conv-${Date.now()}`;
+        const freshConv: Conversation = {
+          id: guestId,
+          title: 'New Conversation',
+          messages: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isPinned: false
+        };
+        setConversations([freshConv]);
         setCurrentConvId(guestId);
       }
       setIsHistoryRestoring(false);
@@ -788,27 +767,23 @@ export default function App() {
     return () => unsubscribe();
   }, [isLoggingInProcess]);
 
-  // Sync state to local storage
+  // Sync state to local storage (only for authenticated users)
   useEffect(() => {
     if (isHistoryRestoring) return;
     try {
       if (currentUser) {
         localStorage.setItem(`ira_conversations_${currentUser.uid}`, JSON.stringify(conversations));
-      } else {
-        localStorage.setItem('ira_guest_conversations', JSON.stringify(conversations));
       }
     } catch (e) {
       console.error("Failed to save conversations to localStorage:", e);
     }
   }, [conversations, currentUser, isHistoryRestoring]);
 
-  // Sync active ID to local storage
+  // Sync active ID to local storage (only for authenticated users)
   useEffect(() => {
     try {
       if (currentUser) {
         localStorage.setItem(`ira_current_conv_id_${currentUser.uid}`, currentConvId);
-      } else {
-        localStorage.setItem('ira_guest_current_conv_id', currentConvId);
       }
     } catch (e) {
       console.error("Failed to save currentConvId to localStorage:", e);
