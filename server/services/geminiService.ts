@@ -45,7 +45,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
           'Authorization': `Bearer ${nvKey}`
         },
         body: JSON.stringify({
-          model: 'nvidia/embeddings-nv-embed-qa-4',
+          model: 'nvidia/nv-embedqa-e5-v5',
           input: [text],
           encoding_format: 'float',
           input_type: 'query'
@@ -68,7 +68,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
             'Authorization': `Bearer ${nvKey}`
           },
           body: JSON.stringify({
-            model: 'nvidia/embeddings-nv-embed-qa-4',
+            model: 'nvidia/nv-embedqa-e5-v5',
             input: text
           })
         });

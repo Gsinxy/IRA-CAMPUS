@@ -3788,10 +3788,10 @@ export default function App() {
                         </div>
 
                         {/* Search Area */}
-                        <div className="w-full max-w-xl animate-in fade-in slide-in-from-bottom-4 duration-600 delay-100">
+                        <div className="w-full max-w-xl px-4 md:px-0 animate-in fade-in slide-in-from-bottom-4 duration-600 delay-100">
                           <form 
                             onSubmit={handleSendMessage} 
-                            className="bg-white border border-[#E6DED3] hover:border-[#C89B4A]/50 focus-within:border-[#C89B4A] shadow-lg shadow-[#1C1C1C]/5 rounded-[24px] p-1.5 flex items-center gap-1 transition-all duration-300 w-full"
+                            className="bg-white border border-[#E6DED3] hover:border-[#C89B4A]/50 focus-within:border-[#C89B4A] shadow-lg shadow-[#1C1C1C]/5 rounded-[24px] p-1.5 flex items-center gap-1 transition-all duration-300 w-full max-w-full"
                           >
                             {/* Attachment Button */}
                             <label 
@@ -3815,7 +3815,7 @@ export default function App() {
                               value={inputMessage}
                               onChange={(e) => setInputMessage(e.target.value)}
                               placeholder="Ask anything about your college..."
-                              className="flex-1 bg-transparent border-none text-[15px] text-[#1C1C1C] placeholder:text-[#6B6B6B]/60 px-3 focus:outline-none focus:ring-0 w-full"
+                              className="flex-1 min-w-0 bg-transparent border-none text-[15px] text-[#1C1C1C] placeholder:text-[#6B6B6B]/60 px-2 sm:px-3 focus:outline-none focus:ring-0"
                             />
 
                             <button
@@ -4002,14 +4002,14 @@ export default function App() {
 
               {/* Chat Fixed Bottom Input panel (Only visible when conversation length > 1 to avoid duplicating input block) */}
               {!(currentConversation.messages.length === 0 || (currentConversation.messages.length === 1 && currentConversation.messages[0].role === 'assistant')) && (
-                <div className="p-4 bg-transparent max-w-4xl w-full mx-auto pb-6 relative z-10 shrink-0">
+                <div className="px-4 py-3 md:p-4 bg-transparent max-w-4xl w-full mx-auto pb-6 relative z-10 shrink-0">
                   <form 
                     onSubmit={handleSendMessage} 
-                    className="bg-white border border-[#E7DDD0] focus-within:border-[#C89B4A] shadow-xl shadow-slate-100/80 rounded-[28px] p-2 flex items-center gap-1 focus-within:ring-4 focus-within:ring-[#C89B4A]/10 transition-all duration-200"
+                    className="bg-white border border-[#E7DDD0] focus-within:border-[#C89B4A] shadow-xl shadow-slate-100/80 rounded-[28px] p-1.5 sm:p-2 flex items-center gap-1 focus-within:ring-4 focus-within:ring-[#C89B4A]/10 transition-all duration-200 w-full max-w-full"
                   >
-                    <div className="flex items-center gap-1 pl-1 shrink-0">
+                    <div className="flex items-center gap-0.5 sm:gap-1 pl-0.5 sm:pl-1 shrink-0">
                       {/* Attachment button */}
-                      <label className="p-2.5 rounded-full hover:bg-[#F2EEE8] text-[#6B6B6B] hover:text-[#6B6B6B] transition-colors cursor-pointer block" title="Attach Document file">
+                      <label className="p-2 sm:p-2.5 rounded-full hover:bg-[#F2EEE8] text-[#6B6B6B] hover:text-[#6B6B6B] transition-colors cursor-pointer block" title="Attach Document file">
                         <Paperclip className="h-4 w-4" />
                         <input 
                           type="file" 
@@ -4026,7 +4026,7 @@ export default function App() {
                       <button
                         type="button"
                         onClick={handleVoiceInput}
-                        className={`p-2.5 rounded-full transition-colors ${
+                        className={`p-2 sm:p-2.5 rounded-full transition-colors ${
                           isListening
                             ? 'bg-[#B65454]/10 text-[#B65454] animate-pulse'
                             : 'text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-[#F2EEE8]'
@@ -4042,7 +4042,7 @@ export default function App() {
                         onClick={() => {
                           alert("AI model is grounded in multi-lingual documents (English, Hindi, regional queries supported).");
                         }}
-                        className="p-2.5 rounded-full text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-[#F2EEE8] transition-colors select-none"
+                        className="p-2 sm:p-2.5 rounded-full text-[#6B6B6B] hover:text-[#6B6B6B] hover:bg-[#F2EEE8] transition-colors select-none"
                         title="Grounded Languages"
                       >
                         <Globe className="h-4 w-4" />
@@ -4055,13 +4055,13 @@ export default function App() {
                       onChange={(e) => setInputMessage(e.target.value)}
                       disabled={isAiTyping}
                       placeholder="Ask anything about your college..."
-                      className="flex-1 bg-transparent border-none text-sm text-[#1B1B1B] placeholder:text-[#6B6B6B] py-3 px-3 focus:outline-none focus:ring-0 disabled:opacity-50"
+                      className="flex-1 min-w-0 bg-transparent border-none text-sm text-[#1B1B1B] placeholder:text-[#6B6B6B] py-3 px-2 sm:px-3 focus:outline-none focus:ring-0 disabled:opacity-50"
                     />
 
                     <button
                       type="submit"
                       disabled={isAiTyping || !inputMessage.trim()}
-                      className="bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] text-white disabled:text-[#6B6B6B] p-3.5 rounded-full transition-all shrink-0 flex items-center justify-center shadow-md shadow-[#C89B4A]/10 active:scale-95 cursor-pointer"
+                      className="bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] text-white disabled:text-[#6B6B6B] p-3 sm:p-3.5 rounded-full transition-all shrink-0 flex items-center justify-center shadow-md shadow-[#C89B4A]/10 active:scale-95 cursor-pointer mr-0.5 sm:mr-1"
                       title="Send message"
                     >
                       <Send className="h-4 w-4" />

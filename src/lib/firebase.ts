@@ -18,8 +18,14 @@ export let analytics: any = null;
 if (typeof window !== 'undefined') {
   isSupported().then((yes) => {
     if (yes) {
-      analytics = getAnalytics(app);
+      try {
+        analytics = getAnalytics(app);
+      } catch (err) {
+        console.warn('[Firebase Analytics] Gracefully handled load/fetch error:', err);
+      }
     }
+  }).catch((err) => {
+    console.warn('[Firebase Analytics] isSupported check failed:', err);
   });
 }
 
