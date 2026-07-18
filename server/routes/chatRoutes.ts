@@ -74,7 +74,20 @@ function isMatch(normQuery: string, normTarget: string): boolean {
 // 3. section_index
 function tryNavigationIndexMatch(query: string, documents: any[]) {
   const normQuery = canonicalNormalize(query);
-  if (!normQuery) return null;
+  console.log(`[DEBUG LOG] Query after normalization: "${normQuery}" (Original query: "${query}")`);
+
+  console.log(`[DEBUG LOG] Loaded navigation index from Firestore:`);
+  for (const doc of documents) {
+    const courseCount = Array.isArray(doc.course_index) ? doc.course_index.length : 0;
+    const semCount = doc.semester_index ? Object.keys(doc.semester_index).length : 0;
+    const secCount = doc.section_index ? Object.keys(doc.section_index).length : 0;
+    console.log(` - Doc: "${doc.title}" (ID: ${doc.documentId}): course_index length = ${courseCount}, semester_index size = ${semCount}, section_index size = ${secCount}`);
+  }
+
+  if (!normQuery) {
+    console.log(`[DEBUG LOG] Query is empty after normalization. Returning null.`);
+    return null;
+  }
 
   // 1. course_index search across all documents
   for (const doc of documents) {
@@ -83,6 +96,8 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
         if (item && item.course) {
           const normCourse = canonicalNormalize(item.course);
           if (isMatch(normQuery, normCourse)) {
+            console.log(`[DEBUG LOG] Which index matched: course_index`);
+            console.log(`[DEBUG LOG] Selected startPage/endPage: ${item.start_page} / ${item.end_page} (Matched item: "${item.course}")`);
             return {
               document: doc,
               matchedItem: {
@@ -107,6 +122,8 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
           const val = value as any;
           const normSem = canonicalNormalize(semName);
           if (isMatch(normQuery, normSem)) {
+            console.log(`[DEBUG LOG] Which index matched: semester_index`);
+            console.log(`[DEBUG LOG] Selected startPage/endPage: ${val.start_page} / ${val.end_page} (Matched item: "${semName}")`);
             return {
               document: doc,
               matchedItem: {
@@ -130,6 +147,8 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
           const val = value as any;
           const normSec = canonicalNormalize(secName);
           if (isMatch(normQuery, normSec)) {
+            console.log(`[DEBUG LOG] Which index matched: section_index`);
+            console.log(`[DEBUG LOG] Selected startPage/endPage: ${val.start_page} / ${val.end_page} (Matched item: "${secName}")`);
             return {
               document: doc,
               matchedItem: {
@@ -145,6 +164,7 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
     }
   }
 
+  console.log(`[DEBUG LOG] No navigation index match found.`);
   return null;
 }
 
@@ -203,15 +223,18 @@ router.post('/', async (req: Request, res: Response) => {
       let bestDoc = null;
       let matchedItem = null;
 
-      if (category === 'Syllabus') {
-        const syllabusDocs = allOfficialDocs.filter(d => d.category === 'Syllabus');
+      // Always try matching navigation indexes first for any official document queries that can potentially match Syllabus indices
+      const syllabusDocs = allOfficialDocs.filter(d => d.category === 'Syllabus');
+      const navMatch = tryNavigationIndexMatch(message, syllabusDocs);
+      
+      if (navMatch) {
+        bestDoc = navMatch.document;
+        matchedItem = navMatch.matchedItem;
+        console.log(`[DEBUG LOG] Fallback PDF search was used: No (Precise navigation index matched successfully: "${matchedItem.title}")`);
+      } else {
+        console.log(`[DEBUG LOG] Fallback PDF search was used: Yes (No navigation index match. Retrying fallback search.)`);
         
-        // Step 1, 2 & 3: Load navigation indexes across all syllabus documents and try to match query first!
-        const navMatch = tryNavigationIndexMatch(message, syllabusDocs);
-        if (navMatch) {
-          bestDoc = navMatch.document;
-          matchedItem = navMatch.matchedItem;
-        } else {
+        if (category === 'Syllabus') {
           // Fallback to department-specific lookup if no navigation index match is found
           // Detect department and programme
           let targetDepartment = studentProfile?.department;
@@ -259,11 +282,11 @@ router.post('/', async (req: Request, res: Response) => {
               bestDoc = matchedDocs[0];
             }
           }
-        }
-      } else {
-        const categoryDocs = allOfficialDocs.filter(d => d.category === category);
-        if (categoryDocs.length > 0) {
-          bestDoc = categoryDocs[0];
+        } else {
+          const categoryDocs = allOfficialDocs.filter(d => d.category === category);
+          if (categoryDocs.length > 0) {
+            bestDoc = categoryDocs[0];
+          }
         }
       }
 
@@ -376,6 +399,8 @@ router.post('/', async (req: Request, res: Response) => {
       console.error('[Official Doc Search Error]', err);
     }
   }
+
+  console.log('[DEBUG LOG] Fallback PDF search was used: Yes (Falling back to standard semantic RAG search)');
 
   let queryVector: number[] = [];
   try {
