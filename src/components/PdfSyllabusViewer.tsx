@@ -434,8 +434,8 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
         
         if (scale === 'fit') {
           if (containerWidth > 30 && pageViewport1.width > 30) {
-            // leave a tiny 20px horizontal padding to occupy maximum possible space
-            dynamicScale = (containerWidth - 20) / pageViewport1.width;
+            // Make the PDF occupy as much horizontal space as possible
+            dynamicScale = containerWidth / pageViewport1.width;
             if (dynamicScale < 0.5) dynamicScale = 0.5;
             if (dynamicScale > 3.0) dynamicScale = 3.0;
           }
@@ -447,8 +447,8 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
 
         const viewport = page.getViewport({ scale: dynamicScale });
         
-        // High-DPI screen support for perfectly crisp typography and vectors
-        const pixelRatio = window.devicePixelRatio || 1;
+        // Render PDF.js pages at high scale 1.75-2.0 and support crisp text on HiDPI displays
+        const pixelRatio = Math.max(1.75, window.devicePixelRatio || 1);
         canvas.width = viewport.width * pixelRatio;
         canvas.height = viewport.height * pixelRatio;
         canvas.style.width = `${viewport.width}px`;
@@ -1121,8 +1121,8 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
           )}
         </AnimatePresence>
 
-        {/* Main Document View Canvas Container */}
-        <div className={`flex-1 overflow-auto p-1.5 sm:p-3.5 flex justify-center items-start min-h-[400px] relative transition-colors ${
+        {/* Main Document View Canvas Container with zero padding to maximize reading area */}
+        <div className={`flex-1 overflow-auto p-0 flex justify-center items-start min-h-[400px] relative transition-colors ${
           isReadingMode ? 'bg-zinc-800' : 'bg-slate-100'
         }`}>
           {loading ? (

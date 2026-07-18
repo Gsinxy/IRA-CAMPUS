@@ -163,25 +163,27 @@ router.post('/', async (req: Request, res: Response) => {
 
   const msgLower = message.toLowerCase();
 
+  const hasWord = (word: string) => new RegExp(`\\b${word}\\b`, 'i').test(message);
+
   // Determine if student is asking for a syllabus or official document
-  const isSyllabusQuery = msgLower.includes('syllabus') || 
-                          msgLower.includes('semester') || 
-                          msgLower.includes('sem') || 
-                          msgLower.includes('paper') || 
-                          msgLower.includes('unit') || 
-                          msgLower.includes('vac') || 
-                          msgLower.includes('sec') || 
-                          msgLower.includes('aec') || 
-                          msgLower.includes('mdc') ||
+  const isSyllabusQuery = hasWord('syllabus') || 
+                          hasWord('semester') || 
+                          hasWord('sem') || 
+                          hasWord('paper') || 
+                          hasWord('unit') || 
+                          hasWord('vac') || 
+                          hasWord('sec') || 
+                          hasWord('aec') || 
+                          hasWord('mdc') ||
                           msgLower.includes('development economics') ||
-                          msgLower.includes('course');
+                          hasWord('course');
 
   const isOfficialDocQuery = isSyllabusQuery || 
-                             msgLower.includes('prospectus') || 
-                             msgLower.includes('calendar') || 
+                             hasWord('prospectus') || 
+                             hasWord('calendar') || 
                              msgLower.includes('examination rules') || 
                              msgLower.includes('exam rules') || 
-                             msgLower.includes('circular');
+                             hasWord('circular');
 
   if (isOfficialDocQuery) {
     try {
@@ -235,46 +237,28 @@ router.post('/', async (req: Request, res: Response) => {
           }
 
           if (!targetDepartment) {
-            const totalDuration = Date.now() - globalStartTime;
-            const finalResponse = `⚠️ **Department Not Specified**\n\nTo view your syllabus, please specify your department in the request (e.g., "Show Economics Semester 5 syllabus") or configure your **Academic Profile** in the top-right profile settings.`;
-            
-            res.setHeader('Content-Type', 'text/event-stream');
-            res.setHeader('Cache-Control', 'no-cache');
-            res.setHeader('Connection', 'keep-alive');
-            res.write(`data: ${JSON.stringify({ text: finalResponse })}\n\n`);
-            res.write(`data: ${JSON.stringify({ done: true, citations: [] })}\n\n`);
-            res.end();
-            return;
-          }
+            console.log('[Chat Route] Syllabus query but target department not specified. Gracefully falling back to general RAG.');
+          } else {
+            let matchedDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment.toLowerCase());
 
-          let matchedDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment.toLowerCase());
-
-          if (matchedDocs.length === 0) {
-            const totalDuration = Date.now() - globalStartTime;
-            const finalResponse = `No official syllabus has been uploaded for this department.`;
-            
-            res.setHeader('Content-Type', 'text/event-stream');
-            res.setHeader('Cache-Control', 'no-cache');
-            res.setHeader('Connection', 'keep-alive');
-            res.write(`data: ${JSON.stringify({ text: finalResponse })}\n\n`);
-            res.write(`data: ${JSON.stringify({ done: true, citations: [] })}\n\n`);
-            res.end();
-            return;
-          }
-
-          // Automatically select the correct one using department, programme, academic year
-          if (matchedDocs.length > 1) {
-            if (targetProgramme) {
-              const progMatch = matchedDocs.filter(d => d.programme === targetProgramme);
-              if (progMatch.length > 0) matchedDocs = progMatch;
-            }
-            if (targetAcademicYear) {
-              const yearMatch = matchedDocs.filter(d => d.academicYear === targetAcademicYear);
-              if (yearMatch.length > 0) matchedDocs = yearMatch;
+            if (matchedDocs.length === 0) {
+              console.log(`[Chat Route] Syllabus query but no matched syllabus docs for department "${targetDepartment}". Gracefully falling back to general RAG.`);
+            } else {
+              // Automatically select the correct one using department, programme, academic year
+              if (matchedDocs.length > 1) {
+                if (targetProgramme) {
+                  const progMatch = matchedDocs.filter(d => d.programme === targetProgramme);
+                  if (progMatch.length > 0) matchedDocs = progMatch;
+                }
+                if (targetAcademicYear) {
+                  const yearMatch = matchedDocs.filter(d => d.academicYear === targetAcademicYear);
+                  if (yearMatch.length > 0) matchedDocs = yearMatch;
+                }
+              }
+              
+              bestDoc = matchedDocs[0];
             }
           }
-          
-          bestDoc = matchedDocs[0];
         }
       } else {
         const categoryDocs = allOfficialDocs.filter(d => d.category === category);
@@ -386,16 +370,7 @@ router.post('/', async (req: Request, res: Response) => {
         res.end();
         return;
       } else {
-        const totalDuration = Date.now() - globalStartTime;
-        const finalResponse = `No official ${category.toLowerCase()} document has been uploaded yet.`;
-        
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.write(`data: ${JSON.stringify({ text: finalResponse })}\n\n`);
-        res.write(`data: ${JSON.stringify({ done: true, citations: [] })}\n\n`);
-        res.end();
-        return;
+        console.log(`[Chat Route] No matching official document found for category "${category}". Gracefully falling back to standard RAG.`);
       }
     } catch (err: any) {
       console.error('[Official Doc Search Error]', err);
