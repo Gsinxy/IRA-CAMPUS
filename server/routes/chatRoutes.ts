@@ -13,7 +13,38 @@ const router = Router();
 function canonicalNormalize(q: string): string {
   if (!q) return '';
   let res = q.toLowerCase();
-  
+
+  // Implement semester normalization map for I-VIII
+  const semesterRules = [
+    { regex: /\b(?:1st|first|1|i)\s*(?:semester|sem)\b/gi, canonical: 'semester 1' },
+    { regex: /\b(?:semester|sem)\s*(?:1st|first|1|i)\b/gi, canonical: 'semester 1' },
+
+    { regex: /\b(?:2nd|second|2|ii)\s*(?:semester|sem)\b/gi, canonical: 'semester 2' },
+    { regex: /\b(?:semester|sem)\s*(?:2nd|second|2|ii)\b/gi, canonical: 'semester 2' },
+
+    { regex: /\b(?:3rd|third|3|iii)\s*(?:semester|sem)\b/gi, canonical: 'semester 3' },
+    { regex: /\b(?:semester|sem)\s*(?:3rd|third|3|iii)\b/gi, canonical: 'semester 3' },
+
+    { regex: /\b(?:4th|fourth|4|iv)\s*(?:semester|sem)\b/gi, canonical: 'semester 4' },
+    { regex: /\b(?:semester|sem)\s*(?:4th|fourth|4|iv)\b/gi, canonical: 'semester 4' },
+
+    { regex: /\b(?:5th|fifth|5|v)\s*(?:semester|sem)\b/gi, canonical: 'semester 5' },
+    { regex: /\b(?:semester|sem)\s*(?:5th|fifth|5|v)\b/gi, canonical: 'semester 5' },
+
+    { regex: /\b(?:6th|sixth|6|vi)\s*(?:semester|sem)\b/gi, canonical: 'semester 6' },
+    { regex: /\b(?:semester|sem)\s*(?:6th|sixth|6|vi)\b/gi, canonical: 'semester 6' },
+
+    { regex: /\b(?:7th|seventh|7|vii)\s*(?:semester|sem)\b/gi, canonical: 'semester 7' },
+    { regex: /\b(?:semester|sem)\s*(?:7th|seventh|7|vii)\b/gi, canonical: 'semester 7' },
+
+    { regex: /\b(?:8th|eighth|8|viii)\s*(?:semester|sem)\b/gi, canonical: 'semester 8' },
+    { regex: /\b(?:semester|sem)\s*(?:8th|eighth|8|viii)\b/gi, canonical: 'semester 8' },
+  ];
+
+  for (const rule of semesterRules) {
+    res = res.replace(rule.regex, rule.canonical);
+  }
+
   // Ignore/remove specific terms: "syllabus", "course", "paper", "show", "give", "explain", "details", "pdf", "subject"
   const ignoreTerms = ["syllabus", "course", "paper", "show", "give", "explain", "details", "pdf", "subject"];
   for (const term of ignoreTerms) {
@@ -21,9 +52,6 @@ function canonicalNormalize(q: string): string {
     res = res.replace(regex, ' ');
   }
 
-  // Also replace "sem" with "semester" to normalize semester variations
-  res = res.replace(/\bsem\b/gi, 'semester');
-  
   // Remove punctuation
   res = res.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, ' ');
   
@@ -73,32 +101,66 @@ function isMatch(normQuery: string, normTarget: string): boolean {
 // 2. semester_index
 // 3. section_index
 function tryNavigationIndexMatch(query: string, documents: any[]) {
+  console.log(`\n=== [RUNTIME DEBUGGING TRACE FOR NAVIGATION INDEX] ===`);
+  
+  // [STEP 1] Raw query received
+  console.log(`[STEP 1] Raw query received: "${query}"`);
+
+  // [STEP 2] Query after normalization
   const normQuery = canonicalNormalize(query);
-  console.log(`[DEBUG LOG] Query after normalization: "${normQuery}" (Original query: "${query}")`);
+  console.log(`[STEP 2] Query after normalization: "${normQuery}"`);
 
-  console.log(`[DEBUG LOG] Loaded navigation index from Firestore:`);
+  // [STEP 3] Total syllabus documents loaded from Firestore
+  console.log(`[STEP 3] Total syllabus documents loaded from Firestore: ${documents.length}`);
+
+  // [STEP 4] Economics document found? (true/false)
+  const hasEconomicsDoc = documents.some(doc => {
+    const titleMatch = doc.title && /economics/i.test(doc.title);
+    const deptMatch = doc.department && /economics/i.test(doc.department);
+    return titleMatch || deptMatch;
+  });
+  console.log(`[STEP 4] Economics document found? ${hasEconomicsDoc}`);
+
+  // Compute counts for STEPS 5, 6, 7
+  let totalSemCount = 0;
+  let totalSecCount = 0;
+  let totalCourseCount = 0;
+
   for (const doc of documents) {
-    const courseCount = Array.isArray(doc.course_index) ? doc.course_index.length : 0;
-    const semCount = doc.semester_index ? Object.keys(doc.semester_index).length : 0;
-    const secCount = doc.section_index ? Object.keys(doc.section_index).length : 0;
-    console.log(` - Doc: "${doc.title}" (ID: ${doc.documentId}): course_index length = ${courseCount}, semester_index size = ${semCount}, section_index size = ${secCount}`);
+    if (doc.semester_index && typeof doc.semester_index === 'object') {
+      totalSemCount += Object.keys(doc.semester_index).length;
+    }
+    if (doc.section_index && typeof doc.section_index === 'object') {
+      totalSecCount += Object.keys(doc.section_index).length;
+    }
+    if (doc.course_index && Array.isArray(doc.course_index)) {
+      totalCourseCount += doc.course_index.length;
+    }
   }
 
-  if (!normQuery) {
-    console.log(`[DEBUG LOG] Query is empty after normalization. Returning null.`);
-    return null;
-  }
+  // [STEP 5] semester_index count
+  console.log(`[STEP 5] semester_index count: ${totalSemCount}`);
+  // [STEP 6] section_index count
+  console.log(`[STEP 6] section_index count: ${totalSecCount}`);
+  // [STEP 7] course_index count
+  console.log(`[STEP 7] course_index count: ${totalCourseCount}`);
 
-  // 1. course_index search across all documents
+  let semesterMatchFound = false;
+  let courseMatchFound = false;
+  let sectionMatchFound = false;
+  let matchedObj: any = null;
+  let finalResult: any = null;
+
+  // Search course_index
   for (const doc of documents) {
     if (doc.course_index && Array.isArray(doc.course_index)) {
       for (const item of doc.course_index) {
         if (item && item.course) {
           const normCourse = canonicalNormalize(item.course);
           if (isMatch(normQuery, normCourse)) {
-            console.log(`[DEBUG LOG] Which index matched: course_index`);
-            console.log(`[DEBUG LOG] Selected startPage/endPage: ${item.start_page} / ${item.end_page} (Matched item: "${item.course}")`);
-            return {
+            courseMatchFound = true;
+            matchedObj = item;
+            finalResult = {
               document: doc,
               matchedItem: {
                 title: item.course,
@@ -108,64 +170,103 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
                 semester: item.semester
               }
             };
+            break;
           }
         }
       }
     }
+    if (finalResult) break;
   }
 
-  // 2. semester_index search across all documents
-  for (const doc of documents) {
-    if (doc.semester_index && typeof doc.semester_index === 'object') {
-      for (const [semName, value] of Object.entries(doc.semester_index)) {
-        if (value && typeof value === 'object') {
-          const val = value as any;
-          const normSem = canonicalNormalize(semName);
-          if (isMatch(normQuery, normSem)) {
-            console.log(`[DEBUG LOG] Which index matched: semester_index`);
-            console.log(`[DEBUG LOG] Selected startPage/endPage: ${val.start_page} / ${val.end_page} (Matched item: "${semName}")`);
-            return {
-              document: doc,
-              matchedItem: {
-                title: semName,
-                startPage: val.start_page,
-                endPage: val.end_page,
-                type: 'semester'
-              }
-            };
+  // Search semester_index (if course_index match not found yet)
+  if (!finalResult) {
+    for (const doc of documents) {
+      if (doc.semester_index && typeof doc.semester_index === 'object') {
+        for (const [semName, value] of Object.entries(doc.semester_index)) {
+          if (value && typeof value === 'object') {
+            const val = value as any;
+            const normSem = canonicalNormalize(semName);
+            if (isMatch(normQuery, normSem)) {
+              semesterMatchFound = true;
+              matchedObj = { semName, ...val };
+              finalResult = {
+                document: doc,
+                matchedItem: {
+                  title: semName,
+                  startPage: val.start_page,
+                  endPage: val.end_page,
+                  type: 'semester'
+                }
+              };
+              break;
+            }
           }
         }
       }
+      if (finalResult) break;
     }
   }
 
-  // 3. section_index search across all documents
-  for (const doc of documents) {
-    if (doc.section_index && typeof doc.section_index === 'object') {
-      for (const [secName, value] of Object.entries(doc.section_index)) {
-        if (value && typeof value === 'object') {
-          const val = value as any;
-          const normSec = canonicalNormalize(secName);
-          if (isMatch(normQuery, normSec)) {
-            console.log(`[DEBUG LOG] Which index matched: section_index`);
-            console.log(`[DEBUG LOG] Selected startPage/endPage: ${val.start_page} / ${val.end_page} (Matched item: "${secName}")`);
-            return {
-              document: doc,
-              matchedItem: {
-                title: secName,
-                startPage: val.start_page,
-                endPage: val.end_page,
-                type: 'section'
-              }
-            };
+  // Search section_index (if match not found yet)
+  if (!finalResult) {
+    for (const doc of documents) {
+      if (doc.section_index && typeof doc.section_index === 'object') {
+        for (const [secName, value] of Object.entries(doc.section_index)) {
+          if (value && typeof value === 'object') {
+            const val = value as any;
+            const normSec = canonicalNormalize(secName);
+            if (isMatch(normQuery, normSec)) {
+              sectionMatchFound = true;
+              matchedObj = { secName, ...val };
+              finalResult = {
+                document: doc,
+                matchedItem: {
+                  title: secName,
+                  startPage: val.start_page,
+                  endPage: val.end_page,
+                  type: 'section'
+                }
+              };
+              break;
+            }
           }
         }
       }
+      if (finalResult) break;
     }
   }
 
-  console.log(`[DEBUG LOG] No navigation index match found.`);
-  return null;
+  // [STEP 8] Semester match found? (true/false)
+  console.log(`[STEP 8] Semester match found? ${semesterMatchFound}`);
+
+  // [STEP 9] Course match found? (true/false)
+  console.log(`[STEP 9] Course match found? ${courseMatchFound}`);
+
+  // [STEP 10] Section match found? (true/false)
+  console.log(`[STEP 10] Section match found? ${sectionMatchFound}`);
+
+  // [STEP 11] Matched object JSON
+  console.log(`[STEP 11] Matched object JSON: ${matchedObj ? JSON.stringify(matchedObj) : 'null'}`);
+
+  // [STEP 12] startPage and endPage
+  if (matchedObj) {
+    const sPage = matchedObj.start_page !== undefined ? matchedObj.start_page : (matchedObj.startPage || -1);
+    const ePage = matchedObj.end_page !== undefined ? matchedObj.end_page : (matchedObj.endPage || -1);
+    console.log(`[STEP 12] startPage and endPage: ${sPage} and ${ePage}`);
+  } else {
+    console.log(`[STEP 12] startPage and endPage: N/A`);
+  }
+
+  // [STEP 13] pdfNavigation returned? (true/false)
+  const pdfNavigationReturned = !!finalResult;
+  console.log(`[STEP 13] pdfNavigation returned? ${pdfNavigationReturned}`);
+
+  // [STEP 14] Fallback PDF search used? (true/false)
+  const fallbackUsed = !finalResult;
+  console.log(`[STEP 14] Fallback PDF search used? ${fallbackUsed}`);
+  console.log(`=== END OF RUNTIME DEBUGGING TRACE ===\n`);
+
+  return finalResult;
 }
 
 // POST /api/chat - Structured RAG chat endpoint
@@ -382,14 +483,21 @@ router.post('/', async (req: Request, res: Response) => {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
+        let sseLogAccumulator = '';
         const words = finalResponse.split(' ');
         for (let i = 0; i < words.length; i += 3) {
           const chunk = words.slice(i, i + 3).join(' ') + ' ';
-          res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+          const chunkData = `data: ${JSON.stringify({ text: chunk })}\n\n`;
+          sseLogAccumulator += chunkData;
+          res.write(chunkData);
           await new Promise(resolve => setTimeout(resolve, 30));
         }
 
-        res.write(`data: ${JSON.stringify({ done: true, citations: [], pdfNavigation })}\n\n`);
+        const doneChunk = `data: ${JSON.stringify({ done: true, citations: [], pdfNavigation })}\n\n`;
+        sseLogAccumulator += doneChunk;
+        res.write(doneChunk);
+        
+        console.log(`[DEBUG LOG] FULL API response sent to the frontend:\n${sseLogAccumulator}`);
         res.end();
         return;
       } else {

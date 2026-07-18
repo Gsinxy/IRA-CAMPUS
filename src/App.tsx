@@ -2528,6 +2528,10 @@ export default function App() {
                     }
                     if (data.pdfNavigation) {
                       pdfNav = data.pdfNavigation;
+                      console.log("[STEP A] Yes, received pdfNavigation from SSE 'done' packet:", true);
+                      console.log("[STEP B] Complete pdfNavigation parsed from SSE:", JSON.stringify(pdfNav, null, 2));
+                    } else {
+                      console.log("[STEP A] Received SSE 'done' packet, but pdfNavigation is not present.");
                     }
                     if (data.debug) {
                       debugData = data.debug;
@@ -2548,6 +2552,8 @@ export default function App() {
         citations = data.citations || [];
         if (data.pdfNavigation) {
           pdfNav = data.pdfNavigation;
+          console.log("[STEP A] (Fallback/mock) Yes, received pdfNavigation from normal JSON response:", true);
+          console.log("[STEP B] (Fallback/mock) Complete pdfNavigation parsed from normal JSON response:", JSON.stringify(pdfNav, null, 2));
         }
         if (data.debug) {
           debugData = data.debug;
@@ -2591,10 +2597,12 @@ export default function App() {
       });
 
       if (pdfNav) {
+        console.log("[STEP C] App.tsx updates state. currentPdfNavigation:", JSON.stringify(pdfNav, null, 2));
         setActivePdfDocId(pdfNav.docId || pdfNav.documentId);
         setPdfSearchKeyword(pdfNav.keyword || pdfNav.title || '');
         setActivePdfNavigation(pdfNav.startPage ? pdfNav : null);
       } else {
+        console.log("[STEP C] App.tsx updates state. currentPdfNavigation: null");
         setActivePdfNavigation(null);
       }
 

@@ -60,10 +60,18 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
   section_index,
   course_index
 }) => {
+  console.log("[STEP D] When PdfSyllabusViewer receives props, props.pdfNavigation:", JSON.stringify(navigation, null, 2));
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const renderTaskRef = useRef<any>(null);
   const renderedScaleRef = useRef<number>(1.2);
+
+  // Ref to track latest navigation value to bypass stale closures in async loaders
+  const navigationRef = useRef(navigation);
+  useEffect(() => {
+    navigationRef.current = navigation;
+  }, [navigation]);
   
   const [pdfjsLoaded, setPdfjsLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -141,9 +149,17 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
         const loadingTask = pdfjsLib.getDocument({ data: bytes });
         const doc = await loadingTask.promise;
         
+        console.log("[STEP E] onDocumentLoadSuccess() triggered - PDF has finished loading.");
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
-        setPageNum(navigation && navigation.startPage ? navigation.startPage : 1);
+        // Access latest navigation object via ref to prevent stale closures
+        const latestNav = navigationRef.current;
+        const targetPage = latestNav && latestNav.startPage ? latestNav.startPage : 1;
+        setPageNum(prev => {
+          console.log(`[STEP E] Inside loadPdf onDocumentLoadSuccess: Received startPage: ${targetPage}, Current page before update: ${prev}`);
+          return targetPage;
+        });
+        console.log(`[STEP E] Inside loadPdf onDocumentLoadSuccess: Current page after update: ${targetPage}`);
       } catch (err: any) {
         console.error('PDF loading error:', err);
         setError('Could not render syllabus PDF document. Please check file format.');
@@ -249,9 +265,18 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
   // Jump to navigation start page when navigation changes
   useEffect(() => {
     if (navigation && navigation.startPage) {
-      setPageNum(navigation.startPage);
+      console.log(`[STEP E] Navigation change useEffect: Received startPage: ${navigation.startPage}`);
+      if (pdfDoc) {
+        setPageNum(prev => {
+          console.log(`[STEP E] Navigation change useEffect: pageNum before: ${prev}`);
+          return navigation.startPage;
+        });
+        console.log(`[STEP E] Navigation change useEffect: pageNum after: ${navigation.startPage}`);
+      } else {
+        console.log(`[STEP E] Navigation change useEffect: pdfDoc is not loaded yet. Skipping jump to startPage.`);
+      }
     }
-  }, [navigation]);
+  }, [navigation, pdfDoc]);
 
   // Collapse green banner after 3 seconds on navigation change
   useEffect(() => {
@@ -277,9 +302,12 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
 
   // Adjust pageNum to stay within active boundaries
   useEffect(() => {
+    console.log(`[DEBUG] Boundary check running. pageNum: ${pageNum}, startPageBound: ${startPageBound}, endPageBound: ${endPageBound}`);
     if (pageNum < startPageBound) {
+      console.log(`[DEBUG] Boundary check under-bound: resetting pageNum ${pageNum} to startPageBound: ${startPageBound}`);
       setPageNum(startPageBound);
     } else if (pageNum > endPageBound && endPageBound >= startPageBound) {
+      console.log(`[DEBUG] Boundary check over-bound: resetting pageNum ${pageNum} to endPageBound: ${endPageBound}`);
       setPageNum(endPageBound);
     }
   }, [startPageBound, endPageBound, pageNum]);
