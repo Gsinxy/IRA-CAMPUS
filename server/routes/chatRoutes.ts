@@ -145,18 +145,35 @@ function tryNavigationIndexMatch(
     return 1.0 - dist / maxLen;
   }
 
-  // Course normalization function (Requirement 1)
+  // Convert Odia digits (୦-୯) to Arabic digits (0-9)
+  function convertOdiaDigits(str: string): string {
+    const odiaDigits = ['୦', '୧', '୨', '୩', '୪', '୫', '୬', '୭', '୮', '୯'];
+    return str.split('').map(char => {
+      const idx = odiaDigits.indexOf(char);
+      return idx !== -1 ? String(idx) : char;
+    }).join('');
+  }
+
+  // Course normalization function (Requirement 1 & 4)
   function courseNormalize(q: string): string {
     if (!q) return '';
-    let res = q.toLowerCase();
+    // Normalize using Unicode NFC
+    let res = q.normalize('NFC');
 
-    // Replace punctuation with a space
-    res = res.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, ' ');
+    // Convert Odia digits to Arabic
+    res = convertOdiaDigits(res);
 
-    // Remove specific words
+    // Lowercase ONLY English letters A-Z (Do not lowercase or alter Odia)
+    res = res.replace(/[A-Z]/g, m => m.toLowerCase());
+
+    // Remove punctuation but preserve Odia letters (U+0B00 to U+0B7F), english letters, digits, and whitespace
+    res = res.replace(/[^\w\s\u0B00-\u0B7F]/gu, ' ');
+    res = res.replace(/_/g, ' ');
+
+    // Remove specific lowercase English words
     const ignoreWords = ['syllabus', 'course', 'paper', 'subject', 'show', 'give', 'details', 'pdf'];
     for (const word of ignoreWords) {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      const regex = new RegExp(`\\b${word}\\b`, 'g');
       res = res.replace(regex, ' ');
     }
 
@@ -239,52 +256,94 @@ function tryNavigationIndexMatch(
     if (doc.course_index && Array.isArray(doc.course_index)) {
       for (const item of doc.course_index) {
         if (item && item.course) {
-          const normCourse = courseNormalize(item.course);
-          const similarityScore = getFuzzySimilarity(normQuery, normCourse);
-          
-          console.log(`Course checked: ${item.course}`);
-          console.log(`Similarity score: ${similarityScore}`);
+          // Candidates: main course title and aliases (Requirement 5)
+          const candidates: { text: string; isAlias: boolean }[] = [
+            { text: item.course, isAlias: false }
+          ];
 
-          // Classify match type and priority
-          let priorityRank = 6;
-          let matchType = 'none';
-
-          if (normQuery === normCourse) {
-            priorityRank = 1;
-            matchType = 'exact';
-          } else if (normCourse.includes(normQuery) || normQuery.includes(normCourse)) {
-            if (normCourse.startsWith(normQuery) || normQuery.startsWith(normCourse)) {
-              priorityRank = 3;
-              matchType = 'startsWith';
-            } else {
-              priorityRank = 2;
-              matchType = 'contains';
-            }
-          } else {
-            // Check token overlap
-            const qTokens = normQuery.split(' ').filter(t => t.length > 0);
-            const cTokens = normCourse.split(' ').filter(t => t.length > 0);
-            const stopWords = ['and', 'or', 'in', 'of', 'the', 'for', 'to', 'with', 'a', 'an'];
-            const qTokensFiltered = qTokens.filter(t => !stopWords.includes(t) && t.length >= 2);
-            const cTokensFiltered = cTokens.filter(t => !stopWords.includes(t) && t.length >= 2);
-            const commonTokens = qTokensFiltered.filter(t => cTokensFiltered.includes(t));
-            
-            if (commonTokens.length > 0) {
-              priorityRank = 4;
-              matchType = 'token overlap';
-            } else if (similarityScore > 0.4) {
-              priorityRank = 5;
-              matchType = 'fuzzy similarity';
+          if (item.aliases) {
+            if (Array.isArray(item.aliases)) {
+              for (const alias of item.aliases) {
+                if (alias) candidates.push({ text: alias, isAlias: true });
+              }
+            } else if (typeof item.aliases === 'string') {
+              candidates.push({ text: item.aliases, isAlias: true });
             }
           }
 
-          if (priorityRank < 6) {
+          let bestItemMatch: any = null;
+
+          for (const cand of candidates) {
+            const normCand = courseNormalize(cand.text);
+            if (!normCand) continue;
+
+            const similarityScore = getFuzzySimilarity(normQuery, normCand);
+            let priorityRank = 6;
+            let matchType = 'none';
+
+            // Check exact normalized
+            if (normQuery === normCand) {
+              priorityRank = 1;
+              matchType = 'exact';
+            } 
+            // Check contains
+            else if (normCand.includes(normQuery) || normQuery.includes(normCand)) {
+              priorityRank = 2;
+              matchType = 'contains';
+            } 
+            // Check startsWith
+            else if (normCand.startsWith(normQuery) || normQuery.startsWith(normCand)) {
+              priorityRank = 3;
+              matchType = 'startsWith';
+            } 
+            // Check token overlap & > 50% course title tokens matching (Requirement 6)
+            else {
+              const qTokens = normQuery.split(' ').filter(t => t.length > 0);
+              const cTokens = normCand.split(' ').filter(t => t.length > 0);
+              
+              const stopWords = ['and', 'or', 'in', 'of', 'the', 'for', 'to', 'with', 'a', 'an'];
+              const qTokensFiltered = qTokens.filter(t => !stopWords.includes(t) && t.length >= 2);
+              const cTokensFiltered = cTokens.filter(t => !stopWords.includes(t) && t.length >= 2);
+              const commonTokens = qTokensFiltered.filter(t => cTokensFiltered.includes(t));
+
+              // Compute token match ratio for > 50% course title tokens match
+              const commonAll = cTokens.filter(token => qTokens.includes(token));
+              const tokenOverlapRatio = cTokens.length > 0 ? (commonAll.length / cTokens.length) : 0;
+
+              if (tokenOverlapRatio > 0.5) {
+                priorityRank = 4;
+                matchType = 'token overlap';
+              } else if (commonTokens.length > 0) {
+                priorityRank = 4;
+                matchType = 'token overlap';
+              } else if (similarityScore > 0.4) {
+                priorityRank = 5;
+                matchType = 'fuzzy similarity';
+              }
+            }
+
+            if (priorityRank < 6) {
+              if (!bestItemMatch || priorityRank < bestItemMatch.priorityRank || (priorityRank === bestItemMatch.priorityRank && similarityScore > bestItemMatch.similarityScore)) {
+                bestItemMatch = {
+                  priorityRank,
+                  matchType,
+                  similarityScore,
+                  matchedValue: cand.text,
+                  isAlias: cand.isAlias
+                };
+              }
+            }
+          }
+
+          if (bestItemMatch) {
             matchedCourses.push({
               doc,
               item,
-              priorityRank,
-              matchType,
-              similarityScore
+              priorityRank: bestItemMatch.priorityRank,
+              matchType: bestItemMatch.matchType,
+              similarityScore: bestItemMatch.similarityScore,
+              matchedValue: bestItemMatch.matchedValue,
+              isAlias: bestItemMatch.isAlias
             });
           }
         }
@@ -359,6 +418,16 @@ function tryNavigationIndexMatch(
         semester: winner.item.semester
       }
     };
+
+    // Print debug logs as required by Requirement 5 / 7
+    console.log(`Raw query: ${query}`);
+    console.log(`Normalized query: ${normQuery}`);
+    console.log(`Course: ${winner.item.course}`);
+    console.log(`Alias matched (if any): ${winner.isAlias ? winner.matchedValue : 'None'}`);
+    console.log(`Similarity score: ${winner.similarityScore}`);
+    console.log(`Selected course: ${winner.item.course}`);
+    console.log(`startPage: ${finalResult.matchedItem.startPage}`);
+    console.log(`endPage: ${finalResult.matchedItem.endPage}`);
 
     console.log(`Winning course: ${winner.item.course}`);
     console.log(`Winning document: ${winner.doc.title}`);
