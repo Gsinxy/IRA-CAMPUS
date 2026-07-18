@@ -100,14 +100,95 @@ function isMatch(normQuery: string, normTarget: string): boolean {
 // 1. course_index
 // 2. semester_index
 // 3. section_index
-function tryNavigationIndexMatch(query: string, documents: any[]) {
+function tryNavigationIndexMatch(
+  query: string, 
+  documents: any[],
+  targetDepartment?: string,
+  targetSemester?: string,
+  targetProgramme?: string
+) {
   console.log(`\n=== [RUNTIME DEBUGGING TRACE FOR NAVIGATION INDEX] ===`);
   
   // [STEP 1] Raw query received
   console.log(`[STEP 1] Raw query received: "${query}"`);
 
+  // Implement Levenshtein Distance
+  function getLevenshteinDistance(a: string, b: string): number {
+    const matrix: number[][] = [];
+    for (let i = 0; i <= b.length; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+      matrix[0][j] = j;
+    }
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1, // substitution
+            matrix[i][j - 1] + 1,     // insertion
+            matrix[i - 1][j] + 1      // deletion
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  function getFuzzySimilarity(a: string, b: string): number {
+    if (a === b) return 1.0;
+    if (a.length === 0 || b.length === 0) return 0.0;
+    const dist = getLevenshteinDistance(a, b);
+    const maxLen = Math.max(a.length, b.length);
+    return 1.0 - dist / maxLen;
+  }
+
+  // Course normalization function (Requirement 1)
+  function courseNormalize(q: string): string {
+    if (!q) return '';
+    let res = q.toLowerCase();
+
+    // Replace punctuation with a space
+    res = res.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, ' ');
+
+    // Remove specific words
+    const ignoreWords = ['syllabus', 'course', 'paper', 'subject', 'show', 'give', 'details', 'pdf'];
+    for (const word of ignoreWords) {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      res = res.replace(regex, ' ');
+    }
+
+    // Replace Roman numerals with Arabic numerals
+    const romanMap: Record<string, string> = {
+      'xii': '12',
+      'xi': '11',
+      'x': '10',
+      'ix': '9',
+      'viii': '8',
+      'vii': '7',
+      'vi': '6',
+      'v': '5',
+      'iv': '4',
+      'iii': '3',
+      'ii': '2',
+      'i': '1'
+    };
+    
+    for (const [roman, arabic] of Object.entries(romanMap)) {
+      const regex = new RegExp(`\\b${roman}\\b`, 'g');
+      res = res.replace(regex, arabic);
+    }
+
+    // Collapse multiple spaces into a single space
+    res = res.replace(/\s+/g, ' ').trim();
+    return res;
+  }
+
   // [STEP 2] Query after normalization
-  const normQuery = canonicalNormalize(query);
+  const normQuery = courseNormalize(query);
+  console.log(`Normalized query: ${normQuery}`);
   console.log(`[STEP 2] Query after normalization: "${normQuery}"`);
 
   // [STEP 3] Total syllabus documents loaded from Firestore
@@ -151,31 +232,138 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
   let matchedObj: any = null;
   let finalResult: any = null;
 
-  // Search course_index
+  // Search course_index (Requirement 3: Matching priority & Requirement 4: Tie-breakers)
+  const matchedCourses: any[] = [];
+  
   for (const doc of documents) {
     if (doc.course_index && Array.isArray(doc.course_index)) {
       for (const item of doc.course_index) {
         if (item && item.course) {
-          const normCourse = canonicalNormalize(item.course);
-          if (isMatch(normQuery, normCourse)) {
-            courseMatchFound = true;
-            matchedObj = item;
-            finalResult = {
-              document: doc,
-              matchedItem: {
-                title: item.course,
-                startPage: item.start_page,
-                endPage: item.end_page,
-                type: 'course',
-                semester: item.semester
-              }
-            };
-            break;
+          const normCourse = courseNormalize(item.course);
+          const similarityScore = getFuzzySimilarity(normQuery, normCourse);
+          
+          console.log(`Course checked: ${item.course}`);
+          console.log(`Similarity score: ${similarityScore}`);
+
+          // Classify match type and priority
+          let priorityRank = 6;
+          let matchType = 'none';
+
+          if (normQuery === normCourse) {
+            priorityRank = 1;
+            matchType = 'exact';
+          } else if (normCourse.includes(normQuery) || normQuery.includes(normCourse)) {
+            if (normCourse.startsWith(normQuery) || normQuery.startsWith(normCourse)) {
+              priorityRank = 3;
+              matchType = 'startsWith';
+            } else {
+              priorityRank = 2;
+              matchType = 'contains';
+            }
+          } else {
+            // Check token overlap
+            const qTokens = normQuery.split(' ').filter(t => t.length > 0);
+            const cTokens = normCourse.split(' ').filter(t => t.length > 0);
+            const stopWords = ['and', 'or', 'in', 'of', 'the', 'for', 'to', 'with', 'a', 'an'];
+            const qTokensFiltered = qTokens.filter(t => !stopWords.includes(t) && t.length >= 2);
+            const cTokensFiltered = cTokens.filter(t => !stopWords.includes(t) && t.length >= 2);
+            const commonTokens = qTokensFiltered.filter(t => cTokensFiltered.includes(t));
+            
+            if (commonTokens.length > 0) {
+              priorityRank = 4;
+              matchType = 'token overlap';
+            } else if (similarityScore > 0.4) {
+              priorityRank = 5;
+              matchType = 'fuzzy similarity';
+            }
+          }
+
+          if (priorityRank < 6) {
+            matchedCourses.push({
+              doc,
+              item,
+              priorityRank,
+              matchType,
+              similarityScore
+            });
           }
         }
       }
     }
-    if (finalResult) break;
+  }
+
+  // Sort and pick winner (Requirement 4)
+  if (matchedCourses.length > 0) {
+    const sortedMatches = matchedCourses.sort((a, b) => {
+      // 1. Matching Priority (exact, contains, startsWith, token overlap, fuzzy)
+      if (a.priorityRank !== b.priorityRank) {
+        return a.priorityRank - b.priorityRank;
+      }
+
+      // 2. Longest matching title
+      const aLen = a.item.course ? a.item.course.length : 0;
+      const bLen = b.item.course ? b.item.course.length : 0;
+      if (aLen !== bLen) {
+        return bLen - aLen; // longest first
+      }
+
+      // 3. Exact department match
+      const aDeptMatch = targetDepartment && a.doc.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
+      const bDeptMatch = targetDepartment && b.doc.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
+      if (aDeptMatch !== bDeptMatch) {
+        return bDeptMatch - aDeptMatch; // matches first
+      }
+
+      // 4. Correct semester
+      const isSemMatch = (candidateSem: string, targetSem: string) => {
+        if (!candidateSem || !targetSem) return false;
+        const cleanSem = (s: string) => {
+          const romanMap: Record<string, string> = {
+            '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V', '6': 'VI', '7': 'VII', '8': 'VIII',
+            'I': 'I', 'II': 'II', 'III': 'III', 'IV': 'IV', 'V': 'V', 'VI': 'VI', 'VII': 'VII', 'VIII': 'VIII'
+          };
+          const match = s.match(/\d+|[IVX]+/i);
+          if (match) {
+            const val = match[0].toUpperCase();
+            return romanMap[val] || val;
+          }
+          return s.toUpperCase().trim();
+        };
+        return cleanSem(candidateSem) === cleanSem(targetSem);
+      };
+
+      const aSemMatch = targetSemester && isSemMatch(a.item.semester, targetSemester) ? 1 : 0;
+      const bSemMatch = targetSemester && isSemMatch(b.item.semester, targetSemester) ? 1 : 0;
+      if (aSemMatch !== bSemMatch) {
+        return bSemMatch - aSemMatch; // correct semester first
+      }
+
+      // 5. Highest similarity score
+      if (a.similarityScore !== b.similarityScore) {
+        return b.similarityScore - a.similarityScore; // highest score first
+      }
+
+      return 0;
+    });
+
+    const winner = sortedMatches[0];
+    courseMatchFound = true;
+    matchedObj = winner.item;
+    finalResult = {
+      document: winner.doc,
+      matchedItem: {
+        title: winner.item.course,
+        startPage: winner.item.start_page !== undefined ? winner.item.start_page : (winner.item.startPage || -1),
+        endPage: winner.item.end_page !== undefined ? winner.item.end_page : (winner.item.endPage || -1),
+        type: 'course',
+        semester: winner.item.semester
+      }
+    };
+
+    console.log(`Winning course: ${winner.item.course}`);
+    console.log(`Winning document: ${winner.doc.title}`);
+    console.log(`startPage: ${finalResult.matchedItem.startPage}`);
+    console.log(`endPage: ${finalResult.matchedItem.endPage}`);
   }
 
   // Search semester_index (if course_index match not found yet)
@@ -186,7 +374,7 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
           if (value && typeof value === 'object') {
             const val = value as any;
             const normSem = canonicalNormalize(semName);
-            if (isMatch(normQuery, normSem)) {
+            if (isMatch(canonicalNormalize(query), normSem)) {
               semesterMatchFound = true;
               matchedObj = { semName, ...val };
               finalResult = {
@@ -215,7 +403,7 @@ function tryNavigationIndexMatch(query: string, documents: any[]) {
           if (value && typeof value === 'object') {
             const val = value as any;
             const normSec = canonicalNormalize(secName);
-            if (isMatch(normQuery, normSec)) {
+            if (isMatch(canonicalNormalize(query), normSec)) {
               sectionMatchFound = true;
               matchedObj = { secName, ...val };
               finalResult = {
@@ -492,7 +680,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         // STEP 4: Only after the correct department document has been selected should the server search
         if (bestDoc) {
-          const navMatch = tryNavigationIndexMatch(message, [bestDoc]);
+          const navMatch = tryNavigationIndexMatch(message, [bestDoc], targetDepartment, extractedSem, targetProg);
           if (navMatch) {
             matchedItem = navMatch.matchedItem;
             console.log(`[DEBUG LOG] Fallback PDF search was used: No (Precise navigation index matched successfully: "${matchedItem.title}")`);
