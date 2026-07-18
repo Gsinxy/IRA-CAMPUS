@@ -324,70 +324,186 @@ router.post('/', async (req: Request, res: Response) => {
       let bestDoc = null;
       let matchedItem = null;
 
-      // Always try matching navigation indexes first for any official document queries that can potentially match Syllabus indices
-      const syllabusDocs = allOfficialDocs.filter(d => d.category === 'Syllabus');
-      const navMatch = tryNavigationIndexMatch(message, syllabusDocs);
-      
-      if (navMatch) {
-        bestDoc = navMatch.document;
-        matchedItem = navMatch.matchedItem;
-        console.log(`[DEBUG LOG] Fallback PDF search was used: No (Precise navigation index matched successfully: "${matchedItem.title}")`);
-      } else {
-        console.log(`[DEBUG LOG] Fallback PDF search was used: Yes (No navigation index match. Retrying fallback search.)`);
+      if (category === 'Syllabus') {
+        // STEP 1: Extract from the user query
+        const depts = [
+          "Economics", "Commerce", "Physics", "Chemistry", "Mathematics", 
+          "Political Science", "History", "English", "Odia", "Botany", 
+          "Zoology", "Computer Science"
+        ];
         
-        if (category === 'Syllabus') {
-          // Fallback to department-specific lookup if no navigation index match is found
-          // Detect department and programme
-          let targetDepartment = studentProfile?.department;
-          let targetProgramme = studentProfile?.programme;
-          let targetAcademicYear = studentProfile?.academicYear;
+        // Setup alias mapping to standard department name
+        const deptAliases: Record<string, string> = {
+          "economics": "Economics",
+          "eco": "Economics",
+          "commerce": "Commerce",
+          "com": "Commerce",
+          "physics": "Physics",
+          "phy": "Physics",
+          "chemistry": "Chemistry",
+          "chem": "Chemistry",
+          "mathematics": "Mathematics",
+          "maths": "Mathematics",
+          "math": "Mathematics",
+          "political science": "Political Science",
+          "pol science": "Political Science",
+          "pol. science": "Political Science",
+          "pol sci": "Political Science",
+          "history": "History",
+          "english": "English",
+          "eng": "English",
+          "odia": "Odia",
+          "botany": "Botany",
+          "zoology": "Zoology",
+          "computer science": "Computer Science",
+          "comp science": "Computer Science",
+          "comp. science": "Computer Science",
+          "cs": "Computer Science"
+        };
 
-          // Force detection from query first
-          const depts = [
-            "Economics", "Commerce", "Physics", "Chemistry", "Mathematics", 
-            "Political Science", "History", "English", "Odia", "Botany", 
-            "Zoology", "Computer Science"
-          ];
-          for (const d of depts) {
-            if (new RegExp(`\\b${d}\\b`, 'i').test(message)) {
-              targetDepartment = d;
-            }
+        let extractedDept: string | undefined = undefined;
+        // Check for alias matching
+        const sortedAliasKeys = Object.keys(deptAliases).sort((a, b) => b.length - a.length);
+        for (const key of sortedAliasKeys) {
+          const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+          if (new RegExp(`\\b${escapedKey}\\b`, 'i').test(message)) {
+            extractedDept = deptAliases[key];
+            break;
+          }
+        }
+
+        // Extract programme
+        let extractedProg: 'UG' | 'PG' | undefined = undefined;
+        if (/\b(?:ug|undergraduate|bachelors|b\.?sc|b\.?a|b\.?com)\b/i.test(message)) {
+          extractedProg = 'UG';
+        } else if (/\b(?:pg|postgraduate|masters|m\.?sc|m\.?a|m\.?com)\b/i.test(message)) {
+          extractedProg = 'PG';
+        }
+
+        // Extract semester
+        let extractedSem: string | undefined = undefined;
+        const semRegex = /\b(?:semester|sem)\s*(\d+|[ivx]+)\b/i;
+        const semMatch = message.match(semRegex);
+        const ordinalSemRegex = /\b(\d+)(?:st|nd|rd|th)\s*(?:semester|sem)\b/i;
+        const ordinalMatch = message.match(ordinalSemRegex);
+        const wordSemRegex = /\b(first|second|third|fourth|fifth|sixth|seventh|eighth)\s*(?:semester|sem)\b/i;
+        const wordMatch = message.match(wordSemRegex);
+
+        const wordToNum: Record<string, string> = {
+          'first': '1', 'second': '2', 'third': '3', 'fourth': '4', 'fifth': '5', 'sixth': '6', 'seventh': '7', 'eighth': '8'
+        };
+
+        const romanMap: Record<string, string> = {
+          '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V', '6': 'VI', '7': 'VII', '8': 'VIII',
+          'I': 'I', 'II': 'II', 'III': 'III', 'IV': 'IV', 'V': 'V', 'VI': 'VI', 'VII': 'VII', 'VIII': 'VIII'
+        };
+
+        if (semMatch) {
+          const val = semMatch[1].toUpperCase();
+          extractedSem = romanMap[val] || val;
+        } else if (ordinalMatch) {
+          const val = ordinalMatch[1];
+          extractedSem = romanMap[val] || val;
+        } else if (wordMatch) {
+          const val = wordToNum[wordMatch[1].toLowerCase()];
+          extractedSem = romanMap[val] || val;
+        }
+
+        // Extract course if present
+        let extractedCourse: string | undefined = undefined;
+        const paperRegex = /\b(?:paper)\s*(\d+|[ivx]+)\b/i;
+        const paperMatch = message.match(paperRegex);
+        if (paperMatch) {
+          const val = paperMatch[1].toUpperCase();
+          const mapped = romanMap[val] || val;
+          extractedCourse = `Paper ${mapped}`;
+        }
+
+        // STEP 2: Load all official syllabus documents
+        const syllabusDocs = allOfficialDocs.filter(d => d.category === 'Syllabus');
+
+        // STEP 3 & STEP 5: Identify the target department
+        let targetDepartment = extractedDept || studentProfile?.department;
+        let isFallbackToProfile = !extractedDept && !!studentProfile?.department;
+
+        // STEP 6: If multiple documents match, prefer: 1. exact department, 2. exact programme, 3. latest academic year
+        let filteredDocs = syllabusDocs;
+        if (targetDepartment) {
+          filteredDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment!.toLowerCase());
+        }
+
+        const targetProg = extractedProg || studentProfile?.programme;
+
+        const sortedDocs = [...filteredDocs].sort((a, b) => {
+          // 1. Exact department match
+          const aDeptMatch = targetDepartment && a.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
+          const bDeptMatch = targetDepartment && b.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
+          if (aDeptMatch !== bDeptMatch) {
+            return bDeptMatch - aDeptMatch;
           }
 
-          if (new RegExp(`\\bUG\\b|\\bUndergraduate\\b`, 'i').test(message)) {
-            targetProgramme = 'UG';
-          } else if (new RegExp(`\\bPG\\b|\\bPostgraduate\\b`, 'i').test(message)) {
-            targetProgramme = 'PG';
+          // 2. Exact programme match
+          const aProgMatch = targetProg && a.programme === targetProg ? 1 : 0;
+          const bProgMatch = targetProg && b.programme === targetProg ? 1 : 0;
+          if (aProgMatch !== bProgMatch) {
+            return bProgMatch - aProgMatch;
           }
 
-          if (!targetDepartment) {
-            console.log('[Chat Route] Syllabus query but target department not specified. Gracefully falling back to general RAG.');
+          // 3. Latest academic year
+          const aYear = a.academicYear || '';
+          const bYear = b.academicYear || '';
+          if (aYear !== bYear) {
+            return bYear.localeCompare(aYear); // e.g. "2023-24" > "2022-23"
+          }
+
+          return 0;
+        });
+
+        bestDoc = sortedDocs[0] || null;
+
+        // Add debug logs required by Requirement 4
+        console.log(`[DEPT ROUTING] Detected department: ${extractedDept || 'None (Using student profile fallback)'}`);
+        console.log(`[DEPT ROUTING] Matched Firestore document: ${bestDoc ? 'Yes' : 'No'}`);
+        if (bestDoc) {
+          console.log(`[DEPT ROUTING] Document ID: ${bestDoc.documentId}`);
+          console.log(`[DEPT ROUTING] Document title: ${bestDoc.title}`);
+          console.log(`[DEPT ROUTING] Department metadata: ${bestDoc.department || 'None'}`);
+          
+          let reason = '';
+          if (extractedDept) {
+            reason += `Extracted department "${extractedDept}" from user query. `;
+          } else if (studentProfile?.department) {
+            reason += `Fell back to student profile department "${studentProfile.department}". `;
           } else {
-            let matchedDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment.toLowerCase());
+            reason += `No department mentioned or found in student profile. `;
+          }
 
-            if (matchedDocs.length === 0) {
-              console.log(`[Chat Route] Syllabus query but no matched syllabus docs for department "${targetDepartment}". Gracefully falling back to general RAG.`);
+          if (targetProg) {
+            if (bestDoc.programme === targetProg) {
+              reason += `Matched target programme "${targetProg}". `;
             } else {
-              // Automatically select the correct one using department, programme, academic year
-              if (matchedDocs.length > 1) {
-                if (targetProgramme) {
-                  const progMatch = matchedDocs.filter(d => d.programme === targetProgramme);
-                  if (progMatch.length > 0) matchedDocs = progMatch;
-                }
-                if (targetAcademicYear) {
-                  const yearMatch = matchedDocs.filter(d => d.academicYear === targetAcademicYear);
-                  if (yearMatch.length > 0) matchedDocs = yearMatch;
-                }
-              }
-              
-              bestDoc = matchedDocs[0];
+              reason += `No document with target programme "${targetProg}" found; selected available programme. `;
             }
           }
-        } else {
-          const categoryDocs = allOfficialDocs.filter(d => d.category === category);
-          if (categoryDocs.length > 0) {
-            bestDoc = categoryDocs[0];
+          
+          reason += `Selected latest academic year document: "${bestDoc.academicYear}".`;
+          console.log(`[DEPT ROUTING] Reason this document was selected: ${reason}`);
+        }
+
+        // STEP 4: Only after the correct department document has been selected should the server search
+        if (bestDoc) {
+          const navMatch = tryNavigationIndexMatch(message, [bestDoc]);
+          if (navMatch) {
+            matchedItem = navMatch.matchedItem;
+            console.log(`[DEBUG LOG] Fallback PDF search was used: No (Precise navigation index matched successfully: "${matchedItem.title}")`);
+          } else {
+            console.log(`[DEBUG LOG] Fallback PDF search was used: Yes (No navigation index match. Retrying fallback search.)`);
           }
+        }
+      } else {
+        const categoryDocs = allOfficialDocs.filter(d => d.category === category);
+        if (categoryDocs.length > 0) {
+          bestDoc = categoryDocs[0];
         }
       }
 
