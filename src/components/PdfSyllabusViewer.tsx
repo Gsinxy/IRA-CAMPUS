@@ -128,11 +128,31 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
     loadPdfjs();
   }, []);
 
+  // Log viewer remount on initial mount
+  useEffect(() => {
+    console.log("[PDF TRANSITION LOG] Viewer remounted");
+    return () => {
+      console.log("[PDF TRANSITION LOG] Viewer unmounted. Clearing states.");
+    };
+  }, []);
+
+  const isFirstPageRenderRef = useRef(true);
+  useEffect(() => {
+    if (isFirstPageRenderRef.current) {
+      isFirstPageRenderRef.current = false;
+      return;
+    }
+    console.log(`[PDF TRANSITION LOG] Page jumped to ${pageNum}`);
+  }, [pageNum]);
+
   // 2. Load PDF document from Base64
   useEffect(() => {
     if (!pdfjsLoaded || !fileBase64) return;
 
+    let isCurrent = true;
+
     const loadPdf = async () => {
+      console.log("[PDF TRANSITION LOG] PDF load started");
       setLoading(true);
       setError(null);
       try {
@@ -149,6 +169,12 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
         const loadingTask = pdfjsLib.getDocument({ data: bytes });
         const doc = await loadingTask.promise;
         
+        if (!isCurrent) {
+          console.log("[PDF TRANSITION LOG] PDF load completed, but ignored due to unmount or newer load request.");
+          return;
+        }
+
+        console.log("[PDF TRANSITION LOG] PDF load completed");
         console.log("[STEP E] onDocumentLoadSuccess() triggered - PDF has finished loading.");
         setPdfDoc(doc);
         setTotalPages(doc.numPages);
@@ -161,14 +187,21 @@ export const PdfSyllabusViewer: React.FC<PdfSyllabusViewerProps> = ({
         });
         console.log(`[STEP E] Inside loadPdf onDocumentLoadSuccess: Current page after update: ${targetPage}`);
       } catch (err: any) {
+        if (!isCurrent) return;
         console.error('PDF loading error:', err);
         setError('Could not render syllabus PDF document. Please check file format.');
       } finally {
-        setLoading(false);
+        if (isCurrent) {
+          setLoading(false);
+        }
       }
     };
 
     loadPdf();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [pdfjsLoaded, fileBase64]);
 
   // 3. Monitor container width for responsive fit sizing

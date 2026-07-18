@@ -955,11 +955,31 @@ export default function App() {
   const [activePdfDocData, setActivePdfDocData] = useState<any | null>(null);
   const [activePdfNavigation, setActivePdfNavigation] = useState<any | null>(null);
 
+  const prevDocIdRef = useRef<string | null>(null);
+  const prevTitleRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    console.log(`[PDF TRANSITION LOG] Previous documentId: ${prevDocIdRef.current || 'null'}`);
+    console.log(`[PDF TRANSITION LOG] New documentId: ${activePdfDocId || 'null'}`);
+    prevDocIdRef.current = activePdfDocId;
+  }, [activePdfDocId]);
+
+  useEffect(() => {
+    if (activePdfDocData) {
+      console.log(`[PDF TRANSITION LOG] Previous title: ${prevTitleRef.current || 'null'}`);
+      console.log(`[PDF TRANSITION LOG] New title: ${activePdfDocData.title || 'null'}`);
+      prevTitleRef.current = activePdfDocData.title;
+    }
+  }, [activePdfDocData]);
+
   useEffect(() => {
     if (!activePdfDocId) {
       setActivePdfDocData(null);
       return;
     }
+    // Set activePdfDocData to null immediately so that any stale PDF is unloaded
+    // and the viewer unmounts immediately before loading the new PDF
+    setActivePdfDocData(null);
     const fetchPdfDoc = async () => {
       try {
         const isOfficial = activePdfDocId.startsWith('doc-off-');
@@ -4932,6 +4952,7 @@ export default function App() {
             {activePdfDocData && (
               <div className="w-full lg:w-1/2 h-[calc(100vh-56px)] flex flex-col border-l border-[#E7DDD0] relative z-10 bg-white shadow-2xl animate-in slide-in-from-right duration-300">
                 <PdfSyllabusViewer
+                  key={activePdfDocData.documentId || activePdfDocData.id || activePdfDocId || 'none'}
                   fileBase64={activePdfDocData.fileBase64 || ''}
                   title={activePdfDocData.title || ''}
                   searchKeyword={activePdfNavigation ? '' : pdfSearchKeyword}
