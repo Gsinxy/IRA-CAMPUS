@@ -248,7 +248,8 @@ Do not include any thinking block, markdown code fence like \`\`\`json, or extra
               id: `faq-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
               question: faq.question,
               answer: faq.answer,
-              category: refreshedDoc.category
+              category: refreshedDoc.category,
+              documentId: refreshedDoc.id
             });
           }
         }

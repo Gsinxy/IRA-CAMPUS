@@ -28,6 +28,7 @@ import {
   Copy,
   Check,
   Share2,
+  AlertCircle,
   Lock,
   Upload,
   Info,
@@ -75,9 +76,12 @@ import {
   Conversation,
   Notice,
   FAQ,
-  AnalyticsSummary
+  AnalyticsSummary,
+  NavigationItem
 } from './types';
 import { auth, db } from './firebase';
+import { PdfSyllabusViewer } from './components/PdfSyllabusViewer';
+import { NavigationIndexTable } from './components/NavigationIndexTable';
 import { onAuthStateChanged, onIdTokenChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveConversationToFirestore, loadConversationsFromFirestore, deleteConversationFromFirestore, deleteConversationsFromFirestore } from './services/firebaseService';
@@ -946,6 +950,52 @@ export default function App() {
   const [chatSearchQuery, setChatSearchQuery] = useState('');
   const [isListening, setIsListening] = useState(false);
 
+  const [activePdfDocId, setActivePdfDocId] = useState<string | null>(null);
+  const [pdfSearchKeyword, setPdfSearchKeyword] = useState<string>('');
+  const [activePdfDocData, setActivePdfDocData] = useState<any | null>(null);
+  const [activePdfNavigation, setActivePdfNavigation] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!activePdfDocId) {
+      setActivePdfDocData(null);
+      return;
+    }
+    const fetchPdfDoc = async () => {
+      try {
+        const isOfficial = activePdfDocId.startsWith('doc-off-');
+        const endpoint = isOfficial 
+          ? `/api/official-documents/public/${activePdfDocId}`
+          : `/api/documents/public/${activePdfDocId}`;
+          
+        const res = await fetch(endpoint);
+        if (res.ok) {
+          const doc = await res.json();
+          setActivePdfDocData(doc);
+        }
+      } catch (e) {
+        console.error('Failed to fetch pdf document:', e);
+      }
+    };
+    fetchPdfDoc();
+  }, [activePdfDocId]);
+
+  const handleCitationClick = async (cite: Citation) => {
+    try {
+      const res = await fetch(`/api/documents/public/${cite.docId}`);
+      if (res.ok) {
+        const docObj = await res.json();
+        if (docObj.type === 'pdf' || (docObj.mimeType && docObj.mimeType.includes('pdf')) || docObj.fileBase64) {
+          setActivePdfDocId(cite.docId);
+          setPdfSearchKeyword('');
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error checking citation doc type:', e);
+    }
+    setActiveCitation(cite);
+  };
+
   const startSpeechRecognition = (onResult: (text: string) => void) => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -1032,6 +1082,39 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  // Official Documents State
+  const [officialDocs, setOfficialDocs] = useState<any[]>([]);
+  const [isOfficialDocsLoading, setIsOfficialDocsLoading] = useState(false);
+  const [pdfjsReady, setPdfjsReady] = useState(false);
+  const [isIndexingPdf, setIsIndexingPdf] = useState(false);
+  const [offDocSemesterIndex, setOffDocSemesterIndex] = useState<any>(null);
+  const [offDocSectionIndex, setOffDocSectionIndex] = useState<any>(null);
+  const [offDocCourseIndex, setOffDocCourseIndex] = useState<any>(null);
+  
+  // Selected official document for editing indexes/metadata
+  const [editingOfficialDoc, setEditingOfficialDoc] = useState<any | null>(null);
+  const [editNavIndex, setEditNavIndex] = useState<NavigationItem[] | null>(null);
+  const [editNavIndexJson, setEditNavIndexJson] = useState('');
+  const [jsonValidationStatus, setJsonValidationStatus] = useState<{ isValid: boolean; message: string } | null>(null);
+  const [isSavingEditIndexes, setIsSavingEditIndexes] = useState(false);
+  const [editIndexesError, setEditIndexesError] = useState('');
+  const [editIndexesSuccess, setEditIndexesSuccess] = useState(false);
+  
+  // Upload Official Document fields
+  const [offDocTitle, setOffDocTitle] = useState('');
+  const [offDocCategory, setOffDocCategory] = useState<'Syllabus' | 'Prospectus' | 'Academic Calendar' | 'Examination Rules' | 'Circulars' | 'Other Documents'>('Syllabus');
+  const [offDocDepartment, setOffDocDepartment] = useState('Economics');
+  const [offDocProgramme, setOffDocProgramme] = useState<'UG' | 'PG'>('UG');
+  const [offDocNepVersion, setOffDocNepVersion] = useState('NEP 2020');
+  const [offDocAcademicYear, setOffDocAcademicYear] = useState('2024-25');
+  const [offDocFile, setOffDocFile] = useState<File | null>(null);
+  const [offDocFileBase64, setOffDocFileBase64] = useState('');
+  const [offDocTotalPages, setOffDocTotalPages] = useState(1);
+  const [isOffDocUploading, setIsOffDocUploading] = useState(false);
+  const [offDocUploadError, setOffDocUploadError] = useState('');
+  const [offDocUploadSuccess, setOffDocUploadSuccess] = useState(false);
+  const [adminTab, setAdminTab] = useState<'analytics' | 'knowledge' | 'official_docs'>('analytics');
 
   // AI Knowledge Extraction System State
   const [pastedContent, setPastedContent] = useState('');
@@ -1420,12 +1503,34 @@ export default function App() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Dynamic script loader for PDF.js in App
+  useEffect(() => {
+    if ((window as any).pdfjsLib) {
+      setPdfjsReady(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+    script.async = true;
+    script.onload = () => {
+      const pdfjsLib = (window as any).pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+      setPdfjsReady(true);
+    };
+    script.onerror = () => {
+      console.error('Failed to load PDF.js in App.');
+    };
+    document.head.appendChild(script);
+  }, []);
+
   // Load notices, faqs, documents, and analytics
   useEffect(() => {
     fetchNotices();
     fetchFAQs();
     if (activeTab === 'admin' && isAdminLoggedIn) {
       fetchAdminDocs();
+      fetchOfficialDocs();
       fetchAnalytics();
     }
   }, [activeTab, isAdminLoggedIn]);
@@ -1497,6 +1602,708 @@ export default function App() {
     }
   };
 
+  const fetchOfficialDocs = async () => {
+    setIsOfficialDocsLoading(true);
+    try {
+      const res = await fetchWithRetry('/api/official-documents');
+      if (!res.ok) {
+        throw new Error(`HTTP status ${res.status}`);
+      }
+      const data = await res.json();
+      setOfficialDocs(data);
+    } catch (err) {
+      console.error('Failed to load official documents:', err);
+    } finally {
+      setIsOfficialDocsLoading(false);
+    }
+  };
+
+  const handleDeleteOfficialDoc = (id: string) => {
+    showConfirm(
+      'Delete Official Document?',
+      'Are you sure you want to delete this official document? This action is permanent and cannot be undone.',
+      async () => {
+        try {
+          const res = await fetch(`/api/official-documents/${id}`, {
+            method: 'DELETE'
+          });
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || `HTTP status ${res.status}`);
+          }
+          fetchOfficialDocs();
+          showAlert('Success', 'Official document deleted successfully.');
+        } catch (err: any) {
+          showAlert('Error', `Failed to delete official document: ${err.message}`);
+        }
+      },
+      'Yes, Delete',
+      'No, Cancel'
+    );
+  };
+
+  const generatePdfNavigationIndex = async (base64: string) => {
+    if (!base64) return;
+    setIsIndexingPdf(true);
+    setOffDocSemesterIndex(null);
+    setOffDocSectionIndex(null);
+    setOffDocCourseIndex(null);
+    try {
+      const pdfjsLib = (window as any).pdfjsLib;
+      if (!pdfjsLib) {
+        console.warn('PDF.js not loaded yet');
+        setIsIndexingPdf(false);
+        return;
+      }
+
+      const binaryString = atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      const loadingTask = pdfjsLib.getDocument({ data: bytes });
+      const doc = await loadingTask.promise;
+      const total = doc.numPages;
+      setOffDocTotalPages(total);
+
+      // Patterns for major sections
+      const patterns: Record<string, RegExp> = {
+        'Semester I': /\b(?:SEMESTER\s*(?:I|1)\b|FIRST\s+SEMESTER\b)/i,
+        'Semester II': /\b(?:SEMESTER\s*(?:II|2)\b|SECOND\s+SEMESTER\b)/i,
+        'Semester III': /\b(?:SEMESTER\s*(?:III|3)\b|THIRD\s+SEMESTER\b)/i,
+        'Semester IV': /\b(?:SEMESTER\s*(?:IV|4)\b|FOURTH\s+SEMESTER\b)/i,
+        'Semester V': /\b(?:SEMESTER\s*(?:V|5)\b|FIFTH\s+SEMESTER\b)/i,
+        'Semester VI': /\b(?:SEMESTER\s*(?:VI|6)\b|SIXTH\s+SEMESTER\b)/i,
+        'Semester VII': /\b(?:SEMESTER\s*(?:VII|7)\b|SEVENTH\s+SEMESTER\b)/i,
+        'Semester VIII': /\b(?:SEMESTER\s*(?:VIII|8)\b|EIGHTH\s+SEMESTER\b)/i,
+        'MDC': /\b(?:MULTIDISCIPLINARY\s+COURSES?|MDC)\b/i,
+        'AEC': /\b(?:ABILITY\s+ENHANCEMENT\s+COURSES?|AEC)\b/i,
+        'SEC': /\b(?:SKILL\s+ENHANCEMENT\s+COURSES?|SEC)\b/i,
+        'VAC': /\b(?:VALUE\s+ADDED\s+COURSES?|VAC)\b/i,
+      };
+
+      // Extract raw lines from every page
+      const pageLinesMap: Record<number, string[]> = {};
+      const pageMatches: Record<number, string[]> = {};
+      const keyMatches: Record<string, number[]> = {
+        'Semester I': [], 'Semester II': [], 'Semester III': [], 'Semester IV': [],
+        'Semester V': [], 'Semester VI': [], 'Semester VII': [], 'Semester VIII': [],
+        'MDC': [], 'AEC': [], 'SEC': [], 'VAC': []
+      };
+
+      for (let p = 1; p <= total; p++) {
+        const page = await doc.getPage(p);
+        const textContent = await page.getTextContent();
+        
+        const items = textContent.items.map((item: any) => ({
+          text: item.str || '',
+          x: item.transform ? item.transform[4] : 0,
+          y: item.transform ? item.transform[5] : 0,
+        })).filter(it => it.text.trim().length > 0);
+
+        const tolerance = 4;
+        const rows: { y: number; items: typeof items }[] = [];
+        for (const item of items) {
+          let foundRow = rows.find(row => Math.abs(row.y - item.y) <= tolerance);
+          if (foundRow) {
+            foundRow.items.push(item);
+          } else {
+            rows.push({ y: item.y, items: [item] });
+          }
+        }
+
+        rows.sort((a, b) => b.y - a.y);
+
+        const pageLines: string[] = [];
+        for (const row of rows) {
+          row.items.sort((a, b) => a.x - b.x);
+          const rowText = row.items.map(it => it.text).join(' ').trim();
+          const cleanRowText = rowText
+            .replace(/\s+/g, ' ')
+            .replace(/–|—/g, '-');
+          if (cleanRowText) {
+            pageLines.push(cleanRowText);
+          }
+        }
+
+        pageLinesMap[p] = pageLines;
+        
+        pageMatches[p] = [];
+        const fullPageText = pageLines.join(' ');
+        for (const [key, pattern] of Object.entries(patterns)) {
+          if (pattern.test(fullPageText)) {
+            pageMatches[p].push(key);
+            keyMatches[key].push(p);
+          }
+        }
+      }
+
+      // Filter out Table of Contents pages
+      const startPages: Record<string, number> = {};
+      for (const [key, pages] of Object.entries(keyMatches)) {
+        const validPages = pages.filter(p => pageMatches[p].length <= 2);
+        if (validPages.length > 0) {
+          startPages[key] = Math.min(...validPages);
+        }
+      }
+
+      // Generate Navigation Index ranges for semesters/sections
+      const tempRanges: Record<string, { startPage: number; endPage: number }> = {};
+      const detectedKeys = Object.keys(startPages);
+      for (const key of detectedKeys) {
+        const start = startPages[key];
+        const greaterStarts = Object.values(startPages).filter(s => s > start);
+        const nextStart = greaterStarts.length > 0 ? Math.min(...greaterStarts) : null;
+        const end = nextStart !== null ? nextStart - 1 : total;
+        
+        tempRanges[key] = {
+          startPage: start,
+          endPage: Math.max(start, end)
+        };
+      }
+
+      const getSemesterForPage = (p: number) => {
+        let bestSem = 'Semester I';
+        let bestStart = -1;
+        for (const [sem, start] of Object.entries(startPages)) {
+          if (sem.startsWith('Semester') && start <= p && start > bestStart) {
+            bestStart = start;
+            bestSem = sem;
+          }
+        }
+        return bestSem;
+      };
+
+      const toTitleCase = (str: string): string => {
+        const romanAndAcronyms = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi', 'xii', 'xiii', 'xiv', 'xv', 'mdc', 'aec', 'sec', 'vac', 'nep', 'ug', 'pg'];
+        return str
+          .split(/\s+/)
+          .map((word, idx) => {
+            const cleanWord = word.replace(/[^a-zA-Z]/g, '').toLowerCase();
+            if (romanAndAcronyms.includes(cleanWord)) {
+              return word.toUpperCase();
+            }
+            if (idx > 0 && ['of', 'and', 'the', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'a', 'an'].includes(word.toLowerCase())) {
+              return word.toLowerCase();
+            }
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+          })
+          .join(' ');
+      };
+
+      const paperRegex = /\b(?:PAPER|COURSE)\s*[-–—]?\s*(XXIII|XXII|XXI|XX|XIX|XVIII|XVII|XVI|XV|XIV|XIII|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I|\d+)\b/i;
+      const noiseKeywords = /\b(?:CREDIT|MARK|HOUR|DURATION|LECTURE|EXTERNAL|INTERNAL|TOTAL|SYLLABUS|OBJECTIVE|OUTCOME|PREREQUISITE|UNIT|MODULE|MAXIMUM|MINIMUM|WRITTEN|EXAM|PRACTICAL|THEORY)\b/i;
+
+      // Extract Courses
+      const detectedCourses: any[] = [];
+      for (let p = 1; p <= total; p++) {
+        const lines = pageLinesMap[p] || [];
+        for (let idx = 0; idx < lines.length; idx++) {
+          const line = lines[idx];
+          const paperMatch = line.match(paperRegex);
+          
+          if (paperMatch) {
+            const paperStr = paperMatch[0];
+            let courseTitle = '';
+
+            const sameLineTitle = line.replace(paperRegex, '').trim().replace(/^[:\-\s–—]+/, '').trim();
+            if (
+              sameLineTitle.length > 3 &&
+              !patterns[sameLineTitle] &&
+              !paperRegex.test(sameLineTitle) &&
+              !noiseKeywords.test(sameLineTitle)
+            ) {
+              courseTitle = sameLineTitle;
+            } else {
+              let nextIdx = idx + 1;
+              while (nextIdx < lines.length) {
+                const nextLine = lines[nextIdx].trim();
+                if (nextLine.length > 0) {
+                  const isNextSection = Object.values(patterns).some(r => r.test(nextLine));
+                  const isNextPaper = paperRegex.test(nextLine);
+                  const isNextNoise = noiseKeywords.test(nextLine);
+                  
+                  if (nextLine.length > 3 && !isNextSection && !isNextPaper && !isNextNoise) {
+                    courseTitle = nextLine;
+                  }
+                  break;
+                }
+                nextIdx++;
+              }
+            }
+
+            if (courseTitle && courseTitle.length > 3) {
+              const formattedTitle = toTitleCase(courseTitle);
+              const exists = detectedCourses.some(c => c.title === formattedTitle && c.startPage === p);
+              if (!exists) {
+                detectedCourses.push({
+                  title: formattedTitle,
+                  paper: toTitleCase(paperStr),
+                  semester: getSemesterForPage(p),
+                  startPage: p,
+                  endPage: p
+                });
+              }
+            }
+          }
+        }
+      }
+
+      for (let i = 0; i < detectedCourses.length; i++) {
+        const current = detectedCourses[i];
+        const next = detectedCourses[i + 1];
+        if (next) {
+          if (next.startPage > current.startPage) {
+            current.endPage = next.startPage - 1;
+          } else {
+            current.endPage = current.startPage;
+          }
+        } else {
+          const semRange = tempRanges[current.semester];
+          current.endPage = semRange ? semRange.endPage : total;
+        }
+      }
+
+      // Build Qwen-compliant index object
+      const semester_index: Record<string, { start_page: number; end_page: number }> = {};
+      const section_index: Record<string, { start_page: number; end_page: number }> = {};
+      const course_index: Array<{ course: string; semester?: string; start_page: number; end_page: number }> = [];
+
+      for (const key of Object.keys(startPages)) {
+        const range = tempRanges[key];
+        const isSem = key.startsWith('Semester');
+        const start = range ? range.startPage : 1;
+        const end = range ? range.endPage : total;
+        if (isSem) {
+          semester_index[key] = { start_page: start, end_page: end };
+        } else {
+          section_index[key] = { start_page: start, end_page: end };
+        }
+      }
+
+      detectedCourses.forEach((c) => {
+        if (c.title) {
+          course_index.push({
+            course: c.title,
+            semester: c.semester || undefined,
+            start_page: c.startPage,
+            end_page: c.endPage
+          });
+        }
+      });
+
+      setOffDocSemesterIndex(semester_index);
+      setOffDocSectionIndex(section_index);
+      setOffDocCourseIndex(course_index);
+      console.log('Generated Qwen Indices:', { semester_index, section_index, course_index });
+    } catch (err) {
+      console.error('Error generating PDF indexes:', err);
+    } finally {
+      setIsIndexingPdf(false);
+    }
+  };
+
+  useEffect(() => {
+    if (offDocCategory === 'Syllabus' && offDocFileBase64) {
+      generatePdfNavigationIndex(offDocFileBase64);
+    } else {
+      setOffDocSemesterIndex(null);
+      setOffDocSectionIndex(null);
+      setOffDocCourseIndex(null);
+    }
+  }, [offDocCategory, offDocFileBase64]);
+
+  const handleOffDocFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setOffDocUploadError('Only PDF files are supported for official documents.');
+      return;
+    }
+    setOffDocFile(file);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        const base64 = (evt.target.result as string).split(',')[1];
+        setOffDocFileBase64(base64);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadOfficialDoc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!offDocTitle || !offDocCategory || !offDocAcademicYear) {
+      setOffDocUploadError('Title, Category, and Academic Year are required.');
+      return;
+    }
+    if (offDocCategory === 'Syllabus' && (!offDocDepartment || !offDocProgramme)) {
+      setOffDocUploadError('Department and Programme are required for Syllabus.');
+      return;
+    }
+    if (!offDocFileBase64) {
+      setOffDocUploadError('Please select a PDF syllabus or document file to upload.');
+      return;
+    }
+
+    setIsOffDocUploading(true);
+    setOffDocUploadError('');
+    setOffDocUploadSuccess(false);
+
+    try {
+      const res = await fetch('/api/official-documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: offDocTitle,
+          category: offDocCategory,
+          department: offDocCategory === 'Syllabus' ? offDocDepartment : '',
+          programme: offDocCategory === 'Syllabus' ? offDocProgramme : '',
+          nepVersion: offDocCategory === 'Syllabus' ? offDocNepVersion : '',
+          academicYear: offDocAcademicYear,
+          fileBase64: offDocFileBase64,
+          fileSize: offDocFile ? `${(offDocFile.size / 1024).toFixed(1)} KB` : '0 KB',
+          totalPages: Number(offDocTotalPages) || 1,
+          uploadedBy: auth.currentUser?.displayName || auth.currentUser?.email || 'Staff Admin',
+          semester_index: offDocSemesterIndex,
+          section_index: offDocSectionIndex,
+          course_index: offDocCourseIndex
+        })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `HTTP status ${res.status}`);
+      }
+
+      setOffDocUploadSuccess(true);
+      setOffDocTitle('');
+      setOffDocFile(null);
+      setOffDocFileBase64('');
+      setOffDocTotalPages(1);
+      setOffDocSemesterIndex(null);
+      setOffDocSectionIndex(null);
+      setOffDocCourseIndex(null);
+      
+      const fileInput = document.getElementById('offDocFileInput') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+
+      fetchOfficialDocs();
+    } catch (err: any) {
+      setOffDocUploadError(err.message || 'An error occurred during official document upload.');
+    } finally {
+      setIsOffDocUploading(false);
+    }
+  };
+
+  const getLineAndColOfPosition = (text: string, pos: number): { line: number; column: number } => {
+    let line = 1;
+    let column = 1;
+    const limit = Math.min(pos, text.length);
+    for (let i = 0; i < limit; i++) {
+      if (text[i] === '\n') {
+        line++;
+        column = 1;
+      } else {
+        column++;
+      }
+    }
+    return { line, column };
+  };
+
+  const getDetailedJsonError = (jsonStr: string, err: any): string => {
+    const message = err?.message || String(err);
+    
+    // Check if the error message already has line and column (e.g. "at line 2 column 5" or "line 2 col 5")
+    const lineColMatch = message.match(/line\s*(\d+).*?col(?:umn)?\s*(\d+)/i);
+    if (lineColMatch) {
+      return message;
+    }
+
+    // Try to find position from message (e.g., "at position 123", "at index 123", "position 123", "char 123")
+    const positionMatch = message.match(/(?:at position|at index|char|position)\s*(\d+)/i);
+    if (positionMatch) {
+      const pos = parseInt(positionMatch[1], 10);
+      if (!isNaN(pos)) {
+        const { line, column } = getLineAndColOfPosition(jsonStr, pos);
+        return `${message} (Line: ${line}, Column: ${column})`;
+      }
+    }
+
+    // Check if the error is "Unexpected end of JSON input" or "Unexpected end of input"
+    if (message.includes('Unexpected end of JSON input') || message.includes('Unexpected end of input')) {
+      const { line, column } = getLineAndColOfPosition(jsonStr, jsonStr.length);
+      return `${message} (Line: ${line}, Column: ${column})`;
+    }
+
+    return message;
+  };
+
+  const validateAndParseJson = (jsonStr: string): { isValid: boolean; message: string; data?: any } => {
+    if (!jsonStr.trim()) {
+      return { isValid: false, message: 'JSON cannot be empty' };
+    }
+    try {
+      const parsed = JSON.parse(jsonStr);
+      if (!parsed || typeof parsed !== 'object') {
+        return { isValid: false, message: 'JSON must be a valid object' };
+      }
+
+      // Check schema validation requirements:
+      // "Validation rules: semester_index must be an object. section_index must be an object. course_index must be an array."
+      if (!('semester_index' in parsed)) {
+        return { isValid: false, message: 'Root object must contain a "semester_index" key' };
+      }
+      if (typeof parsed.semester_index !== 'object' || parsed.semester_index === null || Array.isArray(parsed.semester_index)) {
+        return { isValid: false, message: '"semester_index" must be a valid JSON object' };
+      }
+
+      if (!('section_index' in parsed)) {
+        return { isValid: false, message: 'Root object must contain a "section_index" key' };
+      }
+      if (typeof parsed.section_index !== 'object' || parsed.section_index === null || Array.isArray(parsed.section_index)) {
+        return { isValid: false, message: '"section_index" must be a valid JSON object' };
+      }
+
+      if (!('course_index' in parsed)) {
+        return { isValid: false, message: 'Root object must contain a "course_index" key' };
+      }
+      if (!Array.isArray(parsed.course_index)) {
+        return { isValid: false, message: '"course_index" must be a valid JSON array' };
+      }
+
+      // Deep validate semester_index
+      for (const [key, value] of Object.entries(parsed.semester_index)) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+          return { isValid: false, message: `semester_index key "${key}" must map to an object with "start_page" and "end_page"` };
+        }
+        const v = value as any;
+        if (typeof v.start_page !== 'number' || isNaN(v.start_page)) {
+          return { isValid: false, message: `semester_index key "${key}" has an invalid/missing "start_page"` };
+        }
+        if (typeof v.end_page !== 'number' || isNaN(v.end_page)) {
+          return { isValid: false, message: `semester_index key "${key}" has an invalid/missing "end_page"` };
+        }
+      }
+
+      // Deep validate section_index
+      for (const [key, value] of Object.entries(parsed.section_index)) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+          return { isValid: false, message: `section_index key "${key}" must map to an object with "start_page" and "end_page"` };
+        }
+        const v = value as any;
+        if (typeof v.start_page !== 'number' || isNaN(v.start_page)) {
+          return { isValid: false, message: `section_index key "${key}" has an invalid/missing "start_page"` };
+        }
+        if (typeof v.end_page !== 'number' || isNaN(v.end_page)) {
+          return { isValid: false, message: `section_index key "${key}" has an invalid/missing "end_page"` };
+        }
+      }
+
+      // Deep validate course_index
+      for (let i = 0; i < parsed.course_index.length; i++) {
+        const item = parsed.course_index[i];
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          return { isValid: false, message: `course_index item at index ${i} must be a valid object` };
+        }
+        if (typeof item.course !== 'string' || !item.course.trim()) {
+          return { isValid: false, message: `course_index item at index ${i} is missing a valid "course" string name` };
+        }
+        if (typeof item.start_page !== 'number' || isNaN(item.start_page)) {
+          return { isValid: false, message: `course_index item "${item.course || i}" must have a numeric "start_page"` };
+        }
+        if (typeof item.end_page !== 'number' || isNaN(item.end_page)) {
+          return { isValid: false, message: `course_index item "${item.course || i}" must have a numeric "end_page"` };
+        }
+      }
+
+      return {
+        isValid: true,
+        message: 'JSON conforms perfectly to the Qwen index schema.',
+        data: parsed
+      };
+    } catch (err: any) {
+      const detailedMessage = getDetailedJsonError(jsonStr, err);
+      return { isValid: false, message: `JSON parsing error: ${detailedMessage}` };
+    }
+  };
+
+  const handleStartEditIndexes = (doc: any) => {
+    setEditingOfficialDoc(doc);
+    
+    // When opening the dialog, load the existing document JSON (or {} if none exists).
+    const hasExistingIndex = doc && (
+      (doc.semester_index && Object.keys(doc.semester_index).length > 0) ||
+      (doc.section_index && Object.keys(doc.section_index).length > 0) ||
+      (doc.course_index && doc.course_index.length > 0) ||
+      doc.department ||
+      doc.programme ||
+      doc.nepVersion ||
+      doc.nep
+    );
+
+    let indexJsonObj: any = {};
+    if (hasExistingIndex) {
+      indexJsonObj = {
+        department: doc.department || '',
+        programme: doc.programme || '',
+        nep: doc.nepVersion || doc.nep || '',
+        total_pages: doc.totalPages || 1,
+        semester_index: doc.semester_index || {},
+        section_index: doc.section_index || {},
+        course_index: doc.course_index || []
+      };
+    }
+
+    setEditNavIndex(indexJsonObj);
+    setEditNavIndexJson(JSON.stringify(indexJsonObj, null, 2));
+    setJsonValidationStatus(null);
+    setEditIndexesSuccess(false);
+    setEditIndexesError('');
+  };
+
+  const handleFormatJson = () => {
+    try {
+      const parsed = JSON.parse(editNavIndexJson);
+      setEditNavIndexJson(JSON.stringify(parsed, null, 2));
+      const res = validateAndParseJson(JSON.stringify(parsed));
+      setJsonValidationStatus({ isValid: res.isValid, message: res.message });
+      if (res.isValid && res.data) {
+        setEditNavIndex(res.data);
+      }
+    } catch (err: any) {
+      const detailedMessage = getDetailedJsonError(editNavIndexJson, err);
+      setJsonValidationStatus({ isValid: false, message: `Cannot format invalid JSON: ${detailedMessage}` });
+    }
+  };
+
+  const handleValidateJson = () => {
+    const res = validateAndParseJson(editNavIndexJson);
+    setJsonValidationStatus({ isValid: res.isValid, message: res.message });
+    if (res.isValid && res.data) {
+      setEditNavIndex(res.data);
+    }
+  };
+
+  const handleJsonChange = (val: string) => {
+    setEditNavIndexJson(val);
+    const res = validateAndParseJson(val);
+    if (res.isValid && res.data) {
+      setEditNavIndex(res.data);
+      setJsonValidationStatus({ isValid: true, message: res.message });
+    } else {
+      setJsonValidationStatus({ isValid: false, message: res.message });
+    }
+  };
+
+  const handleClearJson = () => {
+    setEditNavIndexJson('');
+    setEditNavIndex(null);
+    setJsonValidationStatus({ isValid: false, message: 'JSON cannot be empty' });
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    e.preventDefault();
+    handleJsonChange(pastedText);
+  };
+
+  const handleImportJsonClick = () => {
+    const fileInput = document.getElementById('json-import-file-input');
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
+  const handleJsonFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string || '';
+        const parsed = JSON.parse(text);
+        const formatted = JSON.stringify(parsed, null, 2);
+        setEditNavIndexJson(formatted);
+        
+        const res = validateAndParseJson(formatted);
+        setJsonValidationStatus({ isValid: res.isValid, message: res.message });
+        if (res.isValid && res.data) {
+          setEditNavIndex(res.data);
+        }
+      } catch (err: any) {
+        const detailedMessage = getDetailedJsonError(event.target?.result as string || '', err);
+        setJsonValidationStatus({ isValid: false, message: `Failed to import JSON: ${detailedMessage}` });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleSaveEditIndexes = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOfficialDoc) return;
+
+    const validation = validateAndParseJson(editNavIndexJson);
+    if (!validation.isValid || !validation.data) {
+      setEditIndexesError(validation.message);
+      setJsonValidationStatus({ isValid: false, message: validation.message });
+      return;
+    }
+
+    setIsSavingEditIndexes(true);
+    setEditIndexesError('');
+    setEditIndexesSuccess(false);
+
+    try {
+      const res = await fetch(`/api/official-documents/${editingOfficialDoc.documentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(validation.data)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || `HTTP status ${res.status}`);
+      }
+
+      setEditIndexesSuccess(true);
+      
+      // Update local state list
+      setOfficialDocs(prev => prev.map(d => {
+        if (d.documentId === editingOfficialDoc.documentId) {
+          const { navigationIndex, ...rest } = d as any;
+          return {
+            ...rest,
+            department: validation.data.department || d.department,
+            programme: validation.data.programme || d.programme,
+            nepVersion: validation.data.nep || d.nepVersion,
+            totalPages: validation.data.total_pages || d.totalPages,
+            semester_index: validation.data.semester_index,
+            section_index: validation.data.section_index,
+            course_index: validation.data.course_index
+          };
+        }
+        return d;
+      }));
+
+      setTimeout(() => {
+        setEditingOfficialDoc(null);
+      }, 1500);
+    } catch (err: any) {
+      setEditIndexesError(err.message || 'An error occurred while saving indexes.');
+    } finally {
+      setIsSavingEditIndexes(false);
+    }
+  };
+
   const fetchAnalytics = async () => {
     try {
       const res = await fetchWithRetry('/api/analytics');
@@ -1546,22 +2353,28 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handleClearAnalytics = async () => {
-    if (!window.confirm('Are you absolutely sure you want to clear all analytics data? This will permanently delete chat logs, feedback, performance logs, and statistics across all Firestore collections.')) {
-      return;
-    }
-    
-    try {
-      const res = await fetch('/api/analytics/clear', { method: 'POST' });
-      if (res.ok) {
-        setAnalytics(null);
-        fetchAnalytics();
-      } else {
-        alert('Failed to clear analytics data');
-      }
-    } catch (err: any) {
-      console.error('Error clearing analytics:', err);
-    }
+  const handleClearAnalytics = () => {
+    showConfirm(
+      'Clear All Analytics?',
+      'Are you absolutely sure you want to clear all analytics data? This will permanently delete chat logs, feedback, performance logs, and statistics across all Firestore collections.',
+      async () => {
+        try {
+          const res = await fetch('/api/analytics/clear', { method: 'POST' });
+          if (res.ok) {
+            setAnalytics(null);
+            fetchAnalytics();
+            showAlert('Success', 'Analytics data cleared successfully.');
+          } else {
+            showAlert('Error', 'Failed to clear analytics data.');
+          }
+        } catch (err: any) {
+          console.error('Error clearing analytics:', err);
+          showAlert('Error', `Error clearing analytics: ${err.message}`);
+        }
+      },
+      'Yes, Clear All',
+      'No, Cancel'
+    );
   };
 
   // Triggers AI Query from any part of the app (homepage, card clicking, suggest buttons)
@@ -1618,7 +2431,12 @@ export default function App() {
         body: JSON.stringify({
           message: query,
           history: chatHistory,
-          sessionId: sessionId
+          sessionId: sessionId,
+          studentProfile: userProfile ? {
+            department: userProfile.department,
+            programme: userProfile.programme,
+            academicYear: userProfile.academicYear
+          } : null
         })
       });
 
@@ -1633,6 +2451,7 @@ export default function App() {
       let citations: Citation[] = [];
       let streamFinished = false;
       let debugData: any = null;
+      let pdfNav: any = null;
 
       if (contentType.includes('text/event-stream')) {
         // Read SSE stream
@@ -1707,6 +2526,9 @@ export default function App() {
                     if (data.citations) {
                       citations = data.citations;
                     }
+                    if (data.pdfNavigation) {
+                      pdfNav = data.pdfNavigation;
+                    }
                     if (data.debug) {
                       debugData = data.debug;
                     }
@@ -1724,6 +2546,9 @@ export default function App() {
         console.log('[DEBUG] Normal JSON response data:', data);
         accumulatedText = data.text || '';
         citations = data.citations || [];
+        if (data.pdfNavigation) {
+          pdfNav = data.pdfNavigation;
+        }
         if (data.debug) {
           debugData = data.debug;
         }
@@ -1758,11 +2583,20 @@ export default function App() {
             content: accumulatedText,
             suggestions: finalSuggestions.slice(0, 4),
             citations: citations,
+            pdfNavigation: pdfNav || undefined,
             debug: debugData
           };
         }
         return m;
       });
+
+      if (pdfNav) {
+        setActivePdfDocId(pdfNav.docId || pdfNav.documentId);
+        setPdfSearchKeyword(pdfNav.keyword || pdfNav.title || '');
+        setActivePdfNavigation(pdfNav.startPage ? pdfNav : null);
+      } else {
+        setActivePdfNavigation(null);
+      }
 
       const finalConvState: Conversation = {
         ...updatedConv,
@@ -2073,7 +2907,15 @@ export default function App() {
       setExtractedKeywords(data.keywords || []);
       setExtractedSummary(data.summary || '');
       setExtractedFaqs(data.faqs || []);
-      setExtractedChunks(data.chunks || []);
+      const rawChunks1 = data.chunks || [];
+      const sanitizedChunks1 = rawChunks1.map((c: any) => {
+        if (typeof c === 'string') return c;
+        if (c && typeof c === 'object') {
+          return c.text || c.content || JSON.stringify(c);
+        }
+        return String(c || '');
+      });
+      setExtractedChunks(sanitizedChunks1);
       setExtractedMetadata(data.metadata || []);
 
       const ents = data.entities || {};
@@ -2357,7 +3199,15 @@ export default function App() {
       setExtractedKeywords(data.keywords || []);
       setExtractedSummary(data.summary || '');
       setExtractedFaqs(data.faqs || []);
-      setExtractedChunks(data.chunks || []);
+      const rawChunks2 = data.chunks || [];
+      const sanitizedChunks2 = rawChunks2.map((c: any) => {
+        if (typeof c === 'string') return c;
+        if (c && typeof c === 'object') {
+          return c.text || c.content || JSON.stringify(c);
+        }
+        return String(c || '');
+      });
+      setExtractedChunks(sanitizedChunks2);
       setExtractedMetadata(data.metadata || []);
 
       const ents = data.entities || {};
@@ -2383,7 +3233,10 @@ export default function App() {
       setExtractionError('Document title is required.');
       return;
     }
-    if (extractedChunks.length === 0 || extractedChunks.some(c => !c.trim())) {
+    if (extractedChunks.length === 0 || extractedChunks.some(c => {
+      const text = typeof c === 'string' ? c : (c && typeof c === 'object' && 'text' in c ? (c as any).text : '');
+      return !text || !text.trim();
+    })) {
       setExtractionError('You must have at least one valid non-empty searchable knowledge chunk.');
       return;
     }
@@ -3863,6 +4716,23 @@ export default function App() {
                                   )}
                                 </button>
 
+                                {m.pdfNavigation && (
+                                  <button
+                                    onClick={() => {
+                                      const docId = m.pdfNavigation!.docId || (m.pdfNavigation as any).documentId;
+                                      const keyword = m.pdfNavigation!.keyword || (m.pdfNavigation as any).title || '';
+                                      setActivePdfDocId(docId);
+                                      setPdfSearchKeyword(keyword);
+                                      setActivePdfNavigation(m.pdfNavigation!.startPage ? m.pdfNavigation : null);
+                                    }}
+                                    className="hover:text-[#C89B4A] flex items-center gap-1 transition-colors cursor-pointer text-[#C89B4A] font-bold"
+                                    title="Open syllabus PDF"
+                                  >
+                                    <FileText className="h-3 w-3" />
+                                    <span>Syllabus PDF</span>
+                                  </button>
+                                )}
+
                                 {/* Regenerate Button */}
                                 <button
                                   onClick={() => handleRegenerate(m.id)}
@@ -3913,7 +4783,7 @@ export default function App() {
                                     {m.citations.map((cite, cidx) => (
                                       <button
                                         key={cidx}
-                                        onClick={() => setActiveCitation(cite)}
+                                        onClick={() => handleCitationClick(cite)}
                                         className="bg-[#F2EEE8] hover:bg-[#C89B4A]/5 border border-[#E7DDD0] hover:border-[#C89B4A]/20 rounded-lg px-2.5 py-1 text-[10px] font-bold text-[#6B6B6B] hover:text-[#C89B4A] transition-all flex items-center gap-1 cursor-pointer"
                                       >
                                         <FileText className="h-2.5 w-2.5" />
@@ -4049,6 +4919,25 @@ export default function App() {
               )}
 
             </div>
+
+            {/* PDF Syllabus Viewer Side Panel */}
+            {activePdfDocData && (
+              <div className="w-full lg:w-1/2 h-[calc(100vh-56px)] flex flex-col border-l border-[#E7DDD0] relative z-10 bg-white shadow-2xl animate-in slide-in-from-right duration-300">
+                <PdfSyllabusViewer
+                  fileBase64={activePdfDocData.fileBase64 || ''}
+                  title={activePdfDocData.title || ''}
+                  searchKeyword={activePdfNavigation ? '' : pdfSearchKeyword}
+                  navigation={activePdfNavigation}
+                  semester_index={activePdfDocData.semester_index}
+                  section_index={activePdfDocData.section_index}
+                  course_index={activePdfDocData.course_index}
+                  onClose={() => {
+                    setActivePdfDocId(null);
+                    setActivePdfNavigation(null);
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
 
@@ -4203,7 +5092,53 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* ANALYTICS SECTION */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                  {/* Sidebar Navigation */}
+                  <div className="lg:col-span-1 bg-white border border-[#E7DDD0] rounded-2xl p-4 shadow-sm space-y-1">
+                    <p className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wider px-3 mb-2.5">Portal Sections</p>
+                    
+                    <button
+                      onClick={() => setAdminTab('analytics')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        adminTab === 'analytics'
+                          ? 'bg-[#C89B4A] text-white shadow-sm shadow-[#C89B4A]/20'
+                          : 'text-[#6B6B6B] hover:bg-[#F2EEE8]/60 hover:text-[#1B1B1B]'
+                      }`}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                      <span>Dashboard & Analytics</span>
+                    </button>
+
+                    <button
+                      onClick={() => setAdminTab('knowledge')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        adminTab === 'knowledge'
+                          ? 'bg-[#C89B4A] text-white shadow-sm shadow-[#C89B4A]/20'
+                          : 'text-[#6B6B6B] hover:bg-[#F2EEE8]/60 hover:text-[#1B1B1B]'
+                      }`}
+                    >
+                      <Database className="h-4 w-4" />
+                      <span>AI Knowledge Base</span>
+                    </button>
+
+                    <button
+                      onClick={() => setAdminTab('official_docs')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        adminTab === 'official_docs'
+                          ? 'bg-[#C89B4A] text-white shadow-sm shadow-[#C89B4A]/20'
+                          : 'text-[#6B6B6B] hover:bg-[#F2EEE8]/60 hover:text-[#1B1B1B]'
+                      }`}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      <span>📚 Official Documents</span>
+                    </button>
+                  </div>
+
+                  {/* Workspaces Content Area */}
+                  <div className="lg:col-span-3">
+                    {adminTab === 'analytics' && (
+                      <div className="space-y-8">
+                        {/* ANALYTICS SECTION */}
                 {!analytics || analytics.totalQuestions === 0 ? (
                   <div className="bg-white border border-[#E7DDD0] rounded-3xl p-10 text-center space-y-5 max-w-lg mx-auto shadow-sm">
                     <div className="mx-auto w-14 h-14 rounded-2xl bg-[#F2EEE8] border border-[#E7DDD0] flex items-center justify-center">
@@ -4570,12 +5505,13 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-
                   </div>
                 )}
+              </div>
+            )}
 
-                {/* DOCUMENT INDEX MANAGER & AI KNOWLEDGE EXTRACTION */}
-                <div className="space-y-8">
+                    {adminTab === 'knowledge' && (
+                      <div className="space-y-8">
                   
                   {/* AI Knowledge Extraction Hub */}
                   <div className="bg-[#F2EEE8] border border-[#E7DDD0]/60 rounded-3xl p-6 lg:p-8 shadow-sm space-y-6">
@@ -5719,8 +6655,6 @@ export default function App() {
                     </div>
                   </div>
 
-                </div>
-
 
                 {/* PUBLISH NOTICES & FAQ MANAGER PANEL */}
                 <div className="grid lg:grid-cols-2 gap-8">
@@ -5838,6 +6772,330 @@ export default function App() {
                     </form>
                   </div>
 
+                </div>
+
+                      </div>
+                    )}
+
+                    {adminTab === 'official_docs' && (
+                      <div className="space-y-8">
+                        {/* Upload Official Document Form */}
+                        <div className="bg-[#FDFBF7] border border-[#E7DDD0] rounded-3xl p-6 lg:p-8 shadow-sm space-y-6">
+                          <div>
+                            <h4 className="text-lg font-extrabold text-slate-950 flex items-center gap-2">
+                              <BookOpen className="h-5 w-5 text-[#C89B4A]" />
+                              Upload Official Document
+                            </h4>
+                            <p className="text-xs text-[#6B6B6B] font-semibold mt-0.5">
+                              Register official university PDFs. These are excluded from embeddings/AI knowledge base and accessible via search.
+                            </p>
+                          </div>
+
+                          <form onSubmit={handleUploadOfficialDoc} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                              {/* Title */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Document Title</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={offDocTitle}
+                                  onChange={(e) => setOffDocTitle(e.target.value)}
+                                  placeholder="e.g. B.A. Economics Syllabus (2024-25)"
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-medium"
+                                />
+                              </div>
+
+                              {/* Category */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Document Category</label>
+                                <select
+                                  value={offDocCategory}
+                                  onChange={(e) => setOffDocCategory(e.target.value)}
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-medium"
+                                >
+                                  <option value="Syllabus">Syllabus</option>
+                                  <option value="Prospectus">Prospectus</option>
+                                  <option value="Academic Calendar">Academic Calendar</option>
+                                  <option value="Examination Rules">Examination Rules</option>
+                                  <option value="Circulars">Circulars</option>
+                                  <option value="Other Documents">Other Documents</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Syllabus-specific Metadata fields */}
+                            {offDocCategory === 'Syllabus' && (
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 bg-white p-5 border border-[#E7DDD0] rounded-2xl space-y-0">
+                                <div className="space-y-1.5">
+                                  <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Department</label>
+                                  <select
+                                    value={offDocDepartment}
+                                    onChange={(e) => setOffDocDepartment(e.target.value)}
+                                    className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-medium"
+                                  >
+                                    <option value="">-- Select Department --</option>
+                                    <option value="Economics">Economics</option>
+                                    <option value="Commerce">Commerce</option>
+                                    <option value="Physics">Physics</option>
+                                    <option value="Chemistry">Chemistry</option>
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Political Science">Political Science</option>
+                                    <option value="History">History</option>
+                                    <option value="English">English</option>
+                                    <option value="Odia">Odia</option>
+                                    <option value="Botany">Botany</option>
+                                    <option value="Zoology">Zoology</option>
+                                    <option value="Computer Science">Computer Science</option>
+                                  </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Programme Type</label>
+                                  <select
+                                    value={offDocProgramme}
+                                    onChange={(e) => setOffDocProgramme(e.target.value)}
+                                    className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-medium"
+                                  >
+                                    <option value="UG">UG (Undergraduate)</option>
+                                    <option value="PG">PG (Postgraduate)</option>
+                                  </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                  <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Syllabus Version / NEP</label>
+                                  <input
+                                    type="text"
+                                    value={offDocNepVersion}
+                                    onChange={(e) => setOffDocNepVersion(e.target.value)}
+                                    placeholder="e.g. NEP 2020, CBCS"
+                                    className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-medium"
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                              {/* Academic Year */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Academic Year</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={offDocAcademicYear}
+                                  onChange={(e) => setOffDocAcademicYear(e.target.value)}
+                                  placeholder="e.g. 2024-25"
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-medium"
+                                />
+                              </div>
+
+                              {/* Total Pages */}
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Total Page Count</label>
+                                <input
+                                  type="number"
+                                  required
+                                  min={1}
+                                  value={offDocTotalPages}
+                                  onChange={(e) => setOffDocTotalPages(Number(e.target.value))}
+                                  placeholder="e.g. 8"
+                                  className="w-full bg-[#F2EEE8] border border-[#E7DDD0] text-xs text-[#1B1B1B] rounded-xl px-4 py-3 focus:outline-none focus:border-[#C89B4A] font-medium"
+                                />
+                              </div>
+                            </div>
+
+                            {/* File Upload Area */}
+                            <div className="space-y-2">
+                              <label className="text-[10px] text-[#6B6B6B] font-extrabold uppercase tracking-wide">Official Syllabus / Document PDF</label>
+                              <div className="border-2 border-dashed border-[#E7DDD0] hover:border-[#C89B4A] transition-colors rounded-2xl p-6 bg-white text-center space-y-2 relative">
+                                <input
+                                  type="file"
+                                  id="offDocFileInput"
+                                  accept="application/pdf"
+                                  required
+                                  onChange={handleOffDocFileChange}
+                                  className="absolute inset-0 opacity-0 cursor-pointer"
+                                />
+                                <div className="flex flex-col items-center justify-center space-y-1">
+                                  <FileText className="h-8 w-8 text-[#C89B4A]" />
+                                  <p className="text-xs font-bold text-[#1B1B1B]">
+                                    {offDocFile ? offDocFile.name : 'Click or Drag & Drop Syllabus PDF File'}
+                                  </p>
+                                  <p className="text-[10px] text-[#6B6B6B] font-semibold">
+                                    {offDocFile ? `${(offDocFile.size / 1024).toFixed(1)} KB` : 'Only PDF files up to 25MB are accepted'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                             {isIndexingPdf && (
+                              <div className="bg-amber-50 border border-amber-200/60 text-amber-800 text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2">
+                                <RefreshCw className="h-4 w-4 animate-spin text-[#C89B4A]" />
+                                <span>Parsing PDF layout & generating syllabus navigation index...</span>
+                              </div>
+                            )}
+
+                            {(offDocSemesterIndex || offDocSectionIndex || offDocCourseIndex) && (
+                              <div className="bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 text-[#5B8A5A] text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2">
+                                <Check className="h-4 w-4 shrink-0" />
+                                <span>Syllabus navigation index auto-parsed successfully!</span>
+                              </div>
+                            )}
+
+
+                            {offDocUploadError && (
+                              <div className="bg-red-50 border border-red-200/60 text-red-800 text-xs font-bold px-4 py-3 rounded-xl">
+                                ⚠️ {offDocUploadError}
+                              </div>
+                            )}
+
+                            {offDocUploadSuccess && (
+                              <div className="bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 text-[#5B8A5A] text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2">
+                                <Check className="h-4 w-4" />
+                                <span>Official Document registered successfully!</span>
+                              </div>
+                            )}
+
+                            <button
+                              type="submit"
+                              disabled={isOffDocUploading}
+                              className="w-full bg-[#C89B4A] hover:bg-[#B98A32] disabled:bg-[#F2EEE8] text-white disabled:text-[#6B6B6B] font-bold text-xs py-3.5 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              {isOffDocUploading ? (
+                                <>
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                  <span>Uploading official PDF document...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <BookOpen className="h-4 w-4" />
+                                  <span>Register and Secure Document</span>
+                                </>
+                              )}
+                            </button>
+                          </form>
+                        </div>
+
+                        {/* List of Registered Documents */}
+                        <div className="bg-white border border-[#E7DDD0] rounded-3xl p-6 lg:p-8 shadow-sm space-y-5">
+                          <div>
+                            <h4 className="text-base font-extrabold text-slate-950 flex items-center gap-2">
+                              <BookOpen className="h-5 w-5 text-[#C89B4A]" />
+                              Official Documents Directory
+                            </h4>
+                            <p className="text-xs text-[#6B6B6B] font-semibold mt-0.5">
+                              Directory of verified syllabus and documents registered for client-side search.
+                            </p>
+                          </div>
+
+                          {isOfficialDocsLoading ? (
+                            <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#C89B4A]"></div>
+                              <p className="text-xs text-[#6B6B6B] font-bold">Retrieving official documents directory...</p>
+                            </div>
+                          ) : officialDocs.length === 0 ? (
+                            <div className="border border-dashed border-[#E7DDD0] rounded-2xl p-12 text-center space-y-3 bg-[#FDFBF7]">
+                              <BookOpen className="h-8 w-8 text-[#6B6B6B] mx-auto opacity-50" />
+                              <p className="text-xs text-[#6B6B6B] font-extrabold uppercase tracking-wide">No Registered Documents</p>
+                              <p className="text-[10px] text-[#6B6B6B] font-medium max-w-sm mx-auto leading-relaxed">
+                                Upload your first syllabus PDF, prospectus, or academic rules above.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="overflow-x-auto border border-[#E7DDD0] rounded-2xl shadow-sm">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="bg-[#F2EEE8] text-[#6B6B6B] font-black uppercase text-[10px] tracking-wider border-b border-[#E7DDD0]">
+                                    <th className="p-4">Document Title</th>
+                                    <th className="p-4">Category</th>
+                                    <th className="p-4">Department / Program</th>
+                                    <th className="p-4">Academic Year</th>
+                                    <th className="p-4">Stats</th>
+                                    <th className="p-4 text-right">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {officialDocs.map((doc) => {
+                                    let badgeColor = "bg-blue-50 text-blue-700 border-blue-200/50";
+                                    if (doc.category === 'Prospectus') badgeColor = "bg-amber-50 text-amber-700 border-amber-200/50";
+                                    else if (doc.category === 'Academic Calendar') badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-200/50";
+                                    else if (doc.category === 'Examination Rules') badgeColor = "bg-rose-50 text-rose-700 border-rose-200/50";
+                                    else if (doc.category === 'Circulars') badgeColor = "bg-purple-50 text-purple-700 border-purple-200/50";
+                                    else if (doc.category === 'Other Documents') badgeColor = "bg-slate-50 text-slate-700 border-slate-200/50";
+
+                                    return (
+                                      <tr key={doc.documentId} className="border-b border-[#E7DDD0] hover:bg-[#F2EEE8]/30 transition-colors">
+                                        <td className="p-4 font-bold text-[#1B1B1B]">
+                                          <div className="flex items-center space-x-2.5">
+                                            <FileText className="h-4.5 w-4.5 text-[#C89B4A] shrink-0" />
+                                            <span className="truncate max-w-[200px]" title={doc.title}>{doc.title}</span>
+                                          </div>
+                                        </td>
+                                        <td className="p-4">
+                                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border ${badgeColor}`}>
+                                            {doc.category}
+                                          </span>
+                                        </td>
+                                        <td className="p-4 text-[#6B6B6B] font-bold">
+                                          {doc.category === 'Syllabus' ? (
+                                            <div className="space-y-0.5">
+                                              <div>Dept: <span className="text-[#1B1B1B]">{doc.department}</span></div>
+                                              <div className="text-[10px] text-[#6B6B6B]">Prog: <span className="text-[#1B1B1B]">{doc.programme}</span> {doc.nepVersion && `(${doc.nepVersion})`}</div>
+                                            </div>
+                                          ) : (
+                                            <span className="text-[10px] italic font-semibold text-[#6B6B6B]/60">N/A</span>
+                                          )}
+                                        </td>
+                                        <td className="p-4 font-extrabold text-[#1B1B1B]">{doc.academicYear}</td>
+                                        <td className="p-4 text-[#6B6B6B] font-semibold space-y-0.5">
+                                          <div>Size: <span className="text-[#1B1B1B]">{doc.fileSize}</span></div>
+                                          <div className="text-[10px]">Pages: <span className="text-[#1B1B1B]">{doc.totalPages}</span></div>
+                                        </td>
+                                        <td className="p-4 text-right">
+                                          <div className="flex items-center justify-end space-x-2">
+                                            <button
+                                              onClick={() => {
+                                                setActivePdfDocId(doc.documentId);
+                                                setPdfSearchKeyword('');
+                                              }}
+                                              className="p-2 text-[#C89B4A] hover:bg-[#C89B4A]/10 border border-[#C89B4A]/20 rounded-xl font-bold transition-all cursor-pointer text-xs flex items-center gap-1"
+                                              title="Open built-in PDF viewer"
+                                            >
+                                              <FileText className="h-3.5 w-3.5" />
+                                              <span>View</span>
+                                            </button>
+                                            <button
+                                              onClick={() => handleStartEditIndexes(doc)}
+                                              className="p-2 text-blue-600 hover:bg-blue-50 border border-blue-100 rounded-xl font-semibold transition-all cursor-pointer text-xs flex items-center gap-1"
+                                              title="Edit navigation and course indexes"
+                                              type="button"
+                                            >
+                                              <Pencil className="h-3.5 w-3.5" />
+                                              <span>Edit Indices</span>
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteOfficialDoc(doc.documentId)}
+                                              className="p-2 text-rose-600 hover:bg-rose-50 border border-rose-100 rounded-xl font-semibold transition-all cursor-pointer text-xs flex items-center gap-1"
+                                              title="Delete document permanently"
+                                              type="button"
+                                            >
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                              <span>Delete</span>
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
                 </div>
 
               </div>
@@ -6631,6 +7889,272 @@ export default function App() {
                   {customDialog.confirmLabel || 'OK'}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Navigation Indexes Modal */}
+      {editingOfficialDoc && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-[#FDFBF7] border border-[#E7DDD0] w-full max-w-5xl rounded-3xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-[#E7DDD0] flex items-center justify-between bg-[#F2EEE8]/40">
+              <div>
+                <h4 className="text-sm font-black uppercase text-slate-900 tracking-wider">Edit Navigation Indexes</h4>
+                <p className="text-[10px] font-extrabold text-[#6B6B6B] mt-0.5 truncate max-w-[500px]">
+                  Document: <span className="text-[#C89B4A]">{editingOfficialDoc.title}</span> ({editingOfficialDoc.academicYear})
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingOfficialDoc(null)}
+                className="text-[#6B6B6B] hover:text-[#1B1B1B] font-extrabold text-xs tracking-wider uppercase cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleSaveEditIndexes} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col lg:flex-row gap-6 min-h-[500px]">
+              {/* Left Side: JSON Editor */}
+              <div className="flex-1 flex flex-col space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <label className="text-xs font-black uppercase text-slate-900 tracking-wider">
+                      Navigation Index JSON
+                    </label>
+                    <p className="text-[10px] text-[#6B6B6B] font-semibold">
+                      Paste the complete navigation index JSON directly.
+                    </p>
+                  </div>
+                  <span className="text-[10px] bg-slate-100 border border-slate-200 text-slate-700 font-extrabold px-2.5 py-1 rounded-lg">
+                    Pages: {editingOfficialDoc.totalPages}
+                  </span>
+                </div>
+
+                <div className="flex-1 relative border border-[#E7DDD0] focus-within:border-[#C89B4A] rounded-2xl bg-white overflow-hidden shadow-2xs transition-colors flex flex-col min-h-[300px]">
+                  <textarea
+                    value={editNavIndexJson}
+                    onChange={(e) => handleJsonChange(e.target.value)}
+                    onPaste={handlePaste}
+                    className="w-full flex-1 bg-white text-slate-800 text-[11px] font-mono p-4 focus:outline-none resize-none"
+                    placeholder={`{
+  "department": "Economics",
+  "programme": "UG",
+  "nep": "NEP 2020",
+  "total_pages": 80,
+  "semester_index": {
+    "Semester I": { "start_page": 5, "end_page": 8 }
+  },
+  "section_index": {
+    "VAC": { "start_page": 5, "end_page": 5 }
+  },
+  "course_index": [
+    { "course": "Development Economics I", "start_page": 25, "end_page": 26 }
+  ]
+}`}
+                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleValidateJson}
+                    className="flex-1 sm:flex-initial bg-white border border-[#E7DDD0] hover:bg-[#F2EEE8]/40 text-slate-800 text-[10px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer active:scale-95"
+                  >
+                    Validate JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleFormatJson}
+                    className="flex-1 sm:flex-initial bg-white border border-[#E7DDD0] hover:bg-[#F2EEE8]/40 text-slate-800 text-[10px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer active:scale-95"
+                  >
+                    Format JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearJson}
+                    className="flex-1 sm:flex-initial bg-red-50 border border-red-200 hover:bg-red-100/50 text-red-700 text-[10px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer active:scale-95"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImportJsonClick}
+                    className="flex-1 sm:flex-initial bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 hover:bg-[#5B8A5A]/20 text-[#5B8A5A] text-[10px] font-black uppercase tracking-wider px-4 py-2.5 rounded-xl transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <Upload className="h-3 w-3" />
+                    <span>Import JSON</span>
+                  </button>
+                  <input
+                    type="file"
+                    id="json-import-file-input"
+                    accept=".json"
+                    onChange={handleJsonFileImport}
+                    className="hidden"
+                  />
+                </div>
+
+                {/* Validation Status */}
+                <div className="space-y-1.5">
+                  <span className="text-[9px] font-black uppercase text-[#6B6B6B] tracking-wider">Validation Status</span>
+                  {jsonValidationStatus ? (
+                    jsonValidationStatus.isValid ? (
+                      <div className="bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 text-[#5B8A5A] text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2 shadow-2xs">
+                        <Check className="h-4 w-4 shrink-0" />
+                        <span>✅ {jsonValidationStatus.message}</span>
+                      </div>
+                    ) : (
+                      <div className="bg-red-50 border border-red-200 text-red-800 text-xs font-bold px-4 py-3 rounded-xl flex items-start gap-2 shadow-2xs">
+                        <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                        <span className="font-mono whitespace-pre-wrap flex-1">❌ {jsonValidationStatus.message}</span>
+                      </div>
+                    )
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 text-slate-500 text-xs font-semibold px-4 py-3 rounded-xl">
+                      Enter or paste JSON to see validation status.
+                    </div>
+                  )}
+                </div>
+
+                {editIndexesError && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 text-xs font-bold px-4 py-3 rounded-xl">
+                    ⚠️ {editIndexesError}
+                  </div>
+                )}
+
+                {editIndexesSuccess && (
+                  <div className="bg-[#5B8A5A]/10 border border-[#5B8A5A]/20 text-[#5B8A5A] text-xs font-bold px-4 py-3 rounded-xl flex items-center gap-2">
+                    <Check className="h-4 w-4" />
+                    <span>Indexes updated successfully! Closing...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side: Live Preview */}
+              <div className="w-full lg:w-[420px] shrink-0 bg-[#F2EEE8]/20 border border-[#E7DDD0] p-5 rounded-2xl flex flex-col max-h-[500px] overflow-hidden shadow-2xs">
+                <div className="flex items-center justify-between shrink-0 mb-4">
+                  <span className="text-xs font-black uppercase text-slate-900 tracking-wider">Preview</span>
+                  <span className="text-[8px] bg-[#C89B4A]/10 text-[#C89B4A] font-black px-2 py-0.5 rounded-sm uppercase tracking-wide">
+                    Live
+                  </span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-[11px] text-slate-800 leading-relaxed max-h-[400px]">
+                  {(() => {
+                    const hasActiveData = editNavIndex && (
+                      (editNavIndex.semester_index && Object.keys(editNavIndex.semester_index).length > 0) ||
+                      (editNavIndex.section_index && Object.keys(editNavIndex.section_index).length > 0) ||
+                      (editNavIndex.course_index && editNavIndex.course_index.length > 0)
+                    );
+
+                    const dataToRender = hasActiveData ? editNavIndex : {
+                      semester_index: {
+                        "Semester I": { "start_page": 5, "end_page": 8 },
+                        "Semester II": { "start_page": 9, "end_page": 12 },
+                        "Semester III": { "start_page": 13, "end_page": 18 }
+                      },
+                      section_index: {
+                        "VAC": { "start_page": 5, "end_page": 5 },
+                        "SEC": { "start_page": 4, "end_page": 5 }
+                      },
+                      course_index: [
+                        { "course": "Development Economics I", "start_page": 25, "end_page": 26 },
+                        { "course": "Money and Banking", "start_page": 31, "end_page": 32 },
+                        { "course": "Economics of Social Sector", "start_page": 62, "end_page": 63 }
+                      ]
+                    };
+
+                    const sems = dataToRender.semester_index ? Object.entries(dataToRender.semester_index) : [];
+                    const secs = dataToRender.section_index ? Object.entries(dataToRender.section_index) : [];
+                    const courses = dataToRender.course_index || [];
+
+                    return (
+                      <div className="space-y-4">
+                        {/* Semesters Group */}
+                        {sems.length > 0 && (
+                          <div className="space-y-1">
+                            {sems.map(([name, val]: any) => (
+                              <div key={name} className="flex items-center w-full justify-between hover:bg-[#F2EEE8]/40 px-1 py-0.5 rounded-sm">
+                                <span className="shrink-0 pr-1 truncate max-w-[220px]" title={name}>
+                                  {name}
+                                </span>
+                                <div className="flex-1 border-b border-dotted border-slate-300 mx-1.5 mt-2"></div>
+                                <span className="shrink-0 pl-1 font-bold text-slate-900">
+                                  Pages {val.start_page === val.end_page ? val.start_page : `${val.start_page}–${val.end_page}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Sections Group */}
+                        {secs.length > 0 && (
+                          <div className="space-y-1">
+                            {secs.map(([name, val]: any) => (
+                              <div key={name} className="flex items-center w-full justify-between hover:bg-[#F2EEE8]/40 px-1 py-0.5 rounded-sm">
+                                <span className="shrink-0 pr-1 truncate max-w-[220px]" title={name}>
+                                  {name}
+                                </span>
+                                <div className="flex-1 border-b border-dotted border-slate-300 mx-1.5 mt-2"></div>
+                                <span className="shrink-0 pl-1 font-bold text-slate-900">
+                                  Pages {val.start_page === val.end_page ? val.start_page : `${val.start_page}–${val.end_page}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Courses Group */}
+                        {courses.length > 0 && (
+                          <div className="space-y-1">
+                            {courses.map((item: any, idx: number) => (
+                              <div key={idx} className="flex items-center w-full justify-between hover:bg-[#F2EEE8]/40 px-1 py-0.5 rounded-sm">
+                                <span className="shrink-0 pr-1 truncate max-w-[220px]" title={item.course}>
+                                  {item.course}
+                                </span>
+                                <div className="flex-1 border-b border-dotted border-slate-300 mx-1.5 mt-2"></div>
+                                <span className="shrink-0 pl-1 font-bold text-slate-900">
+                                  Pages {item.start_page === item.end_page ? item.start_page : `${item.start_page}–${item.end_page}`}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </form>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-[#E7DDD0] bg-[#F2EEE8]/20 flex justify-end gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => setEditingOfficialDoc(null)}
+                className="bg-white border border-[#E7DDD0] hover:bg-[#F2EEE8]/30 text-slate-800 text-xs font-bold px-5 py-2.5 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveEditIndexes}
+                disabled={isSavingEditIndexes}
+                className="bg-[#C89B4A] hover:bg-[#B98A32] text-white disabled:bg-[#F2EEE8] disabled:text-[#6B6B6B] text-xs font-bold px-6 py-2.5 rounded-xl shadow-md flex items-center gap-2 cursor-pointer"
+              >
+                {isSavingEditIndexes ? (
+                  <>
+                    <RefreshCw className="h-4.5 w-4.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4.5 w-4.5" />
+                    <span>Save Navigation Index</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

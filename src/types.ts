@@ -30,6 +30,8 @@ export interface CollegeDocument {
   importedBy?: string;
   rawJson?: any;
   fileName?: string;
+  fileBase64?: string;
+  mimeType?: string;
   aiStatus?: 'Pending' | 'Processing' | 'Completed' | 'Retry Required' | 'Waiting for AI Processing';
   aiError?: string | null;
   embedding?: number[];
@@ -71,6 +73,15 @@ export interface Message {
   timestamp: string;
   suggestions?: string[];
   citations?: Citation[];
+  pdfNavigation?: {
+    docId: string;
+    keyword?: string;
+    title: string;
+    startPage?: number;
+    endPage?: number;
+    documentId?: string;
+    semester?: string;
+  };
   debug?: {
     retrievedChunks: { docTitle: string; text: string; score: number }[];
     retrievedEntities: any[];
@@ -103,6 +114,7 @@ export interface FAQ {
   question: string;
   answer: string;
   category: string;
+  documentId?: string;
 }
 
 export interface AnalyticsSummary {
@@ -115,3 +127,37 @@ export interface AnalyticsSummary {
   popularDocs: { title: string; count: number }[];
   dailyQuestions: { date: string; count: number }[];
 }
+
+export interface NavigationItem {
+  id: string;
+  type: 'semester' | 'section' | 'course';
+  title: string;
+  semester?: string;
+  startPage: number;
+  endPage: number;
+}
+
+export interface OfficialDocument {
+  documentId: string;
+  title: string;
+  category: 'Syllabus' | 'Prospectus' | 'Academic Calendar' | 'Examination Rules' | 'Circulars' | 'Other Documents';
+  department?: string;
+  programme?: 'UG' | 'PG';
+  nepVersion?: string;
+  academicYear: string;
+  pdfUrl?: string;
+  uploadDate: string;
+  uploadedBy: string;
+  fileSize: string;
+  totalPages: number;
+  fileBase64?: string;
+  semester_index?: Record<string, { start_page: number; end_page: number }>;
+  section_index?: Record<string, { start_page: number; end_page: number }>;
+  course_index?: Array<{
+    course: string;
+    semester?: string;
+    start_page: number;
+    end_page: number;
+  }>;
+}
+

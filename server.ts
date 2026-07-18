@@ -18,6 +18,7 @@ import feedbackRouter from './server/routes/feedbackRoutes.js';
 import analyticsRouter from './server/routes/analyticsRoutes.js';
 import documentRouter from './server/routes/documentRoutes.js';
 import chatRouter from './server/routes/chatRoutes.js';
+import officialDocumentRouter from './server/routes/officialDocumentRoutes.js';
 
 import fs from 'fs';
 
@@ -141,6 +142,7 @@ async function bootstrap() {
   app.use('/api/analytics', analyticsRouter);
   app.use('/api/documents', documentRouter);
   app.use('/api/chat', chatRouter);
+  app.use('/api/official-documents', officialDocumentRouter);
 
   // Alias /api/extract to /api/documents/extract
   app.post('/api/extract', (req, res, next) => {

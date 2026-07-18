@@ -1,15 +1,156 @@
 import { Router, Response, Request } from 'express';
 import { SettingsRepository } from '../repositories/settingsRepository.js';
 import { AnalyticsRepository } from '../repositories/analyticsRepository.js';
+import { DocumentRepository } from '../repositories/documentRepository.js';
+import { OfficialDocumentRepository } from '../repositories/officialDocumentRepository.js';
 import { RagService } from '../services/ragService.js';
 import { GeminiService } from '../services/geminiService.js';
 import { NvidiaService, getVerifiedNvidiaKey, parseNvidiaError } from '../services/nvidiaService.js';
 
 const router = Router();
 
+// Helper function for canonical query normalization
+function canonicalNormalize(q: string): string {
+  if (!q) return '';
+  let res = q.toLowerCase();
+  
+  // Ignore/remove specific terms: "syllabus", "course", "paper", "show", "give", "explain", "details", "pdf", "subject"
+  const ignoreTerms = ["syllabus", "course", "paper", "show", "give", "explain", "details", "pdf", "subject"];
+  for (const term of ignoreTerms) {
+    const regex = new RegExp(`\\b${term}\\b`, 'gi');
+    res = res.replace(regex, ' ');
+  }
+
+  // Also replace "sem" with "semester" to normalize semester variations
+  res = res.replace(/\bsem\b/gi, 'semester');
+  
+  // Remove punctuation
+  res = res.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, ' ');
+  
+  // Replace Roman numerals with Arabic numerals
+  const romanMap: Record<string, string> = {
+    'xii': '12',
+    'xi': '11',
+    'x': '10',
+    'ix': '9',
+    'viii': '8',
+    'vii': '7',
+    'vi': '6',
+    'v': '5',
+    'iv': '4',
+    'iii': '3',
+    'ii': '2',
+    'i': '1'
+  };
+  
+  for (const [roman, arabic] of Object.entries(romanMap)) {
+    const regex = new RegExp(`\\b${roman}\\b`, 'g');
+    res = res.replace(regex, arabic);
+  }
+  
+  // Ignore extra spaces (normalize multiple spaces to single space)
+  res = res.replace(/\s+/g, ' ').trim();
+  
+  return res;
+}
+
+// Helper to determine if a normalized query matches a normalized target
+function isMatch(normQuery: string, normTarget: string): boolean {
+  if (!normQuery || !normTarget) return false;
+  
+  // Exact match
+  if (normQuery === normTarget) return true;
+  
+  // StartsWith or Contains (case-insensitive and punctuation ignored, since they are already normalized)
+  if (normQuery.startsWith(normTarget) || normTarget.startsWith(normQuery)) return true;
+  if (normQuery.includes(normTarget) || normTarget.includes(normQuery)) return true;
+  
+  return false;
+}
+
+// Searches across all documents of category 'Syllabus' in the exact order requested:
+// 1. course_index
+// 2. semester_index
+// 3. section_index
+function tryNavigationIndexMatch(query: string, documents: any[]) {
+  const normQuery = canonicalNormalize(query);
+  if (!normQuery) return null;
+
+  // 1. course_index search across all documents
+  for (const doc of documents) {
+    if (doc.course_index && Array.isArray(doc.course_index)) {
+      for (const item of doc.course_index) {
+        if (item && item.course) {
+          const normCourse = canonicalNormalize(item.course);
+          if (isMatch(normQuery, normCourse)) {
+            return {
+              document: doc,
+              matchedItem: {
+                title: item.course,
+                startPage: item.start_page,
+                endPage: item.end_page,
+                type: 'course',
+                semester: item.semester
+              }
+            };
+          }
+        }
+      }
+    }
+  }
+
+  // 2. semester_index search across all documents
+  for (const doc of documents) {
+    if (doc.semester_index && typeof doc.semester_index === 'object') {
+      for (const [semName, value] of Object.entries(doc.semester_index)) {
+        if (value && typeof value === 'object') {
+          const val = value as any;
+          const normSem = canonicalNormalize(semName);
+          if (isMatch(normQuery, normSem)) {
+            return {
+              document: doc,
+              matchedItem: {
+                title: semName,
+                startPage: val.start_page,
+                endPage: val.end_page,
+                type: 'semester'
+              }
+            };
+          }
+        }
+      }
+    }
+  }
+
+  // 3. section_index search across all documents
+  for (const doc of documents) {
+    if (doc.section_index && typeof doc.section_index === 'object') {
+      for (const [secName, value] of Object.entries(doc.section_index)) {
+        if (value && typeof value === 'object') {
+          const val = value as any;
+          const normSec = canonicalNormalize(secName);
+          if (isMatch(normQuery, normSec)) {
+            return {
+              document: doc,
+              matchedItem: {
+                title: secName,
+                startPage: val.start_page,
+                endPage: val.end_page,
+                type: 'section'
+              }
+            };
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 // POST /api/chat - Structured RAG chat endpoint
 router.post('/', async (req: Request, res: Response) => {
-  const { message, history, sessionId } = req.body;
+  const { message, history, sessionId, studentProfile } = req.body;
   if (!message) {
     return res.status(400).json({ error: 'Message query is required' });
   }
@@ -19,6 +160,247 @@ router.post('/', async (req: Request, res: Response) => {
 
   // 1. Log query attempt to global analytics increment
   await AnalyticsRepository.incrementPopularQuestion(message);
+
+  const msgLower = message.toLowerCase();
+
+  // Determine if student is asking for a syllabus or official document
+  const isSyllabusQuery = msgLower.includes('syllabus') || 
+                          msgLower.includes('semester') || 
+                          msgLower.includes('sem') || 
+                          msgLower.includes('paper') || 
+                          msgLower.includes('unit') || 
+                          msgLower.includes('vac') || 
+                          msgLower.includes('sec') || 
+                          msgLower.includes('aec') || 
+                          msgLower.includes('mdc') ||
+                          msgLower.includes('development economics') ||
+                          msgLower.includes('course');
+
+  const isOfficialDocQuery = isSyllabusQuery || 
+                             msgLower.includes('prospectus') || 
+                             msgLower.includes('calendar') || 
+                             msgLower.includes('examination rules') || 
+                             msgLower.includes('exam rules') || 
+                             msgLower.includes('circular');
+
+  if (isOfficialDocQuery) {
+    try {
+      const allOfficialDocs = await OfficialDocumentRepository.getAll();
+      
+      let category: 'Syllabus' | 'Prospectus' | 'Academic Calendar' | 'Examination Rules' | 'Circulars' | 'Other Documents' = 'Syllabus';
+      if (msgLower.includes('prospectus')) {
+        category = 'Prospectus';
+      } else if (msgLower.includes('calendar')) {
+        category = 'Academic Calendar';
+      } else if (msgLower.includes('examination rules') || msgLower.includes('exam rules')) {
+        category = 'Examination Rules';
+      } else if (msgLower.includes('circular')) {
+        category = 'Circulars';
+      }
+
+      let bestDoc = null;
+      let matchedItem = null;
+
+      if (category === 'Syllabus') {
+        const syllabusDocs = allOfficialDocs.filter(d => d.category === 'Syllabus');
+        
+        // Step 1, 2 & 3: Load navigation indexes across all syllabus documents and try to match query first!
+        const navMatch = tryNavigationIndexMatch(message, syllabusDocs);
+        if (navMatch) {
+          bestDoc = navMatch.document;
+          matchedItem = navMatch.matchedItem;
+        } else {
+          // Fallback to department-specific lookup if no navigation index match is found
+          // Detect department and programme
+          let targetDepartment = studentProfile?.department;
+          let targetProgramme = studentProfile?.programme;
+          let targetAcademicYear = studentProfile?.academicYear;
+
+          // Force detection from query first
+          const depts = [
+            "Economics", "Commerce", "Physics", "Chemistry", "Mathematics", 
+            "Political Science", "History", "English", "Odia", "Botany", 
+            "Zoology", "Computer Science"
+          ];
+          for (const d of depts) {
+            if (new RegExp(`\\b${d}\\b`, 'i').test(message)) {
+              targetDepartment = d;
+            }
+          }
+
+          if (new RegExp(`\\bUG\\b|\\bUndergraduate\\b`, 'i').test(message)) {
+            targetProgramme = 'UG';
+          } else if (new RegExp(`\\bPG\\b|\\bPostgraduate\\b`, 'i').test(message)) {
+            targetProgramme = 'PG';
+          }
+
+          if (!targetDepartment) {
+            const totalDuration = Date.now() - globalStartTime;
+            const finalResponse = `⚠️ **Department Not Specified**\n\nTo view your syllabus, please specify your department in the request (e.g., "Show Economics Semester 5 syllabus") or configure your **Academic Profile** in the top-right profile settings.`;
+            
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.write(`data: ${JSON.stringify({ text: finalResponse })}\n\n`);
+            res.write(`data: ${JSON.stringify({ done: true, citations: [] })}\n\n`);
+            res.end();
+            return;
+          }
+
+          let matchedDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment.toLowerCase());
+
+          if (matchedDocs.length === 0) {
+            const totalDuration = Date.now() - globalStartTime;
+            const finalResponse = `No official syllabus has been uploaded for this department.`;
+            
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.write(`data: ${JSON.stringify({ text: finalResponse })}\n\n`);
+            res.write(`data: ${JSON.stringify({ done: true, citations: [] })}\n\n`);
+            res.end();
+            return;
+          }
+
+          // Automatically select the correct one using department, programme, academic year
+          if (matchedDocs.length > 1) {
+            if (targetProgramme) {
+              const progMatch = matchedDocs.filter(d => d.programme === targetProgramme);
+              if (progMatch.length > 0) matchedDocs = progMatch;
+            }
+            if (targetAcademicYear) {
+              const yearMatch = matchedDocs.filter(d => d.academicYear === targetAcademicYear);
+              if (yearMatch.length > 0) matchedDocs = yearMatch;
+            }
+          }
+          
+          bestDoc = matchedDocs[0];
+        }
+      } else {
+        const categoryDocs = allOfficialDocs.filter(d => d.category === category);
+        if (categoryDocs.length > 0) {
+          bestDoc = categoryDocs[0];
+        }
+      }
+
+      if (bestDoc) {
+        let pdfNavigation: any = null;
+        let finalResponse = '';
+
+        if (matchedItem) {
+          pdfNavigation = {
+            documentId: bestDoc.documentId,
+            docId: bestDoc.documentId,
+            title: bestDoc.title,
+            sectionTitle: matchedItem.title,
+            startPage: matchedItem.startPage,
+            endPage: matchedItem.endPage,
+            semester: matchedItem.semester || undefined,
+            matchedBy: matchedItem.type
+          };
+          
+          const typeLabel = matchedItem.type === 'course' ? 'Course Syllabus' : matchedItem.type === 'semester' ? 'Semester Syllabus' : 'Section Syllabus';
+          const detailsLabel = matchedItem.semester ? ` (${matchedItem.semester})` : '';
+          
+          finalResponse = `📖 **${matchedItem.title}**\n\nI have successfully located the ${typeLabel} for **${matchedItem.title}**${detailsLabel} inside the official syllabus **"${bestDoc.title}"**.\n\nOpening the built-in PDF Viewer and jumping directly to **Pages ${matchedItem.startPage}–${matchedItem.endPage}**.\n\nPlease check the panel on the right side of your screen to browse the content.`;
+        } else {
+          // Fallback legacy search
+          let extractedKeyword = '';
+          const semRegex = /(?:semester|sem)\s*(\d+|[ivx]+)/i;
+          const semMatch = message.match(semRegex);
+          const paperRegex = /(?:paper)\s*(\d+|[ivx]+)/i;
+          const paperMatch = message.match(paperRegex);
+          const unitRegex = /(?:unit)\s*(\d+|[ivx]+)/i;
+          const unitMatch = message.match(unitRegex);
+
+          const romanMap: Record<string, string> = {
+            '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V', '6': 'VI', '7': 'VII', '8': 'VIII',
+            'I': 'I', 'II': 'II', 'III': 'III', 'IV': 'IV', 'V': 'V', 'VI': 'VI', 'VII': 'VII', 'VIII': 'VIII'
+          };
+
+          if (semMatch) {
+            const val = semMatch[1].toUpperCase();
+            const mapped = romanMap[val] || val;
+            extractedKeyword = `Semester ${mapped}`;
+          } else if (paperMatch) {
+            const val = paperMatch[1].toUpperCase();
+            const mapped = romanMap[val] || val;
+            extractedKeyword = `Paper ${mapped}`;
+          } else if (unitMatch) {
+            const val = unitMatch[1].toUpperCase();
+            const mapped = romanMap[val] || val;
+            extractedKeyword = `Unit ${mapped}`;
+          } else {
+            const specialKw = ['sec', 'vac', 'aec', 'mdc'];
+            const foundSpecial = specialKw.find(kw => new RegExp(`\\b${kw}\\b`, 'i').test(msgLower));
+            if (foundSpecial) {
+              extractedKeyword = foundSpecial.toUpperCase();
+            } else {
+              let clean = message.replace(/(?:show|view|find|get|search|display|open|syllabus|for|the|of)\b/ig, '').trim();
+              clean = clean.replace(/^[^\w\s]+|[^\w\s]+$/g, '').trim();
+              if (clean.length > 2) {
+                extractedKeyword = clean;
+              } else {
+                extractedKeyword = bestDoc.title;
+              }
+            }
+          }
+
+          pdfNavigation = {
+            docId: bestDoc.documentId,
+            documentId: bestDoc.documentId,
+            keyword: extractedKeyword,
+            title: bestDoc.title
+          };
+
+          finalResponse = `📄 **Official ${bestDoc.category} Document**\n\nI have successfully located the official document **"${bestDoc.title}"** inside our official repository.\n\nOpening the built-in PDF Viewer and searching for: **"${pdfNavigation.keyword}"**.\n\nPlease check the panel on the right side of your screen to browse the document, jump between matching highlights, or download/print the official PDF.`;
+        }
+
+        const totalDuration = Date.now() - globalStartTime;
+
+        await AnalyticsRepository.logChatInteraction(
+          message,
+          finalResponse,
+          totalDuration,
+          0,
+          30,
+          60,
+          0,
+          'Official Document Navigator',
+          [bestDoc.title],
+          sessionIdentifier
+        );
+
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        const words = finalResponse.split(' ');
+        for (let i = 0; i < words.length; i += 3) {
+          const chunk = words.slice(i, i + 3).join(' ') + ' ';
+          res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+          await new Promise(resolve => setTimeout(resolve, 30));
+        }
+
+        res.write(`data: ${JSON.stringify({ done: true, citations: [], pdfNavigation })}\n\n`);
+        res.end();
+        return;
+      } else {
+        const totalDuration = Date.now() - globalStartTime;
+        const finalResponse = `No official ${category.toLowerCase()} document has been uploaded yet.`;
+        
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.write(`data: ${JSON.stringify({ text: finalResponse })}\n\n`);
+        res.write(`data: ${JSON.stringify({ done: true, citations: [] })}\n\n`);
+        res.end();
+        return;
+      }
+    } catch (err: any) {
+      console.error('[Official Doc Search Error]', err);
+    }
+  }
 
   let queryVector: number[] = [];
   try {
@@ -39,6 +421,8 @@ router.post('/', async (req: Request, res: Response) => {
     fallbackResponse,
     retrievalTimeMs
   } = retrievalResult;
+
+  // The rest of standard RAG / chat route continues below  }
 
   // 3. Fallback routing for out-of-scope/unrelated questions
   if (!isRelevant) {

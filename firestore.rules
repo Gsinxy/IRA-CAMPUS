@@ -108,5 +108,10 @@ service cloud.firestore {
     match /knowledge/{docId} {
       allow read, write: if true;
     }
+
+    // Official Documents Collection (Accessed by the unauthenticated server)
+    match /official_documents/{docId=**} {
+      allow read, write: if true;
+    }
   }
 }

@@ -37,6 +37,10 @@ export function getGeminiClient(): GoogleGenAI | null {
 export async function getEmbedding(text: string): Promise<number[]> {
   const nvKey = process.env.NVIDIA_API_KEY;
   if (nvKey && nvKey.trim() !== '' && nvKey !== 'MY_NVIDIA_API_KEY') {
+    let processedText = text || '';
+    if (processedText.length > 1500) {
+      processedText = processedText.substring(0, 1500);
+    }
     try {
       const response = await fetch('https://integrate.api.nvidia.com/v1/embeddings', {
         method: 'POST',
@@ -46,7 +50,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
         },
         body: JSON.stringify({
           model: 'nvidia/nv-embedqa-e5-v5',
-          input: [text],
+          input: [processedText],
           encoding_format: 'float',
           input_type: 'query'
         })
@@ -69,7 +73,7 @@ export async function getEmbedding(text: string): Promise<number[]> {
           },
           body: JSON.stringify({
             model: 'nvidia/nv-embedqa-e5-v5',
-            input: text
+            input: processedText
           })
         });
         if (retryRes.ok) {

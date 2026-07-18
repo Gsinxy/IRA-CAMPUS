@@ -812,7 +812,8 @@ router.post('/save-extracted', adminAuthMiddleware, async (req: AdminRequest, re
               id: `faq-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
               question: faq.question,
               answer: faq.answer,
-              category: category
+              category: category,
+              documentId: docId
             });
           }
         }
@@ -926,7 +927,10 @@ router.post('/upload', adminAuthMiddleware, async (req: AdminRequest, res: Respo
         dates: []
       },
       chunks: [],
-      embedding: []
+      embedding: [],
+      fileBase64: type === 'pdf' || (mimeType && mimeType.includes('pdf')) ? fileBase64 : (type === 'file' ? fileBase64 : undefined),
+      mimeType: type === 'pdf' || (mimeType && mimeType.includes('pdf')) ? 'application/pdf' : mimeType,
+      fileName: title.endsWith('.pdf') ? title : (type === 'pdf' ? `${title}.pdf` : title)
     };
 
     await DocumentRepository.save(newDoc);
@@ -972,17 +976,62 @@ router.delete('/:id', adminAuthMiddleware, async (req: AdminRequest, res: Respon
   
   try {
     const docObj = await DocumentRepository.getById(id);
-    const docTitle = docObj?.title || 'Unknown Document';
+    if (!docObj) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
 
+    const docTitle = docObj.title || 'Unknown Document';
+    const fileName = docObj.fileName || 'No File Name';
+    const chunkCount = docObj.chunks?.length || 0;
+    
+    // Count embeddings: check global document embedding and each chunk's embedding
+    const globalEmbeddingCount = (docObj.embedding && docObj.embedding.length > 0) ? 1 : 0;
+    const chunkEmbeddingCount = docObj.chunks?.filter(c => c.embedding && c.embedding.length > 0).length || 0;
+    const embeddingCount = globalEmbeddingCount + chunkEmbeddingCount;
+    const timestamp = new Date().toISOString();
+
+    // 1. Delete associated global FAQs to prevent orphaned knowledge remnants
+    let deletedFaqCount = 0;
+    try {
+      const globalFaqs = await FaqsRepository.getAll();
+      const nestedFaqQuestions = new Set((docObj.faqs || []).map(f => f.question.toLowerCase()));
+      const faqsToDelete = globalFaqs.filter(f => 
+        f.documentId === id || 
+        nestedFaqQuestions.has(f.question.toLowerCase())
+      );
+      
+      for (const faq of faqsToDelete) {
+        await FaqsRepository.delete(faq.id);
+        deletedFaqCount++;
+        console.log(`[Document Delete] Deleted related global FAQ: "${faq.question}" (ID: ${faq.id})`);
+      }
+    } catch (faqErr: any) {
+      console.error('[Document Delete] Error cleaning up associated global FAQs:', faqErr);
+    }
+
+    // 2. Permanently delete the document record itself (including nested chunks and embeddings)
     await DocumentRepository.delete(id);
 
+    // 3. Log detailed audit event
     const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
     await AnalyticsRepository.logAuditEvent(
       req.admin?.email || 'admin@ira.edu',
-      `Knowledge Delete: Deleted document: "${docTitle}" (ID: ${id})`,
+      `Knowledge Delete: Deleted document: "${docTitle}" (ID: ${id}, File Name: ${fileName}, Chunk Count: ${chunkCount}, Embedding Count: ${embeddingCount}, Deleted FAQs: ${deletedFaqCount}, Timestamp: ${timestamp})`,
       String(clientIp)
     );
-    res.json({ message: 'Document deleted successfully' });
+
+    res.json({ 
+      message: 'Document deleted successfully',
+      details: {
+        docId: id,
+        title: docTitle,
+        fileName,
+        chunkCount,
+        embeddingCount,
+        deletedFaqs: deletedFaqCount,
+        timestamp
+      }
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -1045,22 +1094,102 @@ router.post('/retry/:id', adminAuthMiddleware, async (req: AdminRequest, res: Re
 // POST rebuild complete vector database embeddings
 router.post('/rebuild', adminAuthMiddleware, async (req: AdminRequest, res: Response) => {
   try {
-    console.log('Rebuilding vector database and regenerating all embeddings...');
+    console.log('[Rebuild] Starting full vector database rebuild and cleaning stale knowledge...');
     const docs = await DocumentRepository.getAll();
+    const docIds = new Set(docs.map(d => d.id));
+
+    // 1. Clean up orphaned and stale global FAQs (e.g. from deleted documents)
+    let deletedFaqCount = 0;
+    try {
+      const globalFaqs = await FaqsRepository.getAll();
+      for (const faq of globalFaqs) {
+        const hasSyllabus = faq.question?.toLowerCase().includes('syllabus') || faq.answer?.toLowerCase().includes('syllabus');
+        const isSyllabusOrphan = hasSyllabus && !docs.some(d => d.title?.toLowerCase().includes('syllabus') || d.content?.toLowerCase().includes('syllabus'));
+        
+        const isOrphanedByDocId = faq.documentId && !docIds.has(faq.documentId);
+
+        if (isOrphanedByDocId || isSyllabusOrphan) {
+          await FaqsRepository.delete(faq.id);
+          deletedFaqCount++;
+          console.log(`[Rebuild] Deleted orphaned/stale FAQ: "${faq.question}" (ID: ${faq.id})`);
+        }
+      }
+    } catch (faqErr) {
+      console.error('[Rebuild] Failed to clean up global FAQs:', faqErr);
+    }
+
+    // 2. Regenerate embeddings for currently available documents only (deleting stale embeddings)
+    let regeneratedEmbeddingCount = 0;
     for (const docObj of docs) {
-      for (const chunk of docObj.chunks || []) {
-        console.log(`Regenerating embedding for: ${docObj.title} chunk...`);
+      if (!docObj.chunks || docObj.chunks.length === 0) {
+        console.log(`[Rebuild] Skipping document "${docObj.title}" (ID: ${docObj.id}) - no chunks available.`);
+        continue;
+      }
+
+      console.log(`[Rebuild] Regenerating embeddings for document "${docObj.title}" (Chunks: ${docObj.chunks.length})...`);
+      for (const chunk of docObj.chunks) {
         try {
           const vector = await GeminiService.getEmbedding(chunk.text);
           if (vector && vector.length > 0) {
             chunk.embedding = vector;
+            regeneratedEmbeddingCount++;
           }
-        } catch (_) {}
+        } catch (embErr) {
+          console.error(`[Rebuild] Failed to generate embedding for chunk in document ${docObj.id}:`, embErr);
+        }
       }
+
+      // Sync document-level embedding (used for metadata/indexing checks)
+      docObj.embedding = (docObj.chunks[0] && docObj.chunks[0].embedding) || [];
       docObj.updatedAt = new Date().toISOString();
       await DocumentRepository.save(docObj);
     }
-    res.json({ success: true, message: 'All vectors successfully regenerated and synced.' });
+
+    // 3. Log administrative audit log
+    const clientIp = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    await AnalyticsRepository.logAuditEvent(
+      req.admin?.email || 'admin@ira.edu',
+      `Knowledge Rebuild: Rebuilt knowledge index. Regenerated ${regeneratedEmbeddingCount} chunk embeddings. Deleted ${deletedFaqCount} orphaned global FAQs.`,
+      String(clientIp)
+    );
+
+    res.json({ 
+      success: true, 
+      message: `AI Knowledge Base vectors completely rebuilt successfully! Regenerated ${regeneratedEmbeddingCount} chunk embeddings, cleared ${deletedFaqCount} orphaned FAQs.` 
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET public list of all documents (metadata only, no base64) for students
+router.get('/public-list', async (req, res) => {
+  try {
+    const list = await DocumentRepository.getAll();
+    const publicList = list.map((d: any) => ({
+      id: d.id,
+      title: d.title,
+      type: d.type,
+      category: d.category,
+      fileName: d.fileName || d.title,
+      size: d.size,
+      uploadedAt: d.uploadedAt
+    }));
+    res.json(publicList);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET public single document by ID (including base64 for student viewing)
+router.get('/public/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const docObj = await DocumentRepository.getById(id);
+    if (!docObj) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    res.json(docObj);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

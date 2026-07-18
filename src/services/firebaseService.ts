@@ -49,15 +49,31 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
+function sanitizeData(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeData);
+  } else if (obj !== null && typeof obj === 'object') {
+    const res: any = {};
+    for (const key of Object.keys(obj)) {
+      if (obj[key] !== undefined) {
+        res[key] = sanitizeData(obj[key]);
+      }
+    }
+    return res;
+  }
+  return obj;
+}
+
 export async function saveConversationToFirestore(userId: string, conversation: Conversation) {
   const pathStr = `conversations/${conversation.id}`;
   try {
     const convRef = doc(db, 'conversations', conversation.id);
-    await setDoc(convRef, {
+    const sanitized = sanitizeData({
       ...conversation,
       userId,
       updatedAt: conversation.updatedAt || new Date().toISOString()
-    }, { merge: true });
+    });
+    await setDoc(convRef, sanitized, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, pathStr);
   }

@@ -253,6 +253,27 @@
         "entities": { "type": "object" }
       },
       "required": ["id", "title", "content", "uploadedAt"]
+    },
+    "OfficialDocument": {
+      "title": "Official Document",
+      "description": "Official college document such as Syllabus, Prospectus, Calendar, or Rules",
+      "type": "object",
+      "properties": {
+        "documentId": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string", "enum": ["Syllabus", "Prospectus", "Academic Calendar", "Examination Rules", "Circulars", "Other Documents"] },
+        "department": { "type": "string" },
+        "programme": { "type": "string", "enum": ["UG", "PG"] },
+        "nepVersion": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "uploadDate": { "type": "string", "format": "date-time" },
+        "uploadedBy": { "type": "string" },
+        "fileSize": { "type": "string" },
+        "totalPages": { "type": "integer" },
+        "fileBase64": { "type": "string" }
+      },
+      "required": ["documentId", "title", "category", "academicYear", "uploadDate", "uploadedBy"]
     }
   },
   "firestore": {
@@ -299,6 +320,10 @@
     "/knowledge/{docId}": {
       "schema": { "$ref": "#/entities/Knowledge" },
       "description": "College documents knowledge base"
+    },
+    "/official_documents/{docId}": {
+      "schema": { "$ref": "#/entities/OfficialDocument" },
+      "description": "Official college syllabus or regulation documents"
     }
   }
 }
