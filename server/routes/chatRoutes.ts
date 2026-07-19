@@ -679,82 +679,134 @@ router.post('/', async (req: Request, res: Response) => {
         // STEP 2: Load all official syllabus documents
         const syllabusDocs = allOfficialDocs.filter(d => d.category === 'Syllabus');
 
-        // STEP 3 & STEP 5: Identify the target department
-        let targetDepartment = extractedDept || studentProfile?.department;
-        let isFallbackToProfile = !extractedDept && !!studentProfile?.department;
+        // Detect whether the query is requesting a standalone document (VAC, SEC, AEC, MDC)
+        const hasStandaloneWord = (word: string) => new RegExp(`\\b${word}\\b`, 'i').test(message);
+        const isStandaloneVAC = hasStandaloneWord('vac');
+        const isStandaloneSEC = hasStandaloneWord('sec');
+        const isStandaloneAEC = hasStandaloneWord('aec');
+        const isStandaloneMDC = hasStandaloneWord('mdc');
+        const isStandaloneRequest = isStandaloneVAC || isStandaloneSEC || isStandaloneAEC || isStandaloneMDC;
 
-        // STEP 6: If multiple documents match, prefer: 1. exact department, 2. exact programme, 3. latest academic year
-        let filteredDocs = syllabusDocs;
-        if (targetDepartment) {
-          filteredDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment!.toLowerCase());
-        }
+        let requestedType: 'vac' | 'sec' | 'aec' | 'mdc' | null = null;
+        if (isStandaloneVAC) requestedType = 'vac';
+        else if (isStandaloneSEC) requestedType = 'sec';
+        else if (isStandaloneAEC) requestedType = 'aec';
+        else if (isStandaloneMDC) requestedType = 'mdc';
 
-        const targetProg = extractedProg || studentProfile?.programme;
+        let processedAsStandalone = false;
 
-        const sortedDocs = [...filteredDocs].sort((a, b) => {
-          // 1. Exact department match
-          const aDeptMatch = targetDepartment && a.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
-          const bDeptMatch = targetDepartment && b.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
-          if (aDeptMatch !== bDeptMatch) {
-            return bDeptMatch - aDeptMatch;
-          }
+        if (isStandaloneRequest && requestedType) {
+          const getDocType = (d: any) => {
+            if (d.metadata && typeof d.metadata === 'object' && !Array.isArray(d.metadata) && d.metadata.type) {
+              return String(d.metadata.type).toLowerCase();
+            }
+            if (d.type) {
+              return String(d.type).toLowerCase();
+            }
+            const titleLower = (d.title || '').toLowerCase();
+            if (titleLower === 'vac' || titleLower.startsWith('vac ') || d.department?.toLowerCase() === 'value added courses') return 'vac';
+            if (titleLower === 'sec' || titleLower.startsWith('sec ') || d.department?.toLowerCase() === 'skill enhancement courses') return 'sec';
+            if (titleLower === 'aec' || titleLower.startsWith('aec ') || d.department?.toLowerCase() === 'ability enhancement courses') return 'aec';
+            if (titleLower === 'mdc' || titleLower.startsWith('mdc ') || d.department?.toLowerCase() === 'multi-disciplinary courses') return 'mdc';
+            return '';
+          };
 
-          // 2. Exact programme match
-          const aProgMatch = targetProg && a.programme === targetProg ? 1 : 0;
-          const bProgMatch = targetProg && b.programme === targetProg ? 1 : 0;
-          if (aProgMatch !== bProgMatch) {
-            return bProgMatch - aProgMatch;
-          }
+          const standaloneDocs = syllabusDocs.filter(d => getDocType(d) === requestedType);
 
-          // 3. Latest academic year
-          const aYear = a.academicYear || '';
-          const bYear = b.academicYear || '';
-          if (aYear !== bYear) {
-            return bYear.localeCompare(aYear); // e.g. "2023-24" > "2022-23"
-          }
-
-          return 0;
-        });
-
-        bestDoc = sortedDocs[0] || null;
-
-        // Add debug logs required by Requirement 4
-        console.log(`[DEPT ROUTING] Detected department: ${extractedDept || 'None (Using student profile fallback)'}`);
-        console.log(`[DEPT ROUTING] Matched Firestore document: ${bestDoc ? 'Yes' : 'No'}`);
-        if (bestDoc) {
-          console.log(`[DEPT ROUTING] Document ID: ${bestDoc.documentId}`);
-          console.log(`[DEPT ROUTING] Document title: ${bestDoc.title}`);
-          console.log(`[DEPT ROUTING] Department metadata: ${bestDoc.department || 'None'}`);
-          
-          let reason = '';
-          if (extractedDept) {
-            reason += `Extracted department "${extractedDept}" from user query. `;
-          } else if (studentProfile?.department) {
-            reason += `Fell back to student profile department "${studentProfile.department}". `;
-          } else {
-            reason += `No department mentioned or found in student profile. `;
-          }
-
-          if (targetProg) {
-            if (bestDoc.programme === targetProg) {
-              reason += `Matched target programme "${targetProg}". `;
+          if (standaloneDocs.length > 0) {
+            processedAsStandalone = true;
+            // Search ONLY standalone documents
+            const navMatch = tryNavigationIndexMatch(message, standaloneDocs, undefined, extractedSem, extractedProg || studentProfile?.programme);
+            if (navMatch) {
+              matchedItem = navMatch.matchedItem;
+              bestDoc = navMatch.document;
+              console.log(`[STANDALONE ROUTING] Matched standalone ${requestedType.toUpperCase()} document via index: ${bestDoc.title}`);
             } else {
-              reason += `No document with target programme "${targetProg}" found; selected available programme. `;
+              bestDoc = standaloneDocs[0];
+              matchedItem = null;
+              console.log(`[STANDALONE ROUTING] Fallback to opening standalone ${requestedType.toUpperCase()} document: ${bestDoc.title}`);
             }
           }
-          
-          reason += `Selected latest academic year document: "${bestDoc.academicYear}".`;
-          console.log(`[DEPT ROUTING] Reason this document was selected: ${reason}`);
         }
 
-        // STEP 4: Only after the correct department document has been selected should the server search
-        if (bestDoc) {
-          const navMatch = tryNavigationIndexMatch(message, [bestDoc], targetDepartment, extractedSem, targetProg);
-          if (navMatch) {
-            matchedItem = navMatch.matchedItem;
-            console.log(`[DEBUG LOG] Fallback PDF search was used: No (Precise navigation index matched successfully: "${matchedItem.title}")`);
-          } else {
-            console.log(`[DEBUG LOG] Fallback PDF search was used: Yes (No navigation index match. Retrying fallback search.)`);
+        if (!processedAsStandalone) {
+          // STEP 3 & STEP 5: Identify the target department for standard routing
+          let targetDepartment = extractedDept || studentProfile?.department;
+          let isFallbackToProfile = !extractedDept && !!studentProfile?.department;
+
+          // STEP 6: If multiple documents match, prefer: 1. exact department, 2. exact programme, 3. latest academic year
+          let filteredDocs = syllabusDocs;
+          if (targetDepartment) {
+            filteredDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment!.toLowerCase());
+          }
+
+          const targetProg = extractedProg || studentProfile?.programme;
+
+          const sortedDocs = [...filteredDocs].sort((a, b) => {
+            // 1. Exact department match
+            const aDeptMatch = targetDepartment && a.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
+            const bDeptMatch = targetDepartment && b.department?.toLowerCase() === targetDepartment.toLowerCase() ? 1 : 0;
+            if (aDeptMatch !== bDeptMatch) {
+              return bDeptMatch - aDeptMatch;
+            }
+
+            // 2. Exact programme match
+            const aProgMatch = targetProg && a.programme === targetProg ? 1 : 0;
+            const bProgMatch = targetProg && b.programme === targetProg ? 1 : 0;
+            if (aProgMatch !== bProgMatch) {
+              return bProgMatch - aProgMatch;
+            }
+
+            // 3. Latest academic year
+            const aYear = a.academicYear || '';
+            const bYear = b.academicYear || '';
+            if (aYear !== bYear) {
+              return bYear.localeCompare(aYear); // e.g. "2023-24" > "2022-23"
+            }
+
+            return 0;
+          });
+
+          bestDoc = sortedDocs[0] || null;
+
+          // Add debug logs required by Requirement 4
+          console.log(`[DEPT ROUTING] Detected department: ${extractedDept || 'None (Using student profile fallback)'}`);
+          console.log(`[DEPT ROUTING] Matched Firestore document: ${bestDoc ? 'Yes' : 'No'}`);
+          if (bestDoc) {
+            console.log(`[DEPT ROUTING] Document ID: ${bestDoc.documentId}`);
+            console.log(`[DEPT ROUTING] Document title: ${bestDoc.title}`);
+            console.log(`[DEPT ROUTING] Department metadata: ${bestDoc.department || 'None'}`);
+            
+            let reason = '';
+            if (extractedDept) {
+              reason += `Extracted department "${extractedDept}" from user query. `;
+            } else if (studentProfile?.department) {
+              reason += `Fell back to student profile department "${studentProfile.department}". `;
+            } else {
+              reason += `No department mentioned or found in student profile. `;
+            }
+
+            if (targetProg) {
+              if (bestDoc.programme === targetProg) {
+                reason += `Matched target programme "${targetProg}". `;
+              } else {
+                reason += `No document with target programme "${targetProg}" found; selected available programme. `;
+              }
+            }
+            
+            reason += `Selected latest academic year document: "${bestDoc.academicYear}".`;
+            console.log(`[DEPT ROUTING] Reason this document was selected: ${reason}`);
+          }
+
+          // STEP 4: Only after the correct department document has been selected should the server search
+          if (bestDoc) {
+            const navMatch = tryNavigationIndexMatch(message, [bestDoc], targetDepartment, extractedSem, targetProg);
+            if (navMatch) {
+              matchedItem = navMatch.matchedItem;
+              console.log(`[DEBUG LOG] Fallback PDF search was used: No (Precise navigation index matched successfully: "${matchedItem.title}")`);
+            } else {
+              console.log(`[DEBUG LOG] Fallback PDF search was used: Yes (No navigation index match. Retrying fallback search.)`);
+            }
           }
         }
       } else {

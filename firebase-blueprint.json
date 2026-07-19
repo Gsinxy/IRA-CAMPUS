@@ -274,6 +274,25 @@
         "fileBase64": { "type": "string" }
       },
       "required": ["documentId", "title", "category", "academicYear", "uploadDate", "uploadedBy"]
+    },
+    "Timetable": {
+      "title": "Official Departmental Timetable",
+      "description": "Departmental and semester specific official timetables",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "department": { "type": "string" },
+        "semester": { "type": "string" },
+        "session": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "fileType": { "type": "string", "enum": ["image", "pdf"] },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "uploadedBy": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileSize": { "type": "string" }
+      },
+      "required": ["id", "department", "semester", "session", "fileUrl", "fileType", "uploadedAt", "uploadedBy"]
     }
   },
   "firestore": {
@@ -324,6 +343,10 @@
     "/official_documents/{docId}": {
       "schema": { "$ref": "#/entities/OfficialDocument" },
       "description": "Official college syllabus or regulation documents"
+    },
+    "/timetables/{docId}": {
+      "schema": { "$ref": "#/entities/Timetable" },
+      "description": "Official departmental and semester timetables"
     }
   }
 }

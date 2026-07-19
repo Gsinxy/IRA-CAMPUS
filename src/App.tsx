@@ -53,7 +53,11 @@ import {
   Square,
   Terminal,
   ChevronDown,
-  ShieldAlert
+  ShieldAlert,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -77,11 +81,15 @@ import {
   Notice,
   FAQ,
   AnalyticsSummary,
-  NavigationItem
+  NavigationItem,
+  OfficialDocument,
+  Timetable
 } from './types';
 import { auth, db } from './firebase';
 import { PdfSyllabusViewer } from './components/PdfSyllabusViewer';
 import { NavigationIndexTable } from './components/NavigationIndexTable';
+import { TimetableManagement } from './components/TimetableManagement';
+import { StudentTimetableViewer } from './components/StudentTimetableViewer';
 import { onAuthStateChanged, onIdTokenChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveConversationToFirestore, loadConversationsFromFirestore, deleteConversationFromFirestore, deleteConversationsFromFirestore } from './services/firebaseService';
@@ -839,7 +847,11 @@ export default function App() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        await setDoc(userRef, newProfile);
+        try {
+          await setDoc(userRef, newProfile);
+        } catch (writeErr: any) {
+          console.warn('[Firestore Write Warning] Bypassed profile creation due to write error:', writeErr.message || writeErr);
+        }
         setUserProfile(newProfile);
 
         setShowAuthModal(false);
@@ -911,7 +923,11 @@ export default function App() {
         updatedAt: new Date().toISOString()
       };
       if (!userSnap.exists()) {
-        await setDoc(userRef, newProfile);
+        try {
+          await setDoc(userRef, newProfile);
+        } catch (writeErr: any) {
+          console.warn('[Firestore Write Warning] Bypassed user profile creation during Google sign-in:', writeErr.message || writeErr);
+        }
         setUserProfile(newProfile);
       } else {
         setUserProfile(userSnap.data());
@@ -1134,7 +1150,7 @@ export default function App() {
   const [isOffDocUploading, setIsOffDocUploading] = useState(false);
   const [offDocUploadError, setOffDocUploadError] = useState('');
   const [offDocUploadSuccess, setOffDocUploadSuccess] = useState(false);
-  const [adminTab, setAdminTab] = useState<'analytics' | 'knowledge' | 'official_docs'>('analytics');
+  const [adminTab, setAdminTab] = useState<'analytics' | 'knowledge' | 'official_docs' | 'timetable'>('analytics');
 
   // AI Knowledge Extraction System State
   const [pastedContent, setPastedContent] = useState('');
@@ -1354,10 +1370,15 @@ export default function App() {
         // Fetch/create users profile from firestore
         try {
           const userRef = doc(db, 'users', user.uid);
-          const userSnap = await getDoc(userRef);
+          let userSnap: any = null;
+          try {
+            userSnap = await getDoc(userRef);
+          } catch (readErr: any) {
+            console.warn('[Firestore Read Warning] Failed to fetch user profile:', readErr.message || readErr);
+          }
           const profileRole = isAdminEmail ? "admin" : "student";
           
-          if (userSnap.exists()) {
+          if (userSnap && userSnap.exists()) {
             const existingProfile = userSnap.data();
             // If it's the admin, ensure the database document role is strictly "admin"
             if (isAdminEmail && existingProfile.role !== 'admin') {
@@ -1366,7 +1387,11 @@ export default function App() {
                 role: 'admin',
                 updatedAt: new Date().toISOString()
               };
-              await setDoc(userRef, updatedProfile);
+              try {
+                await setDoc(userRef, updatedProfile);
+              } catch (writeErr: any) {
+                console.warn('[Firestore Write Warning] Bypassed profile update in listener:', writeErr.message || writeErr);
+              }
               setUserProfile(updatedProfile);
             } else {
               setUserProfile(existingProfile);
@@ -1381,7 +1406,11 @@ export default function App() {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString()
             };
-            await setDoc(userRef, newProfile);
+            try {
+              await setDoc(userRef, newProfile);
+            } catch (writeErr: any) {
+              console.warn('[Firestore Write Warning] Bypassed profile creation in listener:', writeErr.message || writeErr);
+            }
             setUserProfile(newProfile);
           }
         } catch (err) {
@@ -1391,19 +1420,32 @@ export default function App() {
         // Determine admin status using the "admins" collection
         try {
           const adminRef = doc(db, 'admins', user.uid);
-          let adminSnap = await getDoc(adminRef);
-          let isSourcedAdmin = adminSnap.exists();
+          let adminSnap: any = null;
+          let isSourcedAdmin = false;
+          try {
+            adminSnap = await getDoc(adminRef);
+            isSourcedAdmin = adminSnap && adminSnap.exists();
+          } catch (readErr: any) {
+            console.warn('[Firestore Read Warning] Failed to check admin status in collection:', readErr.message || readErr);
+            if (isAdminEmail) {
+              isSourcedAdmin = true; // Fallback to true for the specific admin email on read failure
+            }
+          }
 
           // Auto-seed/create admin document if email is naiknirmal654@gmail.com
           if (isAdminEmail) {
             if (!isSourcedAdmin) {
-              await setDoc(adminRef, {
-                email: "naiknirmal654@gmail.com",
-                role: "admin",
-                createdAt: serverTimestamp()
-              });
+              try {
+                await setDoc(adminRef, {
+                  email: "naiknirmal654@gmail.com",
+                  role: "admin",
+                  createdAt: serverTimestamp()
+                });
+                console.log("[AUTH] Admin document successfully seeded in Firestore 'admins' collection.");
+              } catch (writeErr: any) {
+                console.warn("[Firestore Write Warning] Bypassed admin document seeding due to error:", writeErr.message || writeErr);
+              }
               isSourcedAdmin = true;
-              console.log("[AUTH] Admin document successfully seeded in Firestore 'admins' collection.");
             } else {
               console.log("[AUTH] Admin document already exists in Firestore 'admins' collection.");
             }
@@ -1411,11 +1453,15 @@ export default function App() {
 
           // In case of any other user matching ADMIN_EMAILS (fallback for safety)
           if (!isSourcedAdmin && user.email && ADMIN_EMAILS.map(e => e.toLowerCase()).includes(user.email.toLowerCase())) {
-            await setDoc(adminRef, {
-              email: user.email,
-              role: 'admin',
-              createdAt: serverTimestamp()
-            });
+            try {
+              await setDoc(adminRef, {
+                email: user.email,
+                role: 'admin',
+                createdAt: serverTimestamp()
+              });
+            } catch (writeErr: any) {
+              console.warn("[Firestore Write Warning] Bypassed fallback admin document write due to error:", writeErr.message || writeErr);
+            }
             isSourcedAdmin = true;
           }
 
@@ -3987,6 +4033,31 @@ export default function App() {
             <span className="text-xs text-[#6B6B6B] border-l border-[#E6DED3] pl-3 ml-3 hidden sm:inline-block font-medium tracking-wide">
               Your Campus Assistant
             </span>
+
+            {currentUser && (
+              <nav className="flex items-center space-x-1 border-l border-[#E6DED3] pl-3 ml-3 text-[11px] font-bold">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                    activeTab === 'chat'
+                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                  }`}
+                >
+                  AI Chat
+                </button>
+                <button
+                  onClick={() => setActiveTab('timetables')}
+                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                    activeTab === 'timetables'
+                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                  }`}
+                >
+                  📅 Timetables
+                </button>
+              </nav>
+            )}
           </div>
 
           <div className="flex items-center space-x-3 text-xs font-semibold relative">
@@ -4102,7 +4173,9 @@ export default function App() {
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setActiveTab('chat')}>
+            <div className="flex items-center space-x-2 cursor-pointer" onClick={() => {
+              setActiveTab('chat');
+            }}>
               <span className="text-sm font-extrabold tracking-wider text-[#1B1B1B] uppercase">
                 IRA CAMPUS
               </span>
@@ -4110,6 +4183,31 @@ export default function App() {
                 AI
               </span>
             </div>
+
+            {currentUser && (
+              <nav className="flex items-center space-x-1 border-l border-[#E7DDD0] pl-3 ml-3 text-[11px] font-bold">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                    activeTab === 'chat'
+                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                  }`}
+                >
+                  AI Chat
+                </button>
+                <button
+                  onClick={() => setActiveTab('timetables')}
+                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                    activeTab === 'timetables'
+                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                  }`}
+                >
+                  📅 Timetables
+                </button>
+              </nav>
+            )}
           </div>
 
           {/* Header Right Actions */}
@@ -4972,6 +5070,15 @@ export default function App() {
 
 
 
+        {/* STUDENT TIMETABLES VIEW */}
+        {activeTab === 'timetables' && (
+          <div className="w-full max-w-5xl mx-auto px-4 lg:px-8 py-10">
+            <StudentTimetableViewer userProfile={userProfile} />
+          </div>
+        )}
+
+
+
         {/* ADMIN PORTAL & ANALYTICS VIEW */}
         {activeTab === 'admin' && (
           <div className="w-full max-w-6xl mx-auto px-4 lg:px-8 py-10 space-y-12">
@@ -5160,6 +5267,18 @@ export default function App() {
                     >
                       <BookOpen className="h-4 w-4" />
                       <span>📚 Official Documents</span>
+                    </button>
+
+                    <button
+                      onClick={() => setAdminTab('timetable')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        adminTab === 'timetable'
+                          ? 'bg-[#C89B4A] text-white shadow-sm shadow-[#C89B4A]/20'
+                          : 'text-[#6B6B6B] hover:bg-[#F2EEE8]/60 hover:text-[#1B1B1B]'
+                      }`}
+                    >
+                      <Calendar className="h-4 w-4" />
+                      <span>📅 Timetable Management</span>
                     </button>
                   </div>
 
@@ -7122,6 +7241,10 @@ export default function App() {
                           )}
                         </div>
                       </div>
+                    )}
+
+                    {adminTab === 'timetable' && (
+                      <TimetableManagement adminEmail={currentUser?.email || 'admin@ira.edu'} />
                     )}
 
                   </div>

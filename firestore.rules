@@ -113,5 +113,10 @@ service cloud.firestore {
     match /official_documents/{docId=**} {
       allow read, write: if true;
     }
+
+    // Timetables Collection (Accessed by the unauthenticated server)
+    match /timetables/{docId=**} {
+      allow read, write: if true;
+    }
   }
 }

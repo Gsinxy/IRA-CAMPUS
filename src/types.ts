@@ -161,3 +161,17 @@ export interface OfficialDocument {
   }>;
 }
 
+export interface Timetable {
+  id: string;
+  department: string;
+  semester: string;
+  session: string;
+  fileUrl: string;
+  fileType: 'image' | 'pdf';
+  uploadedAt: string;
+  updatedAt: string;
+  uploadedBy: string;
+  fileName?: string;
+  fileSize?: string;
+}
+

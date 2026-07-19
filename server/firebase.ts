@@ -142,63 +142,85 @@ export async function setDoc(ref: any, data: any, options?: any) {
   const collectionName = ref?.parent?.id || ref?.parent?.path || '';
   const docId = ref?.id || '';
 
-  const result = await originalSetDoc(ref, data, options);
-
-  if (collectionName) {
-    if (!firstWriteDone) {
-      firstWriteDone = true;
-      console.log('Collection created automatically');
-    }
-    if (!initializedCollections.has(collectionName)) {
-      initializedCollections.add(collectionName);
-      console.log(`Collection created automatically: "${collectionName}" on first write to document "${docId}"`);
-    }
-  }
-
-  // 5. After saving, verify by reading the document back from Firestore.
   try {
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      console.warn(`[Firestore Verify Warning] Document "${docId}" in collection "${collectionName}" was not found immediately after setDoc write.`);
-    } else {
-      console.log(`[Firestore Verify] Successfully verified setDoc write for document "${docId}" in collection "${collectionName}".`);
-    }
-  } catch (verifyErr) {
-    console.error(`[Firestore Verify Error] Failed to read back and verify document "${docId}" in "${collectionName}":`, verifyErr);
-  }
+    const result = await originalSetDoc(ref, data, options);
 
-  return result;
+    if (collectionName) {
+      if (!firstWriteDone) {
+        firstWriteDone = true;
+        console.log('Collection created automatically');
+      }
+      if (!initializedCollections.has(collectionName)) {
+        initializedCollections.add(collectionName);
+        console.log(`Collection created automatically: "${collectionName}" on first write to document "${docId}"`);
+      }
+    }
+
+    // 5. After saving, verify by reading the document back from Firestore.
+    try {
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        console.warn(`[Firestore Verify Warning] Document "${docId}" in collection "${collectionName}" was not found immediately after setDoc write.`);
+      } else {
+        console.log(`[Firestore Verify] Successfully verified setDoc write for document "${docId}" in collection "${collectionName}".`);
+      }
+    } catch (verifyErr) {
+      console.error(`[Firestore Verify Error] Failed to read back and verify document "${docId}" in "${collectionName}":`, verifyErr);
+    }
+
+    return result;
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    const isQuotaError = errMsg.includes('RESOURCE_EXHAUSTED') || err?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded');
+    console.error(`[Firestore Write Error] Failed setDoc write for document "${docId}" in collection "${collectionName}":`, err);
+    if (isQuotaError) {
+      console.warn(`[Firestore Quota Warning] Bypassing write error due to resource quota exhaustion.`);
+      return { id: docId, error: errMsg, bypassed: true };
+    }
+    throw err;
+  }
 }
 
 export async function addDoc(colRef: any, data: any) {
   const collectionName = colRef?.id || colRef?.path || '';
 
-  const result = await originalAddDoc(colRef, data);
-  const docId = result.id;
-
-  if (collectionName) {
-    if (!firstWriteDone) {
-      firstWriteDone = true;
-      console.log('Collection created automatically');
-    }
-    if (!initializedCollections.has(collectionName)) {
-      initializedCollections.add(collectionName);
-      console.log(`Collection created automatically: "${collectionName}" on first write to document "${docId}"`);
-    }
-  }
-
-  // 5. After saving, verify by reading the document back from Firestore.
   try {
-    const docRef = doc(db, collectionName, docId);
-    const snap = await getDoc(docRef);
-    if (!snap.exists()) {
-      console.warn(`[Firestore Verify Warning] Document "${docId}" in collection "${collectionName}" was not found immediately after addDoc write.`);
-    } else {
-      console.log(`[Firestore Verify] Successfully verified addDoc write for document "${docId}" in collection "${collectionName}".`);
-    }
-  } catch (verifyErr) {
-    console.error(`[Firestore Verify Error] Failed to read back and verify document "${docId}" in "${collectionName}":`, verifyErr);
-  }
+    const result = await originalAddDoc(colRef, data);
+    const docId = result.id;
 
-  return result;
+    if (collectionName) {
+      if (!firstWriteDone) {
+        firstWriteDone = true;
+        console.log('Collection created automatically');
+      }
+      if (!initializedCollections.has(collectionName)) {
+        initializedCollections.add(collectionName);
+        console.log(`Collection created automatically: "${collectionName}" on first write to document "${docId}"`);
+      }
+    }
+
+    // 5. After saving, verify by reading the document back from Firestore.
+    try {
+      const docRef = doc(db, collectionName, docId);
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        console.warn(`[Firestore Verify Warning] Document "${docId}" in collection "${collectionName}" was not found immediately after addDoc write.`);
+      } else {
+        console.log(`[Firestore Verify] Successfully verified addDoc write for document "${docId}" in collection "${collectionName}".`);
+      }
+    } catch (verifyErr) {
+      console.error(`[Firestore Verify Error] Failed to read back and verify document "${docId}" in "${collectionName}":`, verifyErr);
+    }
+
+    return result;
+  } catch (err: any) {
+    const errMsg = err?.message || String(err);
+    const isQuotaError = errMsg.includes('RESOURCE_EXHAUSTED') || err?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded');
+    console.error(`[Firestore Write Error] Failed addDoc write in collection "${collectionName}":`, err);
+    if (isQuotaError) {
+      console.warn(`[Firestore Quota Warning] Bypassing write error due to resource quota exhaustion.`);
+      return { id: `bypassed-quota-${Date.now()}`, error: errMsg, bypassed: true };
+    }
+    throw err;
+  }
 }
