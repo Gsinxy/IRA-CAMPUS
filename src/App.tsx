@@ -945,7 +945,11 @@ export default function App() {
       }
     } catch (err: any) {
       console.error("Google Sign-In failed:", err);
-      setAuthError(err.message || 'Google Sign-In failed. Please try again.');
+      if (err.code === 'auth/popup-closed-by-user' || (err.message && err.message.includes('popup-closed-by-user'))) {
+        setAuthError('Sign-in was cancelled.');
+      } else {
+        setAuthError(err.message || 'Google Sign-In failed. Please try again.');
+      }
     } finally {
       setAuthLoading(false);
       setIsLoggingInProcess(false);
@@ -2816,6 +2820,8 @@ export default function App() {
       console.error('Google Sign-In failed:', err);
       if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain'))) {
         setLoginError('unauthorized-domain');
+      } else if (err.code === 'auth/popup-closed-by-user' || (err.message && err.message.includes('popup-closed-by-user'))) {
+        setLoginError('Sign-in was cancelled.');
       } else {
         setLoginError(`Google Sign-In failed: ${err.message}`);
       }
