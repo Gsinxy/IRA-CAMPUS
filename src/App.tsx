@@ -6998,6 +6998,11 @@ export default function App() {
                                     <option value="History">History</option>
                                     <option value="English">English</option>
                                     <option value="Odia">Odia</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Sociology">Sociology</option>
+                                    <option value="Philosophy">Philosophy</option>
+                                    <option value="Hindi">Hindi</option>
+                                    <option value="Sanskrit">Sanskrit</option>
                                     <option value="Botany">Botany</option>
                                     <option value="Zoology">Zoology</option>
                                     <option value="Computer Science">Computer Science</option>
