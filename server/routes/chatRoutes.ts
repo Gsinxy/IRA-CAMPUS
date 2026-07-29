@@ -585,7 +585,7 @@ router.post('/', async (req: Request, res: Response) => {
         // STEP 1: Extract from the user query
         const depts = [
           "Economics", "Commerce", "Physics", "Chemistry", "Mathematics", 
-          "Political Science", "History", "English", "Odia", "Botany", 
+          "Political Science", "History", "English", "Odia", "Education", "Botany", 
           "Zoology", "Computer Science"
         ];
         
@@ -610,6 +610,8 @@ router.post('/', async (req: Request, res: Response) => {
           "english": "English",
           "eng": "English",
           "odia": "Odia",
+          "education": "Education",
+          "edu": "Education",
           "botany": "Botany",
           "zoology": "Zoology",
           "computer science": "Computer Science",
