@@ -16,47 +16,32 @@ if (getApps().length === 0) {
 
 export const auth = getAuth(app);
 
-// Use initializeFirestore with experimentalForceLongPolling enabled to resolve connection issues in sandboxed iframe previews.
-// Initialize idempotently to handle Hot Module Replacement (HMR) or multi-module imports without throwing.
+// Use initializeFirestore with long polling enabled FIRST to prevent connection failures in sandboxed iframe previews.
 let dbInstance: any = null;
 const dbId = config.firestoreDatabaseId || undefined;
 
-try {
-  // 1. Try to get already initialized instance for this databaseId
-  dbInstance = getFirestore(app, dbId);
-} catch (getErr: any) {
-  console.warn('[Firebase Client SDK] getFirestore(dbId) failed, attempting initialize:', getErr.message);
-}
+const firestoreSettings = {
+  experimentalForceLongPolling: true,
+  experimentalAutoDetectLongPolling: true,
+};
 
-if (!dbInstance) {
+try {
+  // 1. Prioritize initializeFirestore with long polling settings
+  dbInstance = dbId 
+    ? initializeFirestore(app, firestoreSettings, dbId)
+    : initializeFirestore(app, firestoreSettings);
+} catch (initErr: any) {
+  // 2. If already initialized, retrieve existing Firestore instance
   try {
-    // 2. Try initialize with settings and dbId
-    dbInstance = dbId 
-      ? initializeFirestore(app, { experimentalForceLongPolling: true }, dbId)
-      : initializeFirestore(app, { experimentalForceLongPolling: true });
-  } catch (initErr: any) {
-    console.warn('[Firebase Client SDK] initializeFirestore with dbId failed:', initErr.message);
+    dbInstance = getFirestore(app, dbId);
+  } catch (getErr: any) {
     try {
-      // 3. Fallback to default initialize with settings (no dbId)
-      dbInstance = initializeFirestore(app, { experimentalForceLongPolling: true });
-    } catch (initDefaultErr: any) {
-      console.warn('[Firebase Client SDK] initializeFirestore default failed:', initDefaultErr.message);
+      dbInstance = getFirestore(app);
+    } catch (getDefErr: any) {
       try {
-        // 4. Fallback to default getFirestore with dbId
-        dbInstance = getFirestore(app, dbId);
-      } catch (getFallbackErr: any) {
-        console.warn('[Firebase Client SDK] getFirestore fallback with dbId failed:', getFallbackErr.message);
-        try {
-          // 5. Ultimate fallback to standard default getFirestore
-          dbInstance = getFirestore(app);
-        } catch (ultimateErr: any) {
-          console.error('[Firebase Client SDK] Ultimate getFirestore(app) fallback failed:', ultimateErr.message);
-          try {
-            dbInstance = getFirestore();
-          } catch (lastErr: any) {
-            console.error('[Firebase Client SDK] CRITICAL: getFirestore() failed completely:', lastErr.message);
-          }
-        }
+        dbInstance = getFirestore();
+      } catch (lastErr: any) {
+        console.error('[Firebase Client SDK] CRITICAL: Firestore initialization failed:', lastErr.message);
       }
     }
   }

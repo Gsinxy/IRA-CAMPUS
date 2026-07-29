@@ -77,8 +77,10 @@ export async function saveConversationToFirestore(userId: string, conversation: 
   } catch (error: any) {
     const errMsg = error?.message || String(error);
     const isQuotaError = errMsg.includes('RESOURCE_EXHAUSTED') || error?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded');
-    if (isQuotaError) {
-      console.warn(`[Firestore Quota] Conversation save bypassed due to quota exhaustion. Storing in localStorage fallback.`);
+    const isOfflineOrUnavailable = error?.code === 'unavailable' || errMsg.includes('unavailable') || errMsg.includes('Could not reach Cloud Firestore backend');
+    
+    if (isQuotaError || isOfflineOrUnavailable) {
+      console.warn(`[Firestore Fallback] Conversation save using localStorage fallback due to connection/quota state.`);
       try {
         localStorage.setItem(`ira_fallback_conv_${conversation.id}`, JSON.stringify({
           ...conversation,
@@ -116,8 +118,10 @@ export async function loadConversationsFromFirestore(userId: string): Promise<Co
   } catch (error: any) {
     const errMsg = error?.message || String(error);
     const isQuotaError = errMsg.includes('RESOURCE_EXHAUSTED') || error?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded');
-    if (isQuotaError) {
-      console.warn('[Firestore Quota] Could not load from Firestore due to quota exhaustion. Using local cache/localStorage.');
+    const isOfflineOrUnavailable = error?.code === 'unavailable' || errMsg.includes('unavailable') || errMsg.includes('Could not reach Cloud Firestore backend');
+    
+    if (isQuotaError || isOfflineOrUnavailable) {
+      console.warn('[Firestore Fallback] Could not reach Firestore online backend. Loading conversations from localStorage fallback.');
     } else {
       handleFirestoreError(error, OperationType.LIST, pathStr);
     }
@@ -154,8 +158,9 @@ export async function deleteConversationFromFirestore(conversationId: string) {
   } catch (error: any) {
     const errMsg = error?.message || String(error);
     const isQuotaError = errMsg.includes('RESOURCE_EXHAUSTED') || error?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded');
-    if (isQuotaError) {
-      console.warn(`[Firestore Quota] Deletion bypassed due to quota exhaustion.`);
+    const isOfflineOrUnavailable = error?.code === 'unavailable' || errMsg.includes('unavailable') || errMsg.includes('Could not reach Cloud Firestore backend');
+    if (isQuotaError || isOfflineOrUnavailable) {
+      console.warn(`[Firestore Fallback] Deletion bypassed due to network connection or quota state.`);
       return;
     }
     handleFirestoreError(error, OperationType.DELETE, pathStr);
@@ -178,8 +183,9 @@ export async function deleteConversationsFromFirestore(conversationIds: string[]
   } catch (error: any) {
     const errMsg = error?.message || String(error);
     const isQuotaError = errMsg.includes('RESOURCE_EXHAUSTED') || error?.code === 'resource-exhausted' || errMsg.includes('Quota limit exceeded');
-    if (isQuotaError) {
-      console.warn(`[Firestore Quota] Batch deletion bypassed due to quota exhaustion.`);
+    const isOfflineOrUnavailable = error?.code === 'unavailable' || errMsg.includes('unavailable') || errMsg.includes('Could not reach Cloud Firestore backend');
+    if (isQuotaError || isOfflineOrUnavailable) {
+      console.warn(`[Firestore Fallback] Batch deletion bypassed due to network connection or quota state.`);
       return;
     }
     handleFirestoreError(error, OperationType.DELETE, pathStr);
