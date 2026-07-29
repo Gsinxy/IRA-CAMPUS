@@ -1007,13 +1007,24 @@ export default function App() {
           ? `/api/official-documents/public/${activePdfDocId}`
           : `/api/documents/public/${activePdfDocId}`;
           
+        console.log(`[DIAGNOSTIC LOG] [Frontend] Fetching PDF document ID "${activePdfDocId}" from endpoint "${endpoint}"`);
         const res = await fetch(endpoint);
         if (res.ok) {
           const doc = await res.json();
+          const resolvedPdfUrl = doc.pdfUrl || (doc.fileBase64 ? `Base64 (${doc.fileBase64.length} chars)` : 'None');
+          console.log(`[DIAGNOSTIC LOG] [Frontend] PDF Document loaded:`, {
+            documentId: doc.documentId || doc.id,
+            title: doc.title,
+            department: doc.department,
+            resolvedPdfUrl,
+            hasBase64: !!doc.fileBase64
+          });
           setActivePdfDocData(doc);
+        } else {
+          console.warn(`[DIAGNOSTIC LOG] [Frontend] Fetching endpoint "${endpoint}" returned status ${res.status}`);
         }
       } catch (e) {
-        console.error('Failed to fetch pdf document:', e);
+        console.error('[DIAGNOSTIC LOG] [Frontend] Failed to fetch pdf document:', e);
       }
     };
     fetchPdfDoc();

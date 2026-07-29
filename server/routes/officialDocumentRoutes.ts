@@ -45,10 +45,14 @@ router.get('/public/:id', async (req, res) => {
   try {
     const docObj = await OfficialDocumentRepository.getById(id);
     if (!docObj) {
+      console.log(`[DIAGNOSTIC LOG] Public document fetch failed: ID "${id}" not found in Firestore`);
       return res.status(404).json({ error: 'Official document not found' });
     }
+    const resolvedPdfUrl = docObj.pdfUrl || (docObj.fileBase64 ? `Base64 (${docObj.fileBase64.length} chars)` : 'None');
+    console.log(`[DIAGNOSTIC LOG] Public document fetched - ID: "${id}", Department: "${docObj.department}", Title: "${docObj.title}", Resolved PDF URL / base64: "${resolvedPdfUrl}"`);
     res.json(docObj);
   } catch (err: any) {
+    console.error(`[DIAGNOSTIC LOG] Error fetching public document "${id}":`, err.message);
     res.status(500).json({ error: err.message });
   }
 });

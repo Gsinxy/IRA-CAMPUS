@@ -772,6 +772,9 @@ router.post('/', async (req: Request, res: Response) => {
           bestDoc = sortedDocs[0] || null;
 
           // Add debug logs required by Requirement 4
+          console.log(`[DIAGNOSTIC LOG] extractedDepartment: "${extractedDept || 'undefined'}"`);
+          console.log(`[DIAGNOSTIC LOG] targetDepartment: "${targetDepartment || 'undefined'}"`);
+          console.log(`[DIAGNOSTIC LOG] selectedDocumentId: "${bestDoc ? (bestDoc.documentId || bestDoc.id) : 'null'}"`);
           console.log(`[DEPT ROUTING] Detected department: ${extractedDept || 'None (Using student profile fallback)'}`);
           console.log(`[DEPT ROUTING] Matched Firestore document: ${bestDoc ? 'Yes' : 'No'}`);
           if (bestDoc) {
@@ -890,6 +893,9 @@ router.post('/', async (req: Request, res: Response) => {
 
           finalResponse = `📄 **Official ${bestDoc.category} Document**\n\nI have successfully located the official document **"${bestDoc.title}"** inside our official repository.\n\nOpening the built-in PDF Viewer and searching for: **"${pdfNavigation.keyword}"**.\n\nPlease check the panel on the right side of your screen to browse the document, jump between matching highlights, or download/print the official PDF.`;
         }
+
+        console.log(`[DIAGNOSTIC LOG] pdfNavigation:`, JSON.stringify(pdfNavigation, null, 2));
+        console.log(`[DIAGNOSTIC LOG] resolved PDF URL / storage: "${bestDoc?.pdfUrl || (bestDoc?.fileBase64 ? `Base64 (${bestDoc.fileBase64.length} chars)` : 'None')}"`);
 
         const totalDuration = Date.now() - globalStartTime;
 
