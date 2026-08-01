@@ -3,6 +3,7 @@ import { SettingsRepository } from '../repositories/settingsRepository.js';
 import { AnalyticsRepository } from '../repositories/analyticsRepository.js';
 import { DocumentRepository } from '../repositories/documentRepository.js';
 import { OfficialDocumentRepository } from '../repositories/officialDocumentRepository.js';
+import { ProgrammeStructureRepository } from '../repositories/programmeStructureRepository.js';
 import { RagService } from '../services/ragService.js';
 import { GeminiService } from '../services/geminiService.js';
 import { NvidiaService, getVerifiedNvidiaKey, parseNvidiaError } from '../services/nvidiaService.js';
@@ -678,6 +679,277 @@ router.post('/', async (req: Request, res: Response) => {
           extractedCourse = `Paper ${mapped}`;
         }
 
+        // Diagnostic Logs for Chat Steps 1 - 4
+        const targetDepartment = extractedDept || studentProfile?.department;
+        const targetProg = extractedProg || studentProfile?.programme;
+
+        console.log(`[CHAT STEP 1] Request received: message="${message}"`);
+        console.log(`[CHAT STEP 2] Query parsed: dept="${extractedDept || 'none'}", sem="${extractedSem || 'none'}", prog="${extractedProg || 'none'}", course="${extractedCourse || 'none'}"`);
+        console.log(`[CHAT STEP 3] Department detected: "${targetDepartment || 'none'}"`);
+        console.log(`[CHAT STEP 4] Semester detected: "${extractedSem || 'none'}"`);
+
+        // Check Programme Structure FIRST if department and semester are present and no specific course/paper is requested
+        if (!extractedCourse && targetDepartment && extractedSem) {
+          try {
+            console.log(`[CHAT STEP 5] Fetching programme_structures for Dept="${targetDepartment}", Sem="${extractedSem}"`);
+            const allPSDocs = await ProgrammeStructureRepository.getAll();
+            const totalCount = allPSDocs ? allPSDocs.length : 0;
+            console.log(`[CHAT STEP 6] Firestore documents loaded: count=${totalCount}`);
+
+            const progStruct = await ProgrammeStructureRepository.getByDeptAndSemester(targetDepartment, extractedSem, targetProg);
+
+            if (progStruct) {
+              console.log(`[CHAT STEP 7] Matching programme structure found: ID="${progStruct.id}", Title="${progStruct.title || 'N/A'}"`);
+              console.log(`[CHAT STEP 8] Formatting response`);
+
+              const psAny = progStruct as any;
+              const content = psAny.content && typeof psAny.content === 'object' && !Array.isArray(psAny.content) ? psAny.content : {};
+
+              const getCategory = (camelKey: string, snakeKey: string): any => {
+                if (content[camelKey] !== undefined) return content[camelKey];
+                if (content[snakeKey] !== undefined) return content[snakeKey];
+                if (content[camelKey.toUpperCase()] !== undefined) return content[camelKey.toUpperCase()];
+                if (psAny[camelKey] !== undefined) return psAny[camelKey];
+                if (psAny[snakeKey] !== undefined) return psAny[snakeKey];
+                if (psAny[camelKey.toUpperCase()] !== undefined) return psAny[camelKey.toUpperCase()];
+                return undefined;
+              };
+
+              const formatCourseItem = (item: any): string => {
+                if (!item) return '';
+                if (typeof item === 'string') return item.trim();
+                if (typeof item === 'number') return String(item);
+                if (typeof item === 'object') {
+                  if (item.department && (item.course || item.courseName || item.title || item.name)) {
+                    const cName = item.course || item.courseName || item.title || item.name;
+                    return `${item.department} — ${cName}`;
+                  }
+                  const num = item.paper || item.paperNumber || item.paper_number || item.code || '';
+                  const name = item.course || item.courseName || item.course_name || item.title || item.name || item.subject || '';
+                  if (num && name) return `${num} – ${name}`;
+                  if (name) return name;
+                  if (num) return num;
+                  if (item.description) return item.description;
+                }
+                return '';
+              };
+
+              const semName = extractedSem || progStruct.semester || 'Semester';
+              const semText = semName.toLowerCase().startsWith('sem') ? semName : `Semester ${semName}`;
+              const deptName = targetDepartment || progStruct.department || 'Department';
+              const progName = targetProg || progStruct.programme || 'Honours';
+
+              let cleanTitle = progStruct.title || `${deptName} ${progName} – ${semText}`;
+              cleanTitle = cleanTitle.replace(/^📚\s*/, '').replace(/\s*Syllabus$/i, '').trim();
+              if (!cleanTitle.includes('–') && !cleanTitle.includes('-')) {
+                cleanTitle = `${deptName} ${progName} – ${semText}`;
+              }
+
+              const isPlaceholder = (str: string): boolean => {
+                if (!str || typeof str !== 'string') return true;
+                const l = str.trim().toLowerCase();
+                if (l === '') return true;
+                if (l.includes('no sec') || l.includes('no aec') || l.includes('no vac') || l.includes('no dse')) return true;
+                if (l.includes('not specified') || l.includes('no information') || l.includes('refer to your department') || l.includes('refer to department')) return true;
+                return false;
+              };
+
+              const parseCategoryData = (val: any): { description?: string; items: string[] } => {
+                if (val === null || val === undefined) return { items: [] };
+
+                let description: string | undefined = undefined;
+                const items: string[] = [];
+
+                if (typeof val === 'string') {
+                  if (!isPlaceholder(val)) {
+                    const lines = val.split('\n').map(s => s.trim()).filter(s => s && !isPlaceholder(s));
+                    lines.forEach(line => {
+                      const cleanLine = line.replace(/^[•*–-]\s*/, '').trim();
+                      if (cleanLine) items.push(cleanLine);
+                    });
+                  }
+                } else if (Array.isArray(val)) {
+                  val.forEach(item => {
+                    const formatted = formatCourseItem(item);
+                    if (formatted && !isPlaceholder(formatted)) {
+                      items.push(formatted);
+                    }
+                  });
+                } else if (typeof val === 'object') {
+                  if (val.description && typeof val.description === 'string' && !isPlaceholder(val.description)) {
+                    description = val.description.trim();
+                  }
+
+                  const listProp = val.courses || val.papers || val.items || val.list;
+                  if (Array.isArray(listProp)) {
+                    listProp.forEach(item => {
+                      const formatted = formatCourseItem(item);
+                      if (formatted && !isPlaceholder(formatted)) {
+                        items.push(formatted);
+                      }
+                    });
+                  } else if (typeof listProp === 'string' && !isPlaceholder(listProp)) {
+                    const lines = listProp.split('\n').map(s => s.trim()).filter(s => s && !isPlaceholder(s));
+                    lines.forEach(line => {
+                      const cleanLine = line.replace(/^[•*–-]\s*/, '').trim();
+                      if (cleanLine) items.push(cleanLine);
+                    });
+                  } else {
+                    Object.keys(val).forEach(k => {
+                      if (k !== 'description') {
+                        const v = val[k];
+                        if (Array.isArray(v)) {
+                          v.forEach(subItem => {
+                            const formatted = formatCourseItem(subItem);
+                            if (formatted && !isPlaceholder(formatted)) items.push(formatted);
+                          });
+                        } else {
+                          const formatted = formatCourseItem(v);
+                          if (formatted && !isPlaceholder(formatted)) items.push(formatted);
+                        }
+                      }
+                    });
+                  }
+                }
+
+                return { description, items };
+              };
+
+              const sections: string[] = [];
+
+              // 📘 Title
+              sections.push(`📚 ${cleanTitle}`);
+
+              // Category order strictly matching rule 5:
+              // 📖 Core Papers
+              // 🌱 Minor
+              // 🌍 MDC (Multidisciplinary Courses)
+              // 🛠 SEC (only if courses exist)
+              // 🎯 DSE (only if courses exist)
+              // 🌟 VAC (only if courses exist)
+              // 📚 AEC (only if courses exist)
+              // 📝 Notes
+              const categories = [
+                { keyCamel: 'corePapers', keySnake: 'core_papers', header: '📖 Core Papers' },
+                { keyCamel: 'minor', keySnake: 'minor', header: '🌱 Minor' },
+                { keyCamel: 'mdc', keySnake: 'mdc', header: '🌍 Multidisciplinary Course (MDC)' },
+                { keyCamel: 'sec', keySnake: 'sec', header: '🛠 Skill Enhancement Course (SEC)' },
+                { keyCamel: 'dse', keySnake: 'dse', header: '🎯 Discipline Specific Elective (DSE)' },
+                { keyCamel: 'vac', keySnake: 'vac', header: '🌟 Value Added Course (VAC)' },
+                { keyCamel: 'aec', keySnake: 'aec', header: '📚 Ability Enhancement Course (AEC)' },
+                { keyCamel: 'notes', keySnake: 'notes', header: '📝 Notes' },
+              ];
+
+              categories.forEach(cat => {
+                const rawData = getCategory(cat.keyCamel, cat.keySnake);
+                const parsed = parseCategoryData(rawData);
+
+                if (parsed.items.length > 0 || parsed.description) {
+                  let sectionText = `${cat.header}\n\n`;
+                  if (parsed.description) {
+                    sectionText += `${parsed.description}\n\n`;
+                  }
+                  if (parsed.items.length > 0) {
+                    sectionText += parsed.items.map(it => `• ${it}`).join('\n');
+                  }
+                  sections.push(sectionText.trim());
+                }
+              });
+
+              // ℹ️ Description (only if top-level description exists and has data)
+              const topDescription = getCategory('description', 'description');
+              if (topDescription && typeof topDescription === 'string' && topDescription.trim()) {
+                const descParsed = parseCategoryData(topDescription);
+                if (descParsed.items.length > 0 || descParsed.description) {
+                  let descText = `ℹ️ Description\n\n`;
+                  if (descParsed.description) descText += `${descParsed.description}\n\n`;
+                  if (descParsed.items.length > 0) descText += descParsed.items.join('\n\n');
+                  sections.push(descText.trim());
+                }
+              }
+
+              // 💬 Interactive Ending Prompt
+              let endingText = `💬 Need the detailed syllabus?\n\nReply with:\n\n`;
+              const coreParsed = parseCategoryData(getCategory('corePapers', 'core_papers'));
+              const suggestions: string[] = [];
+
+              if (coreParsed.items.length > 0) {
+                coreParsed.items.forEach(item => {
+                  if (item.includes('—') || item.includes('–') || item.includes('-')) {
+                    const parts = item.split(/—|–|-/);
+                    const paperPart = parts[0].trim();
+                    const namePart = parts.slice(1).join(' ').trim();
+                    if (paperPart && !suggestions.includes(`Open ${paperPart} syllabus`)) {
+                      suggestions.push(`Open ${paperPart} syllabus`);
+                    }
+                    if (namePart && !suggestions.includes(`Open ${namePart} syllabus`)) {
+                      suggestions.push(`Open ${namePart} syllabus`);
+                    }
+                  } else {
+                    if (!suggestions.includes(`Open ${item} syllabus`)) {
+                      suggestions.push(`Open ${item} syllabus`);
+                    }
+                  }
+                });
+              }
+
+              if (suggestions.length === 0) {
+                suggestions.push(`Open ${deptName} ${semText} syllabus`);
+              }
+
+              const limitedSuggestions = suggestions.slice(0, 3);
+              endingText += limitedSuggestions.map(s => `• ${s}`).join('\n');
+              sections.push(endingText.trim());
+
+              const structText = sections.join('\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n');
+
+              console.log(`[CHAT STEP 9] Response formatted successfully: length=${structText.length}`);
+              console.log(`[CHAT STEP 10] Sending response to client`);
+
+              const totalDuration = Date.now() - globalStartTime;
+              try {
+                await AnalyticsRepository.logChatInteraction(
+                  message,
+                  structText,
+                  totalDuration,
+                  10,
+                  0,
+                  0,
+                  0,
+                  'Programme Structure',
+                  [],
+                  'anon-session'
+                );
+              } catch (analyticsErr) {
+                console.warn('[Analytics Error]', analyticsErr);
+              }
+
+              return res.json({
+                role: 'assistant',
+                content: structText,
+                text: structText,
+                answer: structText,
+                timestamp: new Date().toISOString(),
+                pdfNavigation: null
+              });
+            } else {
+              console.log(`[CHAT STEP 7] Matching programme structure found: NO MATCH FOUND for Dept="${targetDepartment}", Sem="${extractedSem}"`);
+            }
+          } catch (psError) {
+            console.error("[PROGRAMME STRUCTURE ERROR]", psError);
+            return res.json({
+              role: 'assistant',
+              content: "An internal error occurred while retrieving the programme structure.",
+              text: "An internal error occurred while retrieving the programme structure.",
+              answer: "An internal error occurred while retrieving the programme structure.",
+              timestamp: new Date().toISOString(),
+              pdfNavigation: null
+            });
+          }
+        } else {
+          console.log(`[CHAT STEP 5] Programme structure check skipped: ${extractedCourse ? 'Specific course requested ("' + extractedCourse + '")' : 'Missing department or semester'}`);
+        }
+
         // STEP 2: Load all official syllabus documents
         const syllabusDocs = allOfficialDocs.filter(d => d.category === 'Syllabus');
 
@@ -733,7 +1005,6 @@ router.post('/', async (req: Request, res: Response) => {
 
         if (!processedAsStandalone) {
           // STEP 3 & STEP 5: Identify the target department for standard routing
-          let targetDepartment = extractedDept || studentProfile?.department;
           let isFallbackToProfile = !extractedDept && !!studentProfile?.department;
 
           // STEP 6: If multiple documents match, prefer: 1. exact department, 2. exact programme, 3. latest academic year
@@ -741,8 +1012,6 @@ router.post('/', async (req: Request, res: Response) => {
           if (targetDepartment) {
             filteredDocs = syllabusDocs.filter(d => d.department?.toLowerCase() === targetDepartment!.toLowerCase());
           }
-
-          const targetProg = extractedProg || studentProfile?.programme;
 
           const sortedDocs = [...filteredDocs].sort((a, b) => {
             // 1. Exact department match

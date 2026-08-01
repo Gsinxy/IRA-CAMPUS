@@ -293,6 +293,29 @@
         "fileSize": { "type": "string" }
       },
       "required": ["id", "department", "semester", "session", "fileUrl", "fileType", "uploadedAt", "uploadedBy"]
+    },
+    "ProgrammeStructure": {
+      "title": "Programme Structure",
+      "description": "Semester-wise syllabus structure mapping for departments",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "department": { "type": "string" },
+        "programme": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "semester": { "type": "string" },
+        "corePapers": { "type": "array" },
+        "minor": { "type": "array" },
+        "mdc": { "type": "array" },
+        "aec": { "type": "array" },
+        "vac": { "type": "array" },
+        "sec": { "type": "array" },
+        "dse": { "type": "array" },
+        "practical": { "type": "array" },
+        "project": { "type": "array" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "department", "semester"]
     }
   },
   "firestore": {
@@ -347,6 +370,10 @@
     "/timetables/{docId}": {
       "schema": { "$ref": "#/entities/Timetable" },
       "description": "Official departmental and semester timetables"
+    },
+    "/programme_structures/{docId}": {
+      "schema": { "$ref": "#/entities/ProgrammeStructure" },
+      "description": "Departmental semester programme structure mapping"
     }
   }
 }

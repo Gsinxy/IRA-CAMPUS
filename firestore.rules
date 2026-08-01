@@ -118,5 +118,10 @@ service cloud.firestore {
     match /timetables/{docId=**} {
       allow read, write: if true;
     }
+
+    // Programme Structures Collection (Accessed by the unauthenticated server)
+    match /programme_structures/{docId=**} {
+      allow read, write: if true;
+    }
   }
 }

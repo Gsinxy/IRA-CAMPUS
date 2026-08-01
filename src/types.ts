@@ -175,3 +175,32 @@ export interface Timetable {
   fileSize?: string;
 }
 
+export interface CorePaper {
+  paperNumber: string; // e.g. "Paper I", "Paper V"
+  courseName: string;  // e.g. "Microeconomics I"
+}
+
+export interface ProgrammeStructure {
+  id: string;
+  department: string;
+  programme: string; // e.g. "UG", "PG"
+  semester: string; // e.g. "Semester III"
+  title: string;
+  keywords?: string[];
+  content: Record<string, any>;
+  academicYear?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+  // Legacy fields for backward compatibility
+  corePapers?: CorePaper[];
+  minor?: string[];
+  mdc?: string[];
+  aec?: string[];
+  vac?: string[];
+  sec?: string[];
+  dse?: string[];
+  practical?: string[];
+  project?: string[];
+  notes?: string;
+}
+

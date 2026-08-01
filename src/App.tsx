@@ -57,7 +57,8 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Layers
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -90,6 +91,7 @@ import { PdfSyllabusViewer } from './components/PdfSyllabusViewer';
 import { NavigationIndexTable } from './components/NavigationIndexTable';
 import { TimetableManagement } from './components/TimetableManagement';
 import { StudentTimetableViewer } from './components/StudentTimetableViewer';
+import { ProgrammeStructureManagement } from './components/ProgrammeStructureManagement';
 import { onAuthStateChanged, onIdTokenChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveConversationToFirestore, loadConversationsFromFirestore, deleteConversationFromFirestore, deleteConversationsFromFirestore } from './services/firebaseService';
@@ -1165,7 +1167,7 @@ export default function App() {
   const [isOffDocUploading, setIsOffDocUploading] = useState(false);
   const [offDocUploadError, setOffDocUploadError] = useState('');
   const [offDocUploadSuccess, setOffDocUploadSuccess] = useState(false);
-  const [adminTab, setAdminTab] = useState<'analytics' | 'knowledge' | 'official_docs' | 'timetable'>('analytics');
+  const [adminTab, setAdminTab] = useState<'analytics' | 'knowledge' | 'official_docs' | 'timetable' | 'programme_structure'>('analytics');
 
   // AI Knowledge Extraction System State
   const [pastedContent, setPastedContent] = useState('');
@@ -2629,7 +2631,7 @@ export default function App() {
         // Normal JSON response (fallback/mock mode)
         const data = await res.json();
         console.log('[DEBUG] Normal JSON response data:', data);
-        accumulatedText = data.text || '';
+        accumulatedText = data.text || data.content || data.answer || '';
         citations = data.citations || [];
         if (data.pdfNavigation) {
           pdfNav = data.pdfNavigation;
@@ -5297,6 +5299,18 @@ export default function App() {
                       <Calendar className="h-4 w-4" />
                       <span>📅 Timetable Management</span>
                     </button>
+
+                    <button
+                      onClick={() => setAdminTab('programme_structure')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        adminTab === 'programme_structure'
+                          ? 'bg-[#C89B4A] text-white shadow-sm shadow-[#C89B4A]/20'
+                          : 'text-[#6B6B6B] hover:bg-[#F2EEE8]/60 hover:text-[#1B1B1B]'
+                      }`}
+                    >
+                      <Layers className="h-4 w-4" />
+                      <span>📚 Programme Structure</span>
+                    </button>
                   </div>
 
                   {/* Workspaces Content Area */}
@@ -7267,6 +7281,10 @@ export default function App() {
 
                     {adminTab === 'timetable' && (
                       <TimetableManagement adminEmail={currentUser?.email || 'admin@ira.edu'} />
+                    )}
+
+                    {adminTab === 'programme_structure' && (
+                      <ProgrammeStructureManagement adminToken={adminToken} />
                     )}
 
                   </div>
