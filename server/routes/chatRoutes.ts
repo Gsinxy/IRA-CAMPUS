@@ -868,37 +868,57 @@ router.post('/', async (req: Request, res: Response) => {
                 }
               }
 
-              // 💬 Interactive Ending Prompt
-              let endingText = `💬 Need the detailed syllabus?\n\nReply with:\n\n`;
-              const coreParsed = parseCategoryData(getCategory('corePapers', 'core_papers'));
-              const suggestions: string[] = [];
+              // 📖 Want to view the detailed syllabus?
+              let endingText = `📖 Want to view the detailed syllabus?\n\nTry one of these searches:\n\n`;
 
-              if (coreParsed.items.length > 0) {
-                coreParsed.items.forEach(item => {
-                  if (item.includes('—') || item.includes('–') || item.includes('-')) {
-                    const parts = item.split(/—|–|-/);
-                    const paperPart = parts[0].trim();
-                    const namePart = parts.slice(1).join(' ').trim();
-                    if (paperPart && !suggestions.includes(`Open ${paperPart} syllabus`)) {
-                      suggestions.push(`Open ${paperPart} syllabus`);
-                    }
-                    if (namePart && !suggestions.includes(`Open ${namePart} syllabus`)) {
-                      suggestions.push(`Open ${namePart} syllabus`);
-                    }
-                  } else {
-                    if (!suggestions.includes(`Open ${item} syllabus`)) {
-                      suggestions.push(`Open ${item} syllabus`);
+              const extractCourseName = (item: any): string => {
+                if (!item) return '';
+                let nameStr = '';
+                if (typeof item === 'string') {
+                  nameStr = item.trim();
+                } else if (typeof item === 'object') {
+                  nameStr = item.course || item.courseName || item.course_name || item.paperName || item.paper_name || item.title || item.name || item.subject || '';
+                  if (!nameStr && item.description) nameStr = item.description;
+                } else {
+                  nameStr = String(item).trim();
+                }
+
+                if (nameStr.includes('—') || nameStr.includes('–') || nameStr.includes('-')) {
+                  const parts = nameStr.split(/—|–|-/);
+                  if (parts.length > 1) {
+                    const firstPart = parts[0].trim();
+                    if (/^paper\s+[ivxlcdm0-9]+/i.test(firstPart) || /^paper/i.test(firstPart) || /^[ivxlcdm0-9]+$/i.test(firstPart)) {
+                      return parts.slice(1).join(' ').trim();
                     }
                   }
-                });
-              }
+                }
+                return nameStr.trim();
+              };
+
+              const rawCore = getCategory('corePapers', 'core_papers');
+              const coreList: any[] = Array.isArray(rawCore)
+                ? rawCore
+                : (typeof rawCore === 'object' && rawCore !== null && Array.isArray(rawCore.courses)
+                    ? rawCore.courses
+                    : (rawCore ? [rawCore] : []));
+
+              const suggestions: string[] = [];
+
+              coreList.forEach((cpItem) => {
+                const cName = extractCourseName(cpItem);
+                if (cName && !isPlaceholder(cName)) {
+                  const searchStr = `${deptName} ${semText} ${cName} syllabus`;
+                  if (!suggestions.includes(searchStr)) {
+                    suggestions.push(searchStr);
+                  }
+                }
+              });
 
               if (suggestions.length === 0) {
-                suggestions.push(`Open ${deptName} ${semText} syllabus`);
+                suggestions.push(`${deptName} ${semText} syllabus`);
               }
 
-              const limitedSuggestions = suggestions.slice(0, 3);
-              endingText += limitedSuggestions.map(s => `• ${s}`).join('\n');
+              endingText += suggestions.map(s => `• ${s}`).join('\n');
               sections.push(endingText.trim());
 
               const structText = sections.join('\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n');
