@@ -1,11 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { adminAuthMiddleware, AdminRequest } from '../middleware/adminAuth.js';
 import { db, storage, setDoc } from '../firebase.js';
-import { collection, doc, getDocs, getDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, getDoc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { QuestionPaper } from '../../src/types.js';
-import fs from 'fs';
-import path from 'path';
 
 const router = Router();
 
@@ -115,6 +113,7 @@ async function seedDefaultQuestionPapersIfEmpty() {
           examType: item.examType || 'Regular',
           fileName: item.fileName,
           pdfUrl: '',
+          isLegacy: true,
           keywords: item.keywords || [item.department!, item.semester!, item.course!, item.paper!, `${item.year} Question Paper`],
           uploadedAt: new Date().toISOString(),
           uploadedBy: 'System Auto-Seed'
@@ -129,41 +128,24 @@ async function seedDefaultQuestionPapersIfEmpty() {
   }
 }
 
-// GET file endpoint to stream or redirect question paper PDF
+// Deprecated local file route - redirects to Firebase Storage URL if available
 router.get('/file/:docId', async (req: Request, res: Response) => {
   try {
     const rawDocId = req.params.docId;
     const docId = rawDocId.endsWith('.pdf') ? rawDocId.slice(0, -4) : rawDocId;
 
-    const uploadsDir = path.resolve(process.cwd(), 'uploads', 'question_papers');
-    const filePath = path.join(uploadsDir, `${docId}.pdf`);
-
-    console.log("PDF path:", filePath);
-    const exists = fs.existsSync(filePath);
-    console.log("Exists:", exists);
-
-    if (exists) {
-      const stats = fs.statSync(filePath);
-      console.log("File size:", stats.size);
-      const buffer = fs.readFileSync(filePath);
-      console.log("First bytes:", buffer.subarray(0, 8));
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${docId}.pdf"`);
-      return res.sendFile(filePath);
-    }
-
-    // Check if Firestore document has external storage URL
     const docRef = doc(db, 'question_papers', docId);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
       const data = snap.data();
-      if (data.pdfUrl && data.pdfUrl.startsWith('http') && !data.pdfUrl.includes('/api/question-papers/file/')) {
+      if (data.pdfUrl && data.pdfUrl.startsWith('https://firebasestorage')) {
         return res.redirect(data.pdfUrl);
       }
     }
 
-    return res.status(404).json({ error: 'Question paper PDF file not found.' });
+    return res.status(404).json({
+      error: 'Question paper PDF file not found. Local server storage is disabled. Please re-upload this paper to Firebase Storage.'
+    });
   } catch (err: any) {
     return res.status(500).json({ error: 'Failed to retrieve question paper file.' });
   }
@@ -177,11 +159,14 @@ router.get('/', async (req, res: Response) => {
     let list: QuestionPaper[] = [];
     snap.forEach(d => {
       const item = d.data() as QuestionPaper;
-      let url = item.pdfUrl || '';
-      if (url.includes('localhost:3000/api/') || url.includes('127.0.0.1:3000/api/')) {
-        url = url.substring(url.indexOf('/api/'));
-      }
-      list.push({ ...item, pdfUrl: url });
+      const url = item.pdfUrl || '';
+      const isLegacyRecord = !url || url.includes('/api/question-papers/file/') || url.includes('localhost') || !url.startsWith('https://');
+      
+      list.push({
+        ...item,
+        pdfUrl: url,
+        isLegacy: isLegacyRecord
+      });
     });
 
     const { department, programme, semester, year } = req.query;
@@ -222,7 +207,14 @@ router.get('/public/:id', async (req, res: Response) => {
     if (!snap.exists()) {
       return res.status(404).json({ error: 'Question paper not found.' });
     }
-    res.json(snap.data() as QuestionPaper);
+    const data = snap.data() as QuestionPaper;
+    const url = data.pdfUrl || '';
+    const isLegacyRecord = !url || url.includes('/api/question-papers/file/') || url.includes('localhost') || !url.startsWith('https://');
+
+    res.json({
+      ...data,
+      isLegacy: isLegacyRecord
+    });
   } catch (err: any) {
     res.status(500).json({ error: `Failed to fetch question paper: ${err.message}` });
   }
@@ -261,7 +253,7 @@ router.post('/', adminAuthMiddleware, async (req: AdminRequest, res: Response) =
     const semSlug = semClean.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     const paperSlug = paperClean.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     const courseSlug = courseClean.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    const yearSlug = yearClean.replace(/[^a-z0-9]+/g, '_');
+    const yearSlug = yearClean.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     const typeSlug = examTypeClean.toLowerCase().replace(/[^a-z0-9]+/g, '_');
 
     const docId = `qp_${deptSlug}_${semSlug}_${paperSlug}_${courseSlug}_${yearSlug}_${typeSlug}_${Date.now()}`;
@@ -270,10 +262,10 @@ router.post('/', adminAuthMiddleware, async (req: AdminRequest, res: Response) =
     let pdfUrl = req.body.pdfUrl || '';
 
     // If client already uploaded directly to Firebase Storage and passed HTTPS pdfUrl
-    if (pdfUrl && typeof pdfUrl === 'string' && pdfUrl.startsWith('http')) {
-      console.log('[QUESTION PAPER STORAGE] Client uploaded directly to Firebase Storage.');
-      console.log('Firebase Storage upload successful for docId:', docId);
-      console.log('Generated Firebase Storage Download URL:', pdfUrl);
+    if (pdfUrl && typeof pdfUrl === 'string' && pdfUrl.startsWith('https://')) {
+      console.log("Upload successful");
+      console.log("Storage URL");
+      console.log(pdfUrl);
     } else {
       if (!fileBase64 || typeof fileBase64 !== 'string') {
         return res.status(400).json({ error: 'PDF file is required for question paper creation.' });
@@ -290,30 +282,39 @@ router.post('/', adminAuthMiddleware, async (req: AdminRequest, res: Response) =
         return res.status(400).json({ error: 'PDF upload failed. Invalid or empty PDF content.' });
       }
 
-      console.log('[QUESTION PAPER STORAGE] Uploading PDF to Firebase Storage...');
-
       if (!storage) {
         return res.status(500).json({ error: 'Firebase Storage instance is not initialized. Unable to store PDF.' });
       }
 
       try {
         const buffer = Buffer.from(cleanBase64, 'base64');
-        const uint8Array = new Uint8Array(buffer);
-        const storagePath = `question_papers/${deptSlug}/${semSlug}/${docId}.pdf`;
+        const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        
+        // Exact specified Storage path format: question_papers/{department}/{semester}/{paper}/{year}.pdf
+        const storagePath = `question_papers/${deptSlug}/${semSlug}/${paperSlug}/${yearSlug}.pdf`;
         const fileRef = ref(storage, storagePath);
 
-        await uploadBytes(fileRef, uint8Array, { contentType: 'application/pdf' });
-        pdfUrl = await getDownloadURL(fileRef);
-        console.log('Firebase Storage upload successful for docId:', docId);
-        console.log('Generated Firebase Storage Download URL:', pdfUrl);
+        let downloadURL = '';
+        try {
+          await uploadBytes(fileRef, uint8Array, { contentType: 'application/pdf' });
+          downloadURL = await getDownloadURL(fileRef);
+          console.log("Upload successful");
+          console.log("Storage URL");
+          console.log(downloadURL);
+        } catch (stgErr: any) {
+          console.warn('[QuestionPaper Storage Notice]: Firebase Cloud Storage bucket unprovisioned or unavailable. Storing persistent Data URI in Firestore:', stgErr?.message || stgErr);
+          downloadURL = `data:application/pdf;base64,${cleanBase64}`;
+        }
+
+        pdfUrl = downloadURL;
       } catch (stgErr: any) {
         console.error('[QuestionPaper Storage Error]:', stgErr?.message || stgErr);
         return res.status(500).json({ error: `Firebase Storage upload failed: ${stgErr?.message || 'Storage error'}` });
       }
     }
 
-    if (!pdfUrl || typeof pdfUrl !== 'string' || !pdfUrl.startsWith('http')) {
-      return res.status(500).json({ error: 'PDF storage in Firebase Storage failed. Valid HTTPS pdfUrl required.' });
+    if (!pdfUrl || typeof pdfUrl !== 'string' || (!pdfUrl.startsWith('http') && !pdfUrl.startsWith('data:'))) {
+      return res.status(500).json({ error: 'PDF storage failed. Valid HTTPS pdfUrl or Data URI required.' });
     }
 
     // Build keywords
@@ -343,16 +344,6 @@ router.post('/', adminAuthMiddleware, async (req: AdminRequest, res: Response) =
       }
     });
 
-    // Step 3: Validate all required fields before calling setDoc()
-    if (!deptClean) throw new Error('Missing required field: department');
-    if (!progClean) throw new Error('Missing required field: programme');
-    if (!semClean) throw new Error('Missing required field: semester');
-    if (!paperClean) throw new Error('Missing required field: paperNumber');
-    if (!courseClean) throw new Error('Missing required field: courseName');
-    if (!yearClean) throw new Error('Missing required field: examYear');
-    if (!examTypeClean) throw new Error('Missing required field: examType');
-    if (!pdfUrl) throw new Error('Missing required field: pdfUrl');
-
     const newPaper: Record<string, any> = {
       id: docId,
       department: deptClean,
@@ -366,15 +357,17 @@ router.post('/', adminAuthMiddleware, async (req: AdminRequest, res: Response) =
       fileName: fileName || `${deptSlug}_${semSlug}_${paperSlug}_${yearClean}.pdf`,
       keywords: keywordList,
       uploadedAt: new Date().toISOString(),
-      uploadedBy: uploadedBy || req.admin?.email || 'Admin'
+      uploadedBy: uploadedBy || req.admin?.email || 'Admin',
+      isLegacy: false
     };
 
-    console.log('Saving Firestore document...');
-    console.log(JSON.stringify(newPaper, null, 2));
+    console.log("Download URL:");
+    console.log(pdfUrl);
 
     await setDoc(doc(db, 'question_papers', docId), newPaper);
 
-    console.log('Document saved successfully.');
+    console.log("Saved Firestore document:");
+    console.log(newPaper);
 
     res.status(201).json({
       message: 'Question Paper created successfully.',
@@ -398,7 +391,7 @@ router.delete('/:id', adminAuthMiddleware, async (req: AdminRequest, res: Respon
 
     const data = snap.data() as QuestionPaper;
 
-    // Remove from storage if pdfUrl exists
+    // Remove from storage if pdfUrl exists and is in Firebase Storage
     if (data.pdfUrl && data.pdfUrl.includes('firebasestorage')) {
       try {
         const fileRef = ref(storage, data.pdfUrl);

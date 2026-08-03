@@ -146,28 +146,37 @@ export const QuestionPaperManagement: React.FC<QuestionPaperManagementProps> = (
       const semSlug = semester.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
       const paperSlug = paper.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
       const courseSlug = course.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
-      const yearSlug = year.trim().replace(/[^a-z0-9]+/g, '_');
+      const yearSlug = year.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
       const typeSlug = examType.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
       const docId = `qp_${deptSlug}_${semSlug}_${paperSlug}_${courseSlug}_${yearSlug}_${typeSlug}_${Date.now()}`;
 
-      const storagePath = `question_papers/${deptSlug}/${semSlug}/${docId}.pdf`;
+      // Storage path format: question_papers/{department}/{semester}/{paper}/{year}.pdf
+      const storagePath = `question_papers/${deptSlug}/${semSlug}/${paperSlug}/${yearSlug}.pdf`;
       const fileRef = ref(storage, storagePath);
 
-      console.log('[QUESTION PAPER STORAGE] Direct Firebase Storage upload starting...');
-      console.log('PDF Storage Path:', storagePath);
+      let downloadURL = '';
+      try {
+        if (selectedFile) {
+          const arrayBuffer = await selectedFile.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          await uploadBytes(fileRef, uint8Array, { contentType: 'application/pdf' });
+          downloadURL = await getDownloadURL(fileRef);
 
-      let firebasePdfUrl = '';
-      if (selectedFile) {
-        const snapshot = await uploadBytes(fileRef, selectedFile, { contentType: 'application/pdf' });
-        console.log('[QUESTION PAPER STORAGE] uploadBytes successful. Path:', snapshot.ref.fullPath);
-        firebasePdfUrl = await getDownloadURL(fileRef);
-        console.log('[QUESTION PAPER STORAGE] Generated Firebase Storage Download URL:', firebasePdfUrl);
-      } else if (fileBase64) {
-        const cleanB64 = fileBase64.includes(',') ? fileBase64.split(',')[1] : fileBase64;
-        await uploadString(fileRef, cleanB64, 'base64', { contentType: 'application/pdf' });
-        console.log('[QUESTION PAPER STORAGE] uploadString successful.');
-        firebasePdfUrl = await getDownloadURL(fileRef);
-        console.log('[QUESTION PAPER STORAGE] Generated Firebase Storage Download URL:', firebasePdfUrl);
+          console.log("Upload successful");
+          console.log("Storage URL");
+          console.log(downloadURL);
+        } else if (fileBase64) {
+          const cleanB64 = fileBase64.includes(',') ? fileBase64.split(',')[1] : fileBase64;
+          await uploadString(fileRef, cleanB64, 'base64', { contentType: 'application/pdf' });
+          downloadURL = await getDownloadURL(fileRef);
+
+          console.log("Upload successful");
+          console.log("Storage URL");
+          console.log(downloadURL);
+        }
+      } catch (stgError: any) {
+        console.warn('[Storage Notice] Firebase Storage upload unprovisioned or unavailable, sending base64 to server:', stgError?.message || stgError);
+        downloadURL = '';
       }
 
       const payload = {
@@ -179,7 +188,7 @@ export const QuestionPaperManagement: React.FC<QuestionPaperManagementProps> = (
         year,
         examType,
         keywords,
-        pdfUrl: firebasePdfUrl,
+        pdfUrl: downloadURL,
         fileBase64,
         fileName: selectedFile?.name || `${department}_${semester}_${paper}_${year}.pdf`,
         uploadedBy: adminEmail || 'Admin'

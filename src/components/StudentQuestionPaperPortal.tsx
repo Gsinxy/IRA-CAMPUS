@@ -153,7 +153,7 @@ export const StudentQuestionPaperPortal: React.FC<StudentQuestionPaperPortalProp
 
   const handleDownload = (paper: QuestionPaper) => {
     if (paper.pdfUrl) {
-      console.log('[STUDENT PORTAL] Downloading PDF directly from Firebase Storage URL:', paper.pdfUrl);
+      console.log("Downloading", paper.pdfUrl);
       const a = document.createElement('a');
       a.href = paper.pdfUrl;
       a.download = paper.fileName || `${paper.department}_${paper.semester}_${paper.paper}_${paper.year}.pdf`;
@@ -161,7 +161,15 @@ export const StudentQuestionPaperPortal: React.FC<StudentQuestionPaperPortalProp
       a.rel = 'noopener noreferrer';
       a.click();
     } else {
-      alert('PDF file URL is not available for this paper.');
+      alert('This question paper was uploaded to legacy storage and must be re-uploaded to Firebase Storage.');
+    }
+  };
+
+  const handleOpenNewWindow = (paper: QuestionPaper) => {
+    if (paper.pdfUrl) {
+      console.log("Opening");
+      console.log(paper.pdfUrl);
+      window.open(paper.pdfUrl, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -424,10 +432,17 @@ export const StudentQuestionPaperPortal: React.FC<StudentQuestionPaperPortalProp
                             </div>
 
                             {/* PDF Status */}
-                            <div className="flex items-center gap-2 text-emerald-700 font-bold">
-                              <span>📄</span>
-                              <span>PDF Available</span>
-                            </div>
+                            {paper.isLegacy ? (
+                              <div className="flex items-center gap-1.5 text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg text-[11px] font-bold">
+                                <span>⚠️</span>
+                                <span>Legacy Record (Requires Re-upload to Firebase Storage)</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 text-emerald-700 font-bold">
+                                <span>📄</span>
+                                <span>PDF Available (Firebase Storage)</span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -491,15 +506,13 @@ export const StudentQuestionPaperPortal: React.FC<StudentQuestionPaperPortalProp
                 </button>
 
                 {getPdfSrc(previewPaper) && (
-                  <a
-                    href={getPdfSrc(previewPaper)!}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    onClick={() => handleOpenNewWindow(previewPaper)}
                     className="bg-white/10 hover:bg-white/20 text-white px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
                     <Maximize2 className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Open Full Screen</span>
-                  </a>
+                  </button>
                 )}
 
                 <button

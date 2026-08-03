@@ -194,6 +194,7 @@ export interface QuestionPaper {
   keywords?: string[];
   uploadedAt: string;
   uploadedBy?: string;
+  isLegacy?: boolean;
 }
 
 export interface ProgrammeStructure {
