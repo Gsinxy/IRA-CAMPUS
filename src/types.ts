@@ -180,7 +180,24 @@ export interface CorePaper {
   courseName: string;  // e.g. "Microeconomics I"
 }
 
+export interface QuestionPaper {
+  id: string;
+  department: string;
+  programme: string;
+  semester: string;
+  paper: string;
+  course: string;
+  year: string;
+  examType: string;
+  pdfUrl: string;
+  fileName?: string;
+  keywords?: string[];
+  uploadedAt: string;
+  uploadedBy?: string;
+}
+
 export interface ProgrammeStructure {
+
   id: string;
   department: string;
   programme: string; // e.g. "UG", "PG"

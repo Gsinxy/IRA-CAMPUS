@@ -316,6 +316,25 @@
         "notes": { "type": "string" }
       },
       "required": ["id", "department", "semester"]
+    },
+    "QuestionPaper": {
+      "title": "Question Paper",
+      "description": "Previous year examination question paper metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "department": { "type": "string" },
+        "programme": { "type": "string" },
+        "semester": { "type": "string" },
+        "paper": { "type": "string" },
+        "course": { "type": "string" },
+        "year": { "type": "string" },
+        "examType": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "fileName": { "type": "string" },
+        "keywords": { "type": "array" }
+      },
+      "required": ["id", "department", "programme", "semester", "paper", "course", "year", "examType", "pdfUrl"]
     }
   },
   "firestore": {
@@ -374,6 +393,10 @@
     "/programme_structures/{docId}": {
       "schema": { "$ref": "#/entities/ProgrammeStructure" },
       "description": "Departmental semester programme structure mapping"
+    },
+    "/question_papers/{docId}": {
+      "schema": { "$ref": "#/entities/QuestionPaper" },
+      "description": "Previous year examination question papers"
     }
   }
 }

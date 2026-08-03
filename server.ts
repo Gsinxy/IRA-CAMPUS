@@ -21,6 +21,7 @@ import chatRouter from './server/routes/chatRoutes.js';
 import officialDocumentRouter from './server/routes/officialDocumentRoutes.js';
 import timetableRouter from './server/routes/timetableRoutes.js';
 import programmeStructureRouter from './server/routes/programmeStructureRoutes.js';
+import questionPaperRouter from './server/routes/questionPaperRoutes.js';
 
 import fs from 'fs';
 
@@ -147,6 +148,7 @@ async function bootstrap() {
   app.use('/api/official-documents', officialDocumentRouter);
   app.use('/api/timetables', timetableRouter);
   app.use('/api/programme-structure', programmeStructureRouter);
+  app.use('/api/question-papers', questionPaperRouter);
 
   // Alias /api/extract to /api/documents/extract
   app.post('/api/extract', (req, res, next) => {

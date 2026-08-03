@@ -123,5 +123,13 @@ service cloud.firestore {
     match /programme_structures/{docId=**} {
       allow read, write: if true;
     }
+
+    // Question Papers Collection (Accessed by the unauthenticated server)
+    match /question_papers/{docId} {
+      allow read, write: if true;
+    }
+    match /question_papers/{docId=**} {
+      allow read, write: if true;
+    }
   }
 }

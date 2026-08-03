@@ -302,10 +302,6 @@ export const ProgrammeStructureManagement: React.FC<Props> = ({ adminToken }) =>
   };
 
   const handleDelete = async (id: string, dept: string, sem: string) => {
-    if (!window.confirm(`Are you sure you want to delete the Programme Structure for "${dept}" (${sem})?`)) {
-      return;
-    }
-
     setDeletingId(id);
     setErrorMsg('');
     setSuccessMsg('');

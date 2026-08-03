@@ -92,6 +92,8 @@ import { NavigationIndexTable } from './components/NavigationIndexTable';
 import { TimetableManagement } from './components/TimetableManagement';
 import { StudentTimetableViewer } from './components/StudentTimetableViewer';
 import { ProgrammeStructureManagement } from './components/ProgrammeStructureManagement';
+import { StudentQuestionPaperPortal } from './components/StudentQuestionPaperPortal';
+import { QuestionPaperManagement } from './components/QuestionPaperManagement';
 import { onAuthStateChanged, onIdTokenChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { saveConversationToFirestore, loadConversationsFromFirestore, deleteConversationFromFirestore, deleteConversationsFromFirestore } from './services/firebaseService';
@@ -274,8 +276,8 @@ const UniversityBuildingSVG = () => (
 );
 
 export default function App() {
-  // Navigation & tabs state: 'chat' | 'admin'
-  const [activeTab, setActiveTab] = useState<'chat' | 'admin'>('chat');
+  // Navigation & tabs state: 'chat' | 'timetables' | 'question_papers' | 'admin'
+  const [activeTab, setActiveTab] = useState<'chat' | 'timetables' | 'question_papers' | 'admin'>('chat');
   
   // Custom non-blocking modal confirmation / alert state
   const [customDialog, setCustomDialog] = useState<{
@@ -1167,7 +1169,7 @@ export default function App() {
   const [isOffDocUploading, setIsOffDocUploading] = useState(false);
   const [offDocUploadError, setOffDocUploadError] = useState('');
   const [offDocUploadSuccess, setOffDocUploadSuccess] = useState(false);
-  const [adminTab, setAdminTab] = useState<'analytics' | 'knowledge' | 'official_docs' | 'timetable' | 'programme_structure'>('analytics');
+  const [adminTab, setAdminTab] = useState<'analytics' | 'knowledge' | 'official_docs' | 'timetable' | 'programme_structure' | 'question_papers'>('analytics');
 
   // AI Knowledge Extraction System State
   const [pastedContent, setPastedContent] = useState('');
@@ -4053,30 +4055,38 @@ export default function App() {
               Your Campus Assistant
             </span>
 
-            {currentUser && (
-              <nav className="flex items-center space-x-1 border-l border-[#E6DED3] pl-3 ml-3 text-[11px] font-bold">
-                <button
-                  onClick={() => setActiveTab('chat')}
-                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-                    activeTab === 'chat'
-                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
-                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
-                  }`}
-                >
-                  AI Chat
-                </button>
-                <button
-                  onClick={() => setActiveTab('timetables')}
-                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-                    activeTab === 'timetables'
-                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
-                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
-                  }`}
-                >
-                  📅 Timetables
-                </button>
-              </nav>
-            )}
+            <nav className="flex items-center space-x-1 border-l border-[#E6DED3] pl-3 ml-3 text-[11px] font-bold">
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                  activeTab === 'chat'
+                    ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                }`}
+              >
+                AI Chat
+              </button>
+              <button
+                onClick={() => setActiveTab('timetables')}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                  activeTab === 'timetables'
+                    ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                }`}
+              >
+                📅 Timetables
+              </button>
+              <button
+                onClick={() => setActiveTab('question_papers')}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                  activeTab === 'question_papers'
+                    ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                }`}
+              >
+                📝 Question Papers
+              </button>
+            </nav>
           </div>
 
           <div className="flex items-center space-x-3 text-xs font-semibold relative">
@@ -4203,30 +4213,38 @@ export default function App() {
               </span>
             </div>
 
-            {currentUser && (
-              <nav className="flex items-center space-x-1 border-l border-[#E7DDD0] pl-3 ml-3 text-[11px] font-bold">
-                <button
-                  onClick={() => setActiveTab('chat')}
-                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-                    activeTab === 'chat'
-                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
-                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
-                  }`}
-                >
-                  AI Chat
-                </button>
-                <button
-                  onClick={() => setActiveTab('timetables')}
-                  className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
-                    activeTab === 'timetables'
-                      ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
-                      : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
-                  }`}
-                >
-                  📅 Timetables
-                </button>
-              </nav>
-            )}
+            <nav className="flex items-center space-x-1 border-l border-[#E7DDD0] pl-3 ml-3 text-[11px] font-bold">
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                  activeTab === 'chat'
+                    ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                }`}
+              >
+                AI Chat
+              </button>
+              <button
+                onClick={() => setActiveTab('timetables')}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                  activeTab === 'timetables'
+                    ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                }`}
+              >
+                📅 Timetables
+              </button>
+              <button
+                onClick={() => setActiveTab('question_papers')}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+                  activeTab === 'question_papers'
+                    ? 'bg-[#C89B4A]/10 text-[#C89B4A]'
+                    : 'text-[#6B6B6B] hover:bg-[#F2EEE8] hover:text-[#1B1B1B]'
+                }`}
+              >
+                📝 Question Papers
+              </button>
+            </nav>
           </div>
 
           {/* Header Right Actions */}
@@ -5096,6 +5114,13 @@ export default function App() {
           </div>
         )}
 
+        {/* STUDENT QUESTION PAPERS VIEW */}
+        {activeTab === 'question_papers' && (
+          <div className="w-full max-w-6xl mx-auto px-4 lg:px-8 py-10">
+            <StudentQuestionPaperPortal userProfile={userProfile} />
+          </div>
+        )}
+
 
 
         {/* ADMIN PORTAL & ANALYTICS VIEW */}
@@ -5310,6 +5335,18 @@ export default function App() {
                     >
                       <Layers className="h-4 w-4" />
                       <span>📚 Programme Structure</span>
+                    </button>
+
+                    <button
+                      onClick={() => setAdminTab('question_papers')}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        adminTab === 'question_papers'
+                          ? 'bg-[#C89B4A] text-white shadow-sm shadow-[#C89B4A]/20'
+                          : 'text-[#6B6B6B] hover:bg-[#F2EEE8]/60 hover:text-[#1B1B1B]'
+                      }`}
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span>📄 Question Papers</span>
                     </button>
                   </div>
 
@@ -7285,6 +7322,13 @@ export default function App() {
 
                     {adminTab === 'programme_structure' && (
                       <ProgrammeStructureManagement adminToken={adminToken} />
+                    )}
+
+                    {adminTab === 'question_papers' && (
+                      <QuestionPaperManagement
+                        adminEmail={currentUser?.email || undefined}
+                        authHeader={adminToken ? `Bearer ${adminToken}` : undefined}
+                      />
                     )}
 
                   </div>
