@@ -7,5 +7,6 @@
   "storageBucket": "ira-campus-4983a.firebasestorage.app",
   "messagingSenderId": "174374841078",
   "measurementId": "",
-  "oAuthClientId": "174374841078-vp2l05bbub6skhm610lmp402cn2g8vu3.apps.googleusercontent.com"
+  "oAuthClientId": "174374841078-vp2l05bbub6skhm610lmp402cn2g8vu3.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }

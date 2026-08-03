@@ -13,6 +13,8 @@ import {
   Eye,
   X
 } from 'lucide-react';
+import { storage } from '../lib/firebase';
+import { ref, uploadBytes, uploadString, getDownloadURL } from 'firebase/storage';
 import { QuestionPaper } from '../types';
 
 interface QuestionPaperManagementProps {
@@ -140,6 +142,34 @@ export const QuestionPaperManagement: React.FC<QuestionPaperManagementProps> = (
     setSuccess(null);
 
     try {
+      const deptSlug = department.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const semSlug = semester.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const paperSlug = paper.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const courseSlug = course.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const yearSlug = year.trim().replace(/[^a-z0-9]+/g, '_');
+      const typeSlug = examType.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+      const docId = `qp_${deptSlug}_${semSlug}_${paperSlug}_${courseSlug}_${yearSlug}_${typeSlug}_${Date.now()}`;
+
+      const storagePath = `question_papers/${deptSlug}/${semSlug}/${docId}.pdf`;
+      const fileRef = ref(storage, storagePath);
+
+      console.log('[QUESTION PAPER STORAGE] Direct Firebase Storage upload starting...');
+      console.log('PDF Storage Path:', storagePath);
+
+      let firebasePdfUrl = '';
+      if (selectedFile) {
+        const snapshot = await uploadBytes(fileRef, selectedFile, { contentType: 'application/pdf' });
+        console.log('[QUESTION PAPER STORAGE] uploadBytes successful. Path:', snapshot.ref.fullPath);
+        firebasePdfUrl = await getDownloadURL(fileRef);
+        console.log('[QUESTION PAPER STORAGE] Generated Firebase Storage Download URL:', firebasePdfUrl);
+      } else if (fileBase64) {
+        const cleanB64 = fileBase64.includes(',') ? fileBase64.split(',')[1] : fileBase64;
+        await uploadString(fileRef, cleanB64, 'base64', { contentType: 'application/pdf' });
+        console.log('[QUESTION PAPER STORAGE] uploadString successful.');
+        firebasePdfUrl = await getDownloadURL(fileRef);
+        console.log('[QUESTION PAPER STORAGE] Generated Firebase Storage Download URL:', firebasePdfUrl);
+      }
+
       const payload = {
         department,
         programme,
@@ -149,6 +179,7 @@ export const QuestionPaperManagement: React.FC<QuestionPaperManagementProps> = (
         year,
         examType,
         keywords,
+        pdfUrl: firebasePdfUrl,
         fileBase64,
         fileName: selectedFile?.name || `${department}_${semester}_${paper}_${year}.pdf`,
         uploadedBy: adminEmail || 'Admin'
@@ -165,6 +196,7 @@ export const QuestionPaperManagement: React.FC<QuestionPaperManagementProps> = (
 
       const data = await res.json();
       if (res.ok) {
+        console.log('[QUESTION PAPER STORAGE] Firestore document creation verified:', data.questionPaper);
         setSuccess(`Question paper "${paper} - ${course}" uploaded successfully.`);
         setPaper('');
         setCourse('');
@@ -176,6 +208,7 @@ export const QuestionPaperManagement: React.FC<QuestionPaperManagementProps> = (
         setError(data.error || 'Failed to upload question paper.');
       }
     } catch (err: any) {
+      console.error('[QUESTION PAPER STORAGE] Direct upload error:', err);
       setError(err.message || 'Error submitting question paper.');
     } finally {
       setIsSubmitting(false);
@@ -580,7 +613,56 @@ export const QuestionPaperManagement: React.FC<QuestionPaperManagementProps> = (
                 </p>
               )}
             </div>
-            <div className="flex justify-end">
+            {previewPaper.pdfUrl && (
+              <div className="w-full h-80 relative rounded-2xl overflow-hidden border border-[#E7DDD0] bg-slate-900">
+                <object
+                  data={previewPaper.pdfUrl}
+                  type="application/pdf"
+                  className="w-full h-full"
+                >
+                  <embed
+                    src={previewPaper.pdfUrl}
+                    type="application/pdf"
+                    className="w-full h-full"
+                  />
+                  <div className="absolute inset-0 bg-white flex flex-col items-center justify-center p-4 text-center space-y-2">
+                    <p className="text-xs text-slate-600 font-medium">PDF preview embedded from Firebase Storage</p>
+                    <a
+                      href={previewPaper.pdfUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-[#C89B4A] text-white text-xs font-bold rounded-xl"
+                    >
+                      Open PDF in New Window
+                    </a>
+                  </div>
+                </object>
+              </div>
+            )}
+            <div className="flex items-center justify-between pt-2">
+              {previewPaper.pdfUrl ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href={previewPaper.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-[#C89B4A] hover:bg-[#B98A32] text-white text-xs font-extrabold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>Open Full Screen</span>
+                  </a>
+                  <a
+                    href={previewPaper.pdfUrl}
+                    download={previewPaper.fileName || `${previewPaper.department}_${previewPaper.paper}.pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-extrabold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Upload className="h-3.5 w-3.5 rotate-180" />
+                    <span>Download PDF</span>
+                  </a>
+                </div>
+              ) : <div />}
               <button
                 onClick={() => setPreviewPaper(null)}
                 className="px-4 py-2 bg-[#1B1B1B] text-white text-xs font-bold rounded-xl cursor-pointer"

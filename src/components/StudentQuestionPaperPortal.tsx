@@ -153,10 +153,12 @@ export const StudentQuestionPaperPortal: React.FC<StudentQuestionPaperPortalProp
 
   const handleDownload = (paper: QuestionPaper) => {
     if (paper.pdfUrl) {
+      console.log('[STUDENT PORTAL] Downloading PDF directly from Firebase Storage URL:', paper.pdfUrl);
       const a = document.createElement('a');
       a.href = paper.pdfUrl;
       a.download = paper.fileName || `${paper.department}_${paper.semester}_${paper.paper}_${paper.year}.pdf`;
       a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       a.click();
     } else {
       alert('PDF file URL is not available for this paper.');
@@ -165,14 +167,7 @@ export const StudentQuestionPaperPortal: React.FC<StudentQuestionPaperPortalProp
 
   const getPdfSrc = (paper: QuestionPaper | null) => {
     if (!paper || !paper.pdfUrl) return null;
-    let url = paper.pdfUrl;
-    if (url.includes('localhost:3000/api/') || url.includes('127.0.0.1:3000/api/')) {
-      const apiPath = url.substring(url.indexOf('/api/'));
-      url = typeof window !== 'undefined' ? window.location.origin + apiPath : apiPath;
-    } else if (url.startsWith('/api/')) {
-      url = typeof window !== 'undefined' ? window.location.origin + url : url;
-    }
-    return url;
+    return paper.pdfUrl;
   };
 
   useEffect(() => {

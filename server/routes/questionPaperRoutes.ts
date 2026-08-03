@@ -267,28 +267,35 @@ router.post('/', adminAuthMiddleware, async (req: AdminRequest, res: Response) =
     const docId = `qp_${deptSlug}_${semSlug}_${paperSlug}_${courseSlug}_${yearSlug}_${typeSlug}_${Date.now()}`;
 
     let cleanBase64 = '';
-    let pdfUrl = '';
+    let pdfUrl = req.body.pdfUrl || '';
 
-    if (!fileBase64 || typeof fileBase64 !== 'string') {
-      return res.status(400).json({ error: 'PDF file is required for question paper creation.' });
-    }
-
-    if (fileBase64.startsWith('data:')) {
-      const parts = fileBase64.split(';base64,');
-      cleanBase64 = parts[1] || parts[0];
+    // If client already uploaded directly to Firebase Storage and passed HTTPS pdfUrl
+    if (pdfUrl && typeof pdfUrl === 'string' && pdfUrl.startsWith('http')) {
+      console.log('[QUESTION PAPER STORAGE] Client uploaded directly to Firebase Storage.');
+      console.log('Firebase Storage upload successful for docId:', docId);
+      console.log('Generated Firebase Storage Download URL:', pdfUrl);
     } else {
-      cleanBase64 = fileBase64;
-    }
+      if (!fileBase64 || typeof fileBase64 !== 'string') {
+        return res.status(400).json({ error: 'PDF file is required for question paper creation.' });
+      }
 
-    if (!cleanBase64.trim()) {
-      return res.status(400).json({ error: 'PDF upload failed. Invalid or empty PDF content.' });
-    }
+      if (fileBase64.startsWith('data:')) {
+        const parts = fileBase64.split(';base64,');
+        cleanBase64 = parts[1] || parts[0];
+      } else {
+        cleanBase64 = fileBase64;
+      }
 
-    console.log('[QUESTION PAPER]');
-    console.log('Uploading PDF...');
+      if (!cleanBase64.trim()) {
+        return res.status(400).json({ error: 'PDF upload failed. Invalid or empty PDF content.' });
+      }
 
-    // Attempt Firebase Storage upload first if storage instance is ready
-    if (storage) {
+      console.log('[QUESTION PAPER STORAGE] Uploading PDF to Firebase Storage...');
+
+      if (!storage) {
+        return res.status(500).json({ error: 'Firebase Storage instance is not initialized. Unable to store PDF.' });
+      }
+
       try {
         const buffer = Buffer.from(cleanBase64, 'base64');
         const uint8Array = new Uint8Array(buffer);
@@ -297,35 +304,16 @@ router.post('/', adminAuthMiddleware, async (req: AdminRequest, res: Response) =
 
         await uploadBytes(fileRef, uint8Array, { contentType: 'application/pdf' });
         pdfUrl = await getDownloadURL(fileRef);
-        console.log('Upload successful.');
-        console.log('Download URL:\n' + pdfUrl);
+        console.log('Firebase Storage upload successful for docId:', docId);
+        console.log('Generated Firebase Storage Download URL:', pdfUrl);
       } catch (stgErr: any) {
-        console.log('[QuestionPaper Storage Notice] Firebase Storage bucket unavailable, saving file to server disk repository.');
+        console.error('[QuestionPaper Storage Error]:', stgErr?.message || stgErr);
+        return res.status(500).json({ error: `Firebase Storage upload failed: ${stgErr?.message || 'Storage error'}` });
       }
     }
 
-    // Fallback to local server disk storage if Firebase Storage bucket is inactive/404
-    if (!pdfUrl) {
-      try {
-        const uploadsDir = path.resolve(process.cwd(), 'uploads', 'question_papers');
-        if (!fs.existsSync(uploadsDir)) {
-          fs.mkdirSync(uploadsDir, { recursive: true });
-        }
-        const filePath = path.join(uploadsDir, `${docId}.pdf`);
-        fs.writeFileSync(filePath, Buffer.from(cleanBase64, 'base64'));
-
-        pdfUrl = `/api/question-papers/file/${docId}.pdf`;
-
-        console.log('Upload successful.');
-        console.log('Download URL:\n' + pdfUrl);
-      } catch (fsErr: any) {
-        console.error('[QuestionPaper Storage Error]:', fsErr?.message || fsErr);
-        return res.status(500).json({ error: 'PDF upload failed. Question paper was not saved.' });
-      }
-    }
-
-    if (!pdfUrl || typeof pdfUrl !== 'string' || (!pdfUrl.startsWith('http') && !pdfUrl.startsWith('/api/'))) {
-      return res.status(500).json({ error: 'PDF upload failed. Question paper was not saved.' });
+    if (!pdfUrl || typeof pdfUrl !== 'string' || !pdfUrl.startsWith('http')) {
+      return res.status(500).json({ error: 'PDF storage in Firebase Storage failed. Valid HTTPS pdfUrl required.' });
     }
 
     // Build keywords
@@ -410,24 +398,14 @@ router.delete('/:id', adminAuthMiddleware, async (req: AdminRequest, res: Respon
 
     const data = snap.data() as QuestionPaper;
 
-    // Remove from local disk storage if exists
-    const uploadsDir = path.resolve(process.cwd(), 'uploads', 'question_papers');
-    const localFilePath = path.join(uploadsDir, `${id}.pdf`);
-    if (fs.existsSync(localFilePath)) {
-      try {
-        fs.unlinkSync(localFilePath);
-      } catch (e) {
-        console.warn('[QuestionPaper] Local disk delete notice:', e);
-      }
-    }
-
     // Remove from storage if pdfUrl exists
     if (data.pdfUrl && data.pdfUrl.includes('firebasestorage')) {
       try {
         const fileRef = ref(storage, data.pdfUrl);
         await deleteObject(fileRef);
-      } catch (e) {
-        console.warn('[QuestionPaper] Storage delete notice:', e);
+        console.log('[QuestionPaper] Deleted Firebase Storage object for:', data.pdfUrl);
+      } catch (e: any) {
+        console.warn('[QuestionPaper] Storage delete notice:', e?.message || e);
       }
     }
 
