@@ -24,7 +24,7 @@ const dbId = config.firestoreDatabaseId || undefined;
 
 const firestoreSettings = {
   experimentalForceLongPolling: true,
-  experimentalAutoDetectLongPolling: true,
+  useFetchStreams: false,
 };
 
 try {

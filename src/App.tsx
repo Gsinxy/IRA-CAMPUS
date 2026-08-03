@@ -915,7 +915,12 @@ export default function App() {
       const user = result.user;
       
       const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
+      let userSnap: any = null;
+      try {
+        userSnap = await getDoc(userRef);
+      } catch (getErr: any) {
+        console.warn('[Firestore Read Warning] Failed to fetch user profile during Google sign-in:', getErr.message || getErr);
+      }
       const nameVal = user.displayName || user.email?.split('@')[0] || 'User';
       const newProfile = {
         uid: user.uid,
@@ -926,7 +931,7 @@ export default function App() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      if (!userSnap.exists()) {
+      if (!userSnap || !userSnap.exists()) {
         try {
           await setDoc(userRef, newProfile);
         } catch (writeErr: any) {
